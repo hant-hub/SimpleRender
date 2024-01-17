@@ -20,11 +20,55 @@
 static const uint32_t WIDTH = 1920;
 static const uint32_t HEIGHT = 1080;
 
+
 typedef struct PipelineData {
     VkViewport view;
     VkRect2D scissor;
     VkPipelineLayout layout;
 } PipelineData;
+
+
+static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, SwapImageDetails* details) {
+    VkAttachmentDescription renderColorAttachment = {0};
+    renderColorAttachment.format = details->format;
+    renderColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    renderColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    renderColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    renderColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    renderColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    renderColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    renderColorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference renderColorReference = {0};
+    renderColorReference.attachment = 0;
+    renderColorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription renderSubpass = {0};
+    renderSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    renderSubpass.colorAttachmentCount = 1;
+    renderSubpass.pColorAttachments = &renderColorReference;
+
+    VkRenderPassCreateInfo renderPassInfo = {0};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &renderColorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &renderSubpass;
+
+    if (vkCreateRenderPass(logicalDevice, &renderPassInfo, NULL, renderPass) != VK_SUCCESS) {
+        errno = FailedCreation;
+        fprintf(stderr, ERR_COLOR("Failed to Create Render Pass"));
+        return;
+    }
+
+    fprintf(stdout, TRACE_COLOR("Render Pass Created"));
+}
+
+
+
 
 
 static void CreateGraphicsPipeline(VkDevice logicalDevice, SwapImageDetails swapChainExtent, PipelineData* pipeData, GLFWwindow* window) {
@@ -318,12 +362,32 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    //Create Render passes
+    VkRenderPass renderPass;
+    CreateRenderPass(&renderPass, logicalDevice, &details);
+    if (errno == FailedCreation) {
+        CloseGLFW(window);
+        if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
+        DestroyImageViews(logicalDevice, swapViews, imageCount);
+        vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
+        vkDestroySurfaceKHR(instance, surface, NULL);
+        vkDestroyDevice(logicalDevice, NULL);
+        vkDestroyInstance(instance, NULL);
+        exit(EXIT_FAILURE);
+    }
+
+
+
+
+
+
     //create Graphics Pipeline
     PipelineData data;
     CreateGraphicsPipeline(logicalDevice, details, &data, window);
     if (errno == FailedCreation) {
         CloseGLFW(window);
         if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
+        vkDestroyRenderPass(logicalDevice, renderPass, NULL);
         DestroyImageViews(logicalDevice, swapViews, imageCount);
         vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
         vkDestroySurfaceKHR(instance, surface, NULL);
@@ -346,6 +410,7 @@ int main() {
     
 
     vkDestroyPipelineLayout(logicalDevice, data.layout, NULL);
+    vkDestroyRenderPass(logicalDevice, renderPass, NULL);
     DestroyImageViews(logicalDevice, swapViews, imageCount);
     vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
     vkDestroySurfaceKHR(instance, surface, NULL);
