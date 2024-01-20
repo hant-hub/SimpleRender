@@ -7,10 +7,10 @@
 #include <vulkan/vulkan_core.h>
 
 
-static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* presentQueue, VkPhysicalDevice* p, VkSurfaceKHR* surface) {
-    QueueFamilyIndicies indicies = findQueueFamily(p, surface);
+static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* presentQueue, VkPhysicalDevice* p, VkSurfaceKHR* surface, QueueFamilyIndicies* indicies) {
+    *indicies = findQueueFamily(p, surface);
     uint32_t uniqueIndiciesCount = 2;
-    if (indicies.graphicsQueue.value == indicies.presentQueue.value) {
+    if (indicies->graphicsQueue.value == indicies->presentQueue.value) {
         uniqueIndiciesCount = 1;
     }
 
@@ -20,7 +20,7 @@ static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* pr
     float queuePriority = 1.0f;
     for (int i = 0; i < uniqueIndiciesCount; i++) {
         queueCreateInfo[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo[i].queueFamilyIndex = indicies.graphicsQueue.value;
+        queueCreateInfo[i].queueFamilyIndex = indicies->graphicsQueue.value;
         queueCreateInfo[i].queueCount = 1;
         queueCreateInfo[i].pQueuePriorities = &queuePriority;
     }
@@ -48,8 +48,8 @@ static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* pr
         fprintf(stderr, ERR_COLOR("Logical Device Creation Failed!"));
         return;
     }
-    vkGetDeviceQueue(*d, indicies.graphicsQueue.value, 0, graphicsQueue);
-    vkGetDeviceQueue(*d, indicies.presentQueue.value, 0, presentQueue);
+    vkGetDeviceQueue(*d, indicies->graphicsQueue.value, 0, graphicsQueue);
+    vkGetDeviceQueue(*d, indicies->presentQueue.value, 0, presentQueue);
     
 
     fprintf(stdout, TRACE_COLOR("Logical Device Creation Success"));

@@ -10,6 +10,7 @@
 #include "lib/SimpleMath/src/include/misc.h"
 #include "pipeline.h"
 #include "framebuffer.h"
+#include "command.h"
 #include <GLFW/glfw3.h>
 #include <errno.h>
 #include <stdint.h>
@@ -21,6 +22,7 @@
 
 static const uint32_t WIDTH = 1920;
 static const uint32_t HEIGHT = 1080;
+
 
 
 
@@ -102,7 +104,8 @@ int main() {
     VkDevice logicalDevice = VK_NULL_HANDLE; 
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
-    createLogicalDevice(&logicalDevice, &graphicsQueue, &presentQueue, &physicalDevice, &surface);
+    QueueFamilyIndicies indicies = {0};
+    createLogicalDevice(&logicalDevice, &graphicsQueue, &presentQueue, &physicalDevice, &surface, &indicies);
     if (errno == FailedCreation) {
         CloseGLFW(window);
         if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
@@ -193,7 +196,57 @@ int main() {
         vkDestroyInstance(instance, NULL);
         exit(EXIT_FAILURE);
     }
- 
+
+
+    //Create Command Storage
+    VkCommandPool commandPool;
+    VkCommandBuffer commandBuffer;
+    CreateCommandObjects(&commandPool, &commandBuffer, &indicies, logicalDevice);
+    if (errno == FailedCreation) {
+        CloseGLFW(window);
+        if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
+        for (int i = 0; i < imageCount; i++) {
+            vkDestroyFramebuffer(logicalDevice, framebuffers[i], NULL);
+        }
+        vkDestroyRenderPass(logicalDevice, renderPass, NULL);
+        DestroyImageViews(logicalDevice, swapViews, imageCount);
+        vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
+        vkDestroySurfaceKHR(instance, surface, NULL);
+        vkDestroyDevice(logicalDevice, NULL);
+        vkDestroyInstance(instance, NULL);
+        exit(EXIT_FAILURE);
+    }
+
+
+    //Sync Objects
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
+    VkFence inFlightFence;
+
+    VkSemaphoreCreateInfo semaphoreInfo = {0};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo = {0};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+    if (vkCreateSemaphore(logicalDevice, &semaphoreInfo, NULL, &imageAvailableSemaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(logicalDevice, &semaphoreInfo, NULL, &renderFinishedSemaphore) != VK_SUCCESS ||
+            vkCreateFence(logicalDevice, &fenceInfo, NULL, &inFlightFence) != VK_SUCCESS) {
+
+        CloseGLFW(window);
+        if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
+        for (int i = 0; i < imageCount; i++) {
+            vkDestroyFramebuffer(logicalDevice, framebuffers[i], NULL);
+        }
+        vkDestroyCommandPool(logicalDevice, commandPool, NULL);
+        vkDestroyRenderPass(logicalDevice, renderPass, NULL);
+        DestroyImageViews(logicalDevice, swapViews, imageCount);
+        vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
+        vkDestroySurfaceKHR(instance, surface, NULL);
+        vkDestroyDevice(logicalDevice, NULL);
+        vkDestroyInstance(instance, NULL);
+        exit(EXIT_FAILURE);
+    }
 
     
 
@@ -210,7 +263,11 @@ int main() {
         vkDestroyFramebuffer(logicalDevice, framebuffers[i], NULL);
     }
     
+    vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, NULL);
+    vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, NULL);
+    vkDestroyFence(logicalDevice, inFlightFence, NULL);
 
+    vkDestroyCommandPool(logicalDevice, commandPool, NULL);
     vkDestroyPipeline(logicalDevice, pipeline, NULL);
     vkDestroyPipelineLayout(logicalDevice, data.layout, NULL);
     vkDestroyRenderPass(logicalDevice, renderPass, NULL);
