@@ -228,6 +228,7 @@ int main() {
 
     VkFenceCreateInfo fenceInfo = {0};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     if (vkCreateSemaphore(logicalDevice, &semaphoreInfo, NULL, &imageAvailableSemaphore) != VK_SUCCESS ||
             vkCreateSemaphore(logicalDevice, &semaphoreInfo, NULL, &renderFinishedSemaphore) != VK_SUCCESS ||
@@ -253,9 +254,76 @@ int main() {
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
 
+        //Draw Frame
+        vkWaitForFences(logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+        vkResetFences(logicalDevice, 1, &inFlightFence); 
 
-        glfwSwapBuffers(window);
+        uint32_t imageIndex;
+        vkAcquireNextImageKHR(logicalDevice, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        vkResetCommandBuffer(commandBuffer, 0);
+        RecordCommands(&commandBuffer, renderPass, &pipeline, &details, framebuffers, imageIndex);
+
+        VkSubmitInfo submitInfo = {0};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+            if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
+
+            for (int i = 0; i < imageCount; i++) {
+                vkDestroyFramebuffer(logicalDevice, framebuffers[i], NULL);
+            }
+
+            vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, NULL);
+            vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, NULL);
+            vkDestroyFence(logicalDevice, inFlightFence, NULL);
+
+            vkDestroyCommandPool(logicalDevice, commandPool, NULL);
+            vkDestroyPipeline(logicalDevice, pipeline, NULL);
+            vkDestroyPipelineLayout(logicalDevice, data.layout, NULL);
+            vkDestroyRenderPass(logicalDevice, renderPass, NULL);
+            DestroyImageViews(logicalDevice, swapViews, imageCount);
+            vkDestroySwapchainKHR(logicalDevice, swapchain, NULL);
+            vkDestroySurfaceKHR(instance, surface, NULL);
+            vkDestroyDevice(logicalDevice, NULL);
+            vkDestroyInstance(instance, NULL);
+            CloseGLFW(window);
+            return EXIT_FAILURE;
+        }
+
+        VkPresentInfoKHR presentInfo = {0};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapchains[] = {swapchain};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        presentInfo.pResults = NULL;
+
+        vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+
+
     }
+
+    vkQueueWaitIdle(graphicsQueue);
+    vkDeviceWaitIdle(logicalDevice);
 
     if (enableValidationLayers)  DestroyDebugMessenger(&instance, &debugMessenger);
 

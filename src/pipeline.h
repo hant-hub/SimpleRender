@@ -3,6 +3,7 @@
 #include "Vulkan.h"
 #include "swapchain.h"
 #include "util.h"
+#include <vulkan/vulkan_core.h>
 
 typedef struct PipelineData {
     VkViewport view;
@@ -40,6 +41,19 @@ static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, S
     renderPassInfo.pAttachments = &renderColorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &renderSubpass;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(logicalDevice, &renderPassInfo, NULL, renderPass) != VK_SUCCESS) {
         errno = FailedCreation;
