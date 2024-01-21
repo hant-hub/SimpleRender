@@ -128,6 +128,9 @@ int main() {
 
     vkQueueWaitIdle(state.logical.graphicsQueue);
     vkDeviceWaitIdle(state.logical.device);
+    vkDestroySemaphore(state.logical.device, imageAvailableSemaphore, NULL);
+    vkDestroySemaphore(state.logical.device, renderFinishedSemaphore, NULL);
+    vkDestroyFence(state.logical.device, inFlightFence, NULL);
     ExitVulkan(&state);
 
     return EXIT_SUCCESS;

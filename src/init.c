@@ -1,5 +1,6 @@
 #include "init.h"
 #include "instance.h"
+#include "state.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -20,14 +21,16 @@ static void CreateSurface(VkInstance* instance, GLFWwindow* window, VkSurfaceKHR
 void ExitVulkan(VulkanState *state) {
    
     switch (state->stage){
-        
         case COMPLETE:
         case COMMAND:
+            vkDestroyCommandPool(state->logical.device, state->command.commandPool, NULL);
         case FRAMEBUFFER:
             for (int i = 0; i < state->swapData.imageCount; i++) 
                 vkDestroyFramebuffer(state->logical.device, state->swapData.frameBuffers[i], NULL);      
             free(state->swapData.frameBuffers);
         case GRAPHPIPE:
+            vkDestroyPipeline(state->logical.device, state->pipe.pipeline, NULL);
+            vkDestroyPipelineLayout(state->logical.device, state->pipe.layout, NULL);
         case RENDERPASS:
             for (int i = 0; i < state->pipe.renderpassCount; i++)
                 vkDestroyRenderPass(state->logical.device, state->pipe.renderpasses[i], NULL);
@@ -60,6 +63,7 @@ void ExitVulkan(VulkanState *state) {
 }
 
 void InitVulkan(VulkanState* state) {
+    state->stage = NONE;
 
     //appinfo
     VkApplicationInfo appInfo = {0};
@@ -76,6 +80,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = INSTANCE;
     
     //Debug Messenging
     CreateDebugMessenger(&state->debugMessenger, &state->instance);
@@ -83,6 +88,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = DEBUG;
     
 
     //window surface creation
@@ -91,6 +97,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = SURFACE;
 
 
 
@@ -100,6 +107,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = PHYSDEVICE;
 
     //Logical Device and Queue Creation
     createLogicalDevice(&state->logical.device, &state->logical.graphicsQueue, 
@@ -109,6 +117,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = LOGIDEVICE;
 
 
     //SwapChain Creation
@@ -119,6 +128,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = SWAPCHAIN;
 
     vkGetSwapchainImagesKHR(state->logical.device, *state->swapData.swapchains, &state->swapData.imageCount, NULL); 
     VkImage swapChainImages[state->swapData.imageCount];
@@ -131,6 +141,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = IMAGEVIEWS;
 
     //Create Render passes
     state->pipe.renderpassCount = 1;
@@ -140,6 +151,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = RENDERPASS;
 
 
     //create Graphics Pipeline
@@ -150,6 +162,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = GRAPHPIPE;
 
 
     //Framebuffers
@@ -159,6 +172,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = FRAMEBUFFER;
 
 
     //Create Command Storage
@@ -169,6 +183,7 @@ void InitVulkan(VulkanState* state) {
         ExitVulkan(state);
         return;
     }
+    state->stage = COMPLETE;
 }
 
 
