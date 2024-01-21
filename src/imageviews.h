@@ -1,9 +1,10 @@
 #ifndef IMAGE_VIEWS_H
 #define IMAGE_VIEWS_H
 #include "Vulkan.h"
+#include "state.h"
 #include "swapchain.h"
 
-static void CreateImageViews(VkImageView* swapViews, VkImage* swapChainImages, SwapImageDetails details, VkDevice logicalDevice, uint32_t imageCount) {
+static void CreateImageViews(VkImageView* swapViews, VkImage* swapChainImages, SwapChainData details, VkDevice logicalDevice, uint32_t imageCount) {
     for (int i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCreateInfo = {};
         viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

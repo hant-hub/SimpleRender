@@ -2,14 +2,11 @@
 #define SWAPCHAIN_H
 #include "Vulkan.h"
 #include "lib/SimpleMath/src/include/misc.h"
+#include "state.h"
 #include "physicaldevice.h"
 
-typedef struct SwapImageDetails {
-    VkExtent2D extent;
-    VkFormat format;
-} SwapImageDetails;
 
-static void CreateSwapChain(VkSwapchainKHR* swapchain, SwapImageDetails* details, VkPhysicalDevice physicalDevice,
+static void CreateSwapChain(VkSwapchainKHR* swapchain, SwapChainData* details, VkPhysicalDevice physicalDevice,
         VkDevice logicaldevice, VkSurfaceKHR surface, GLFWwindow* window) { 
 
     uint32_t formatCount;

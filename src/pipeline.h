@@ -2,17 +2,13 @@
 #define PIPELINE_H
 #include "Vulkan.h"
 #include "swapchain.h"
+#include "state.h"
 #include "util.h"
 #include <vulkan/vulkan_core.h>
 
-typedef struct PipelineData {
-    VkViewport view;
-    VkRect2D scissor;
-    VkPipelineLayout layout;
-} PipelineData;
 
 
-static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, SwapImageDetails* details) {
+static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, SwapChainData* details) {
     VkAttachmentDescription renderColorAttachment = {};
     renderColorAttachment.format = details->format;
     renderColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -68,7 +64,7 @@ static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, S
 
 
 
-static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass, VkDevice logicalDevice, SwapImageDetails swapChainExtent, PipelineData* pipeData, GLFWwindow* window) {
+static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass, VkDevice logicalDevice, SwapChainData swapChainExtent, PipelineData* pipeData, GLFWwindow* window) {
     //Load Shaders
     SizedBuffer vert; 
     SizedBuffer frag;

@@ -2,6 +2,7 @@
 #define COMMAND_H
 #include "Vulkan.h"
 #include "physicaldevice.h"
+#include "state.h"
 #include "swapchain.h"
 
 
@@ -36,7 +37,7 @@ static void CreateCommandObjects(VkCommandPool* commandPool, VkCommandBuffer* co
     fprintf(stdout, TRACE_COLOR("Created Command Buffer"));
 }
 
-static void RecordCommands(VkCommandBuffer* commandBuffer, VkRenderPass renderPass, VkPipeline *pipeline, SwapImageDetails *details, VkFramebuffer* framebuffers,
+static void RecordCommands(VkCommandBuffer* commandBuffer, VkRenderPass renderPass, VkPipeline *pipeline, SwapChainData *details, VkFramebuffer* framebuffers,
                            uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

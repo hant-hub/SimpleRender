@@ -2,10 +2,11 @@
 #define FRAMEBUFFER_H
 #include "Vulkan.h"
 #include "error.h"
+#include "state.h"
 #include "swapchain.h"
 #include <vulkan/vulkan_core.h>
 
-static void CreateFrameBuffers(VkFramebuffer* framebuffers, VkDevice logicalDevice, SwapImageDetails* details, 
+static void CreateFrameBuffers(VkFramebuffer* framebuffers, VkDevice logicalDevice, SwapChainData* details, 
                                 VkRenderPass* renderPass, VkImageView* swapViews, uint32_t imageCount) {
     for (int i = 0; i < imageCount; i++) {
         VkImageView attachments[] = {
