@@ -8,9 +8,9 @@
 
 
 
-static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, SwapChainData* details) {
+static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, VkFormat format) {
     VkAttachmentDescription renderColorAttachment = {};
-    renderColorAttachment.format = details->format;
+    renderColorAttachment.format = format;
     renderColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
     renderColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -64,7 +64,7 @@ static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, S
 
 
 
-static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass, VkDevice logicalDevice, SwapChainData swapChainExtent, PipelineData* pipeData, GLFWwindow* window) {
+static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass, VkDevice logicalDevice, VkExtent2D extent, PipelineData* pipeData, GLFWwindow* window) {
     //Load Shaders
     SizedBuffer vert; 
     SizedBuffer frag;
@@ -152,14 +152,14 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.extent.width;
-    viewport.height = (float)swapChainExtent.extent.height;
+    viewport.width = (float)extent.width;
+    viewport.height = (float)extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor = {};
     scissor.offset = (VkOffset2D){0,0};
-    scissor.extent = swapChainExtent.extent;
+    scissor.extent = extent;
 
     VkPipelineViewportStateCreateInfo viewportInfo = {};
     viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

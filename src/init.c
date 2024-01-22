@@ -130,13 +130,10 @@ void InitVulkan(VulkanState* state) {
     }
     state->stage = SWAPCHAIN;
 
-    vkGetSwapchainImagesKHR(state->logical.device, *state->swapData.swapchains, &state->swapData.imageCount, NULL); 
-    VkImage swapChainImages[state->swapData.imageCount];
-    vkGetSwapchainImagesKHR(state->logical.device, *state->swapData.swapchains, &state->swapData.imageCount, swapChainImages);
+
 
     //SwapChain Image Views
-    state->swapData.swapViews = (VkImageView*)malloc(sizeof(VkImageView) * state->swapData.imageCount);
-    CreateImageViews(state->swapData.swapViews, swapChainImages, state->swapData, state->logical.device, state->swapData.imageCount);
+    CreateImageViews(&state->swapData, state->logical.device);
     if (errno == FailedCreation) {
         ExitVulkan(state);
         return;
@@ -146,7 +143,7 @@ void InitVulkan(VulkanState* state) {
     //Create Render passes
     state->pipe.renderpassCount = 1;
     state->pipe.renderpasses = (VkRenderPass*)malloc(sizeof(VkRenderPass) * state->pipe.renderpassCount);
-    CreateRenderPass(state->pipe.renderpasses, state->logical.device, &state->swapData);
+    CreateRenderPass(state->pipe.renderpasses, state->logical.device, state->swapData.format);
     if (errno == FailedCreation) {
         ExitVulkan(state);
         return;
@@ -157,7 +154,7 @@ void InitVulkan(VulkanState* state) {
     //create Graphics Pipeline
     CreateGraphicsPipeline(&state->pipe.pipeline, 
             *state->pipe.renderpasses, state->logical.device, 
-            state->swapData, &state->pipe, state->w);
+            state->swapData.extent, &state->pipe, state->w);
     if (errno == FailedCreation) {
         ExitVulkan(state);
         return;

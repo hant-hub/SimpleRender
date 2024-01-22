@@ -73,8 +73,6 @@ static void RecordCommands(VkCommandBuffer* commandBuffer, VkRenderPass renderPa
         fprintf(stderr, ERR_COLOR("Failed to End Recording Command Buffer"));
         return;
     }
-
-    fprintf(stdout, TRACE_COLOR("Successfully Recorded Command Buffer"));
 }
 
 #endif
