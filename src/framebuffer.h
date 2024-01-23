@@ -3,14 +3,12 @@
 #include "Vulkan.h"
 #include "error.h"
 #include "state.h"
-#include "swapchain.h"
 #include <vulkan/vulkan_core.h>
 
-static void CreateFrameBuffers(VkFramebuffer* framebuffers, VkDevice logicalDevice, SwapChainData* details, 
-                                VkRenderPass* renderPass, VkImageView* swapViews, uint32_t imageCount) {
-    for (int i = 0; i < imageCount; i++) {
+static ErrorCode CreateFrameBuffers(VkDevice logicalDevice, SwapChain* s, VkRenderPass* renderPass) {
+    for (int i = 0; i < s->imageCount; i++) {
         VkImageView attachments[] = {
-            swapViews[i]
+            s->swapViews[i]
         };
 
         VkFramebufferCreateInfo frameBufferInfo = {};
@@ -18,22 +16,21 @@ static void CreateFrameBuffers(VkFramebuffer* framebuffers, VkDevice logicalDevi
         frameBufferInfo.renderPass = *renderPass;
         frameBufferInfo.attachmentCount = 1;
         frameBufferInfo.pAttachments = attachments;
-        frameBufferInfo.width = details->extent.width;
-        frameBufferInfo.height = details->extent.height;
+        frameBufferInfo.width = s->extent.width;
+        frameBufferInfo.height = s->extent.height;
         frameBufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(logicalDevice, &frameBufferInfo, NULL, &framebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(logicalDevice, &frameBufferInfo, NULL, &s->frameBuffers[i]) != VK_SUCCESS) {
             for (int j = i-1; j >= 0; j--) {
-                vkDestroyFramebuffer(logicalDevice, framebuffers[j], NULL);
+                vkDestroyFramebuffer(logicalDevice, s->frameBuffers[j], NULL);
             }
-            errno = FailedCreation;
             fprintf(stderr, ERR_COLOR("Failed to Initialize all FrameBuffers"));
-            return;
+            return Error;
         }
 
     }
     fprintf(stdout, TRACE_COLOR("Framebuffers Created"));
-    return;
+    return NoError;
 }
 
 #endif

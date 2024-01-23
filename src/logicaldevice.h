@@ -1,13 +1,14 @@
 #ifndef LOGICAL_DEVICE_H
 #define LOGICAL_DEVICE_H
 #include "Vulkan.h"
+#include "error.h"
 #include "instance.h"
 #include "physicaldevice.h"
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
 
-static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* presentQueue, VkPhysicalDevice* p, VkSurfaceKHR* surface, QueueFamilyIndicies* indicies) {
+static ErrorCode createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* presentQueue, VkPhysicalDevice* p, VkSurfaceKHR* surface, QueueFamilyIndicies* indicies) {
     *indicies = findQueueFamily(p, surface);
     uint32_t uniqueIndiciesCount = 2;
     if (indicies->graphicsQueue.value == indicies->presentQueue.value) {
@@ -44,9 +45,8 @@ static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* pr
     }
 
     if (vkCreateDevice(*p, &deviceCreateInfo, NULL, d) != VK_SUCCESS) {
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Logical Device Creation Failed!"));
-        return;
+        return Error;
     }
     vkGetDeviceQueue(*d, indicies->graphicsQueue.value, 0, graphicsQueue);
     vkGetDeviceQueue(*d, indicies->presentQueue.value, 0, presentQueue);
@@ -54,7 +54,7 @@ static void createLogicalDevice(VkDevice *d, VkQueue *graphicsQueue, VkQueue* pr
 
     fprintf(stdout, TRACE_COLOR("Logical Device Creation Success"));
      
-
+    return NoError;
 }
 
 

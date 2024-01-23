@@ -1,14 +1,14 @@
 #ifndef PIPELINE_H
 #define PIPELINE_H
 #include "Vulkan.h"
-#include "swapchain.h"
+#include "error.h"
 #include "state.h"
 #include "util.h"
 #include <vulkan/vulkan_core.h>
 
 
 
-static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, VkFormat format) {
+static ErrorCode CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, VkFormat format) {
     VkAttachmentDescription renderColorAttachment = {};
     renderColorAttachment.format = format;
     renderColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -52,19 +52,19 @@ static void CreateRenderPass(VkRenderPass* renderPass, VkDevice logicalDevice, V
     renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(logicalDevice, &renderPassInfo, NULL, renderPass) != VK_SUCCESS) {
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Failed to Create Render Pass"));
-        return;
+        return Error;
     }
 
     fprintf(stdout, TRACE_COLOR("Render Pass Created"));
+    return NoError;
 }
 
 
 
 
 
-static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass, VkDevice logicalDevice, VkExtent2D extent, PipelineData* pipeData, GLFWwindow* window) {
+static ErrorCode CreateGraphicsPipeline(VulkanDevice* d, SwapChain* s, Pipeline* p) {
     //Load Shaders
     SizedBuffer vert; 
     SizedBuffer frag;
@@ -73,9 +73,8 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     LoadFile(".//shaders//standard.frag.spv", &frag);
 
     if (errno != 0) {
-        errno = FailedSearch;
         fprintf(stderr, ERR_COLOR("Failed to Load File"));
-        return;
+        return Error;
     }
 
 
@@ -85,12 +84,11 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     VertCreateInfo.pCode = (uint32_t*)vert.buffer;
 
     VkShaderModule vertex;
-    if (vkCreateShaderModule(logicalDevice, &VertCreateInfo, NULL, &vertex) != VK_SUCCESS) {
+    if (vkCreateShaderModule(d->logical.device, &VertCreateInfo, NULL, &vertex) != VK_SUCCESS) {
         free(vert.buffer);
         free(frag.buffer);
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Failed to Create Vertex Shader Module"));
-        return;
+        return Error;
     }
     free(vert.buffer);
 
@@ -100,12 +98,11 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     FragCreateInfo.pCode = (uint32_t*)frag.buffer;
 
     VkShaderModule fragment;
-    if (vkCreateShaderModule(logicalDevice, &FragCreateInfo, NULL, &fragment) != VK_SUCCESS) {
+    if (vkCreateShaderModule(d->logical.device, &FragCreateInfo, NULL, &fragment) != VK_SUCCESS) {
         free(frag.buffer);
-        vkDestroyShaderModule(logicalDevice, vertex, NULL);
-        errno = FailedCreation;
+        vkDestroyShaderModule(d->logical.device, vertex, NULL);
         fprintf(stderr, ERR_COLOR("Failed to Create Fragment Shader Module"));
-        return;
+        return Error;
 
     }
     free(frag.buffer);
@@ -152,14 +149,14 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)extent.width;
-    viewport.height = (float)extent.height;
+    viewport.width = (float)s->extent.width;
+    viewport.height = (float)s->extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor = {};
     scissor.offset = (VkOffset2D){0,0};
-    scissor.extent = extent;
+    scissor.extent = s->extent;
 
     VkPipelineViewportStateCreateInfo viewportInfo = {};
     viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -220,12 +217,11 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     layoutInfo.pushConstantRangeCount = 0; 
     layoutInfo.pPushConstantRanges = NULL; 
 
-    if (vkCreatePipelineLayout(logicalDevice, &layoutInfo, NULL, &pipeData->layout) != VK_SUCCESS) {
-        errno = FailedCreation;
+    if (vkCreatePipelineLayout(d->logical.device, &layoutInfo, NULL, &p->layout) != VK_SUCCESS) {
         fprintf(stderr, ERR_COLOR("Failed to create Pipeline Layout"));
-        vkDestroyShaderModule(logicalDevice, vertex, NULL);
-        vkDestroyShaderModule(logicalDevice, fragment, NULL);
-        return;
+        vkDestroyShaderModule(d->logical.device, vertex, NULL);
+        vkDestroyShaderModule(d->logical.device, fragment, NULL);
+        return Error;
     }
     fprintf(stdout, TRACE_COLOR("\tPipeline Layout Created"));
 
@@ -244,25 +240,25 @@ static void CreateGraphicsPipeline(VkPipeline* pipeline, VkRenderPass renderPass
     pipelineCreateInfo.pColorBlendState = &colorStateInfo;
     pipelineCreateInfo.pDynamicState = &dynamicCreateInfo;
 
-    pipelineCreateInfo.layout = pipeData->layout;
-    pipelineCreateInfo.renderPass = renderPass;
+    pipelineCreateInfo.layout = p->layout;
+    pipelineCreateInfo.renderPass = p->renderpass;
     pipelineCreateInfo.subpass = 0;
 
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, NULL, pipeline) != VK_SUCCESS) {
-        errno = FailedCreation;
+    if (vkCreateGraphicsPipelines(d->logical.device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, NULL, &p->pipeline) != VK_SUCCESS) {
         fprintf(stderr, ERR_COLOR("Failed to create Graphics Pipeline"));
-        vkDestroyShaderModule(logicalDevice, vertex, NULL);
-        vkDestroyShaderModule(logicalDevice, fragment, NULL);
-        return;
+        vkDestroyShaderModule(d->logical.device, vertex, NULL);
+        vkDestroyShaderModule(d->logical.device, fragment, NULL);
+        return Error;
     }
 
 
-    vkDestroyShaderModule(logicalDevice, vertex, NULL);
-    vkDestroyShaderModule(logicalDevice, fragment, NULL);
+    vkDestroyShaderModule(d->logical.device, vertex, NULL);
+    vkDestroyShaderModule(d->logical.device, fragment, NULL);
     fprintf(stdout, TRACE_COLOR("Created Graphics Pipeline"));
+    return NoError;
 }
 
 #endif

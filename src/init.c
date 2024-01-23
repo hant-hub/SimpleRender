@@ -1,4 +1,5 @@
 #include "init.h"
+#include "error.h"
 #include "instance.h"
 #include "state.h"
 #include <vulkan/vulkan_core.h>
@@ -9,62 +10,35 @@ inline static void CloseGLFW(GLFWwindow *w) {
     glfwTerminate();
 }
 
-static void CreateSurface(VkInstance* instance, GLFWwindow* window, VkSurfaceKHR* surface) {
+static ErrorCode CreateSurface(VkInstance* instance, GLFWwindow* window, VkSurfaceKHR* surface) {
     if (glfwCreateWindowSurface(*instance, window, NULL, surface) != VK_SUCCESS) {
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Failed to Create Window Surface!"));
+        return Error;
     }
     fprintf(stdout, TRACE_COLOR("Window Surface Created"));
+    return NoError;
 
 }
 
-void ExitVulkan(VulkanState *state) {
-   
-    switch (state->stage){
-        case COMPLETE:
-        case COMMAND:
-            vkDestroyCommandPool(state->logical.device, state->command.commandPool, NULL);
-        case FRAMEBUFFER:
-            for (int i = 0; i < state->swapData.imageCount; i++) 
-                vkDestroyFramebuffer(state->logical.device, state->swapData.frameBuffers[i], NULL);      
-            free(state->swapData.frameBuffers);
-        case GRAPHPIPE:
-            vkDestroyPipeline(state->logical.device, state->pipe.pipeline, NULL);
-            vkDestroyPipelineLayout(state->logical.device, state->pipe.layout, NULL);
-        case RENDERPASS:
-            for (int i = 0; i < state->pipe.renderpassCount; i++)
-                vkDestroyRenderPass(state->logical.device, state->pipe.renderpasses[i], NULL);
-            free(state->pipe.renderpasses);
-        case IMAGEVIEWS:
-            for (int i = 0; i < state->swapData.imageCount; i++) 
-                vkDestroyImageView(state->logical.device, state->swapData.swapViews[i], NULL);
-            free(state->swapData.swapViews);
-            
-        case SWAPCHAIN:
-            vkDestroySwapchainKHR(state->logical.device, *state->swapData.swapchains, NULL);
-            free(state->swapData.swapchains);
+void ExitVulkan(VulkanDevice* deviceData, InitStage stage) {
+    switch (stage) {
+        default:
         case LOGIDEVICE:
-            vkDestroyDevice(state->logical.device, NULL);
+            vkDestroyDevice(deviceData->logical.device, NULL);
         case PHYSDEVICE:
         case SURFACE:
-            vkDestroySurfaceKHR(state->instance, state->surface, NULL);
-
+            vkDestroySurfaceKHR(deviceData->instance, deviceData->surface, NULL);
         case DEBUG:
-            DestroyDebugMessenger(&state->instance, &state->debugMessenger);
-
+            DestroyDebugMessenger(&deviceData->instance, &deviceData->debugMessenger);
         case INSTANCE:
-            vkDestroyInstance(state->instance, NULL);
+            vkDestroyInstance(deviceData->instance, NULL);
         case NONE:
-            CloseGLFW(state->w);
+            CloseGLFW(deviceData->w);
             glfwTerminate();
-        default:
-            break;
     }
 }
 
-void InitVulkan(VulkanState* state) {
-    state->stage = NONE;
-
+ErrorCode InitVulkan(VulkanDevice* deviceData) {
     //appinfo
     VkApplicationInfo appInfo = {0};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -75,113 +49,270 @@ void InitVulkan(VulkanState* state) {
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
     //Create Instance
-    CreateInstance(&state->instance, &appInfo);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    ErrorCode result = CreateInstance(&deviceData->instance, &appInfo);
+    if (result == Error) {
+        ExitVulkan(deviceData, INSTANCE);
+        return Error;
     }
-    state->stage = INSTANCE;
     
     //Debug Messenging
-    CreateDebugMessenger(&state->debugMessenger, &state->instance);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    result = CreateDebugMessenger(&deviceData->debugMessenger, &deviceData->instance); 
+    if (result == Error) {
+        ExitVulkan(deviceData, DEBUG);
+        return Error;
     }
-    state->stage = DEBUG;
     
 
     //window surface creation
-    CreateSurface(&state->instance, state->w, &state->surface);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    result = CreateSurface(&deviceData->instance, deviceData->w, &deviceData->surface);
+    if (result == Error) {
+        ExitVulkan(deviceData, SURFACE);
+        return Error;
     }
-    state->stage = SURFACE;
 
 
 
     //Physical Device Creation
-    pickPhysicalDevice(&state->physical.device, &state->instance, &state->surface);
-    if (errno == FailedSearch) {
-        ExitVulkan(state);
-        return;
+    result = pickPhysicalDevice(&deviceData->physical.device, &deviceData->instance, &deviceData->surface);
+    if (result == Error) {
+        ExitVulkan(deviceData, PHYSDEVICE);
+        return Error;
     }
-    state->stage = PHYSDEVICE;
 
     //Logical Device and Queue Creation
-    createLogicalDevice(&state->logical.device, &state->logical.graphicsQueue, 
-                        &state->logical.presentQueue, &state->physical.device, 
-                        &state->surface, &state->physical.indicies);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    result = createLogicalDevice(&deviceData->logical.device, &deviceData->logical.graphicsQueue, 
+                        &deviceData->logical.presentQueue, &deviceData->physical.device, 
+                        &deviceData->surface, &deviceData->physical.indicies);
+    if (result == Error) {
+        ExitVulkan(deviceData, LOGIDEVICE);
+        return Error;
     }
-    state->stage = LOGIDEVICE;
 
+    return NoError;
+}
 
+void DestroySwapChain(VulkanDevice* d, SwapChain* s, InitStage stage) {
+    switch (stage) {
+        default:
+        case IMAGEVIEWS:
+            for (int i = 0; i < s->imageCount; i++)
+                vkDestroyImageView(d->logical.device, s->swapViews[i], NULL);
+        case SWAPCHAIN:
+            vkDestroySwapchainKHR(d->logical.device, s->swapchain, NULL);
+            return;
+    }
+}
+
+ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s){
     //SwapChain Creation
-    state->swapData.swapCount = 1;
-    state->swapData.swapchains = (VkSwapchainKHR*)malloc(sizeof(VkSwapchainKHR) * state->swapData.swapCount);
-    CreateSwapChain(state->swapData.swapchains, &state->swapData, state->physical.device, state->logical.device, state->surface, state->w);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, NULL);
+    VkSurfaceFormatKHR formats[formatCount];
+    if (formatCount != 0) {
+        vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, formats);
     }
-    state->stage = SWAPCHAIN;
+    
+    VkSurfaceFormatKHR format = formats[0];
+    for (int i = 0; i < formatCount; i++) {
+        if (formats[i].format == VK_FORMAT_B8G8R8_SRGB &&
+            formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            format = formats[i];
+        }
+    }
 
+    uint32_t presentCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, NULL);
+    VkPresentModeKHR presentmodes[presentCount];
+    if (formatCount != 0) {
+        vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, presentmodes);
+    }
+
+    VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;    
+    for (int i = 0; i < presentCount; i++) {
+        if (presentmodes[i] == VK_PRESENT_MODE_MAILBOX_KHR) 
+            mode = presentmodes[i];
+    }
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->physical.device, d->surface, &capabilities);
+    VkExtent2D extent = {0, 0};
+    
+    if (capabilities.currentExtent.width != UINT32_MAX) {
+        extent = capabilities.currentExtent;
+    } else {
+        int width, height;
+        glfwGetFramebufferSize(d->w, &width, &height);
+        
+        extent.width = (uint32_t)width;
+        extent.height = (uint32_t)height;
+
+        extent.width = clampf(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        extent.height = clampf(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    }
+
+    uint32_t imageCount = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
+        imageCount = capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainCreateInfo.surface = d->surface;
+
+    swapchainCreateInfo.minImageCount = imageCount;
+    swapchainCreateInfo.imageFormat = format.format;
+    swapchainCreateInfo.imageColorSpace = format.colorSpace;
+    swapchainCreateInfo.imageExtent = extent;
+    swapchainCreateInfo.imageArrayLayers = 1;
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    s->extent = extent;
+    s->format = format.format;
+
+    QueueFamilyIndicies indicies = findQueueFamily(&d->physical.device, &d->surface); 
+    uint32_t values[] = {indicies.graphicsQueue.value, indicies.presentQueue.value};
+    if (values[0] != values[1]) {
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapchainCreateInfo.queueFamilyIndexCount = 2;
+        swapchainCreateInfo.pQueueFamilyIndices = values;
+    } else {
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchainCreateInfo.queueFamilyIndexCount = 0;
+        swapchainCreateInfo.pQueueFamilyIndices = NULL;
+    }
+
+    swapchainCreateInfo.preTransform = capabilities.currentTransform;
+    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchainCreateInfo.presentMode = mode;
+    swapchainCreateInfo.clipped = VK_TRUE;
+    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+
+   if (vkCreateSwapchainKHR(d->logical.device, &swapchainCreateInfo, NULL, &s->swapchain) != VK_SUCCESS) {
+        fprintf(stderr, ERR_COLOR("Swap Chain Creation Failed"));
+        DestroySwapChain(d, s, SWAPCHAIN);
+        return Error;
+    }
+    fprintf(stdout, TRACE_COLOR("Swap Chain Created"));
 
 
     //SwapChain Image Views
-    CreateImageViews(&state->swapData, state->logical.device);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    ErrorCode result = CreateImageViews(d->logical.device, s);
+    if (result == Error) {
+        DestroySwapChain(d, s, IMAGEVIEWS);
+        return Error;
     }
-    state->stage = IMAGEVIEWS;
+
+    s->frameBuffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * s->imageCount);
+    memset(s->frameBuffers, 0, sizeof(VkFramebuffer) * s->imageCount);
+
+    return NoError;
+}
+
+void DestroyPipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stage) {
+    switch (stage) {
+        default:
+        case FRAMEBUFFER:
+            for (int i = 0; i < s->imageCount; i++)
+                vkDestroyFramebuffer(d->logical.device, s->frameBuffers[i], NULL);
+        case GRAPHPIPE:
+            vkDestroyPipeline(d->logical.device, p->pipeline, NULL);
+            vkDestroyPipelineLayout(d->logical.device, p->layout, NULL);
+        case RENDERPASS:
+            vkDestroyRenderPass(d->logical.device, p->renderpass, NULL);
+            return;
+    }
+
+}
+
+ErrorCode CreatePipeline(VulkanDevice* d, SwapChain* s, Pipeline* p) {
 
     //Create Render passes
-    state->pipe.renderpassCount = 1;
-    state->pipe.renderpasses = (VkRenderPass*)malloc(sizeof(VkRenderPass) * state->pipe.renderpassCount);
-    CreateRenderPass(state->pipe.renderpasses, state->logical.device, state->swapData.format);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    ErrorCode result = CreateRenderPass(&p->renderpass, d->logical.device, s->format);
+    if (result == Error) {
+        DestroyPipeline(d, s, p, RENDERPASS);
+        return Error;
     }
-    state->stage = RENDERPASS;
-
-
-    //create Graphics Pipeline
-    CreateGraphicsPipeline(&state->pipe.pipeline, 
-            *state->pipe.renderpasses, state->logical.device, 
-            state->swapData.extent, &state->pipe, state->w);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
-    }
-    state->stage = GRAPHPIPE;
-
 
     //Framebuffers
-    state->swapData.frameBuffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * state->swapData.imageCount);
-    CreateFrameBuffers(state->swapData.frameBuffers, state->logical.device, &state->swapData, state->pipe.renderpasses, state->swapData.swapViews, state->swapData.imageCount);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    result = CreateFrameBuffers(d->logical.device, s, &p->renderpass);
+    if (result == Error) {
+        DestroySwapChain(d, s, FRAMEBUFFER);
+        return Error;
     }
-    state->stage = FRAMEBUFFER;
 
-
-    //Create Command Storage
-    state->command.commandBufferCount = 1;
-    state->command.commandbuffers = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * state->command.commandBufferCount);
-    CreateCommandObjects(&state->command.commandPool, state->command.commandbuffers, &state->physical.indicies, state->logical.device);
-    if (errno == FailedCreation) {
-        ExitVulkan(state);
-        return;
+    //create Graphics Pipeline
+    result = CreateGraphicsPipeline(d, s, p);
+    if (result == Error) {
+        DestroyPipeline(d, s, p, GRAPHPIPE);
+        return Error;
     }
-    state->stage = COMPLETE;
+
+    return NoError;
 }
 
 
+ErrorCode CreateCommandObjects(Command* c, VulkanDevice* d) {
+    //initialize Command pool
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = d->physical.indicies.graphicsQueue.value;
+
+    if (vkCreateCommandPool(d->logical.device, &poolInfo, NULL, &c->pool) != VK_SUCCESS) {
+        fprintf(stderr, ERR_COLOR("Failed to create Command Pool"));
+        return Error;
+    }
+    fprintf(stdout, TRACE_COLOR("Created Command Pool"));
+
+    //Allocate Command Buffer
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = c->pool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(d->logical.device, &allocInfo, &c->buffer) != VK_SUCCESS) {
+        fprintf(stderr, ERR_COLOR("Failed to create Command Buffer"));
+        return Error;
+    }
+    fprintf(stdout, TRACE_COLOR("Created Command Buffer"));
+    return NoError;
+}
+
+ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, Pipeline* p, SwapChain* s, uint32_t imageIndex) {
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = NULL;
+
+    if (vkBeginCommandBuffer(*commandBuffer, &beginInfo) != VK_SUCCESS) {
+        fprintf(stderr, ERR_COLOR("Failed to Begin Recording Command Buffer"));
+        return Error;
+    }
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = p->renderpass;
+    renderPassInfo.framebuffer = s->frameBuffers[imageIndex];
+
+    renderPassInfo.renderArea.offset = (VkOffset2D){0, 0};
+    renderPassInfo.renderArea.extent = s->extent;
+
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}}; 
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues =  &clearColor;
+
+    vkCmdBeginRenderPass(*commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipeline);
+
+    vkCmdDraw(*commandBuffer, 3, 1, 0, 0);
+    vkCmdEndRenderPass(*commandBuffer);
+
+    if (vkEndCommandBuffer(*commandBuffer) != VK_SUCCESS) {
+        fprintf(stderr, ERR_COLOR("Failed to End Recording Command Buffer"));
+        return Error;
+    }
+
+    return NoError;
+}
 

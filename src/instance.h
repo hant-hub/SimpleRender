@@ -2,6 +2,7 @@
 #define INSTANCE_H
 
 #include "Vulkan.h"
+#include "error.h"
 #include <vulkan/vulkan_core.h>
 
 static const char* validationLayers[] = {
@@ -50,7 +51,7 @@ static int checkValidationLayerSupport() {
 }
 
 
-static void CreateDebugMessenger(VkDebugUtilsMessengerEXT* messenger, VkInstance* instance) {
+static ErrorCode CreateDebugMessenger(VkDebugUtilsMessengerEXT* messenger, VkInstance* instance) {
     VkDebugUtilsMessengerCreateInfoEXT createInfo = (VkDebugUtilsMessengerCreateInfoEXT){};
     memset(&createInfo, 0, sizeof(VkDebugUtilsMessengerCreateInfoEXT));
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -65,16 +66,16 @@ static void CreateDebugMessenger(VkDebugUtilsMessengerEXT* messenger, VkInstance
 
     PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(*instance, "vkCreateDebugUtilsMessengerEXT");
     if (func == NULL) {
-        errno = NoExtension; 
         fprintf(stderr, ERR_COLOR("Debug Messenger Creation Function Can't Be Found"));
-        return;
+        return Error;
     }
     
     if (func(*instance, &createInfo, NULL, messenger) != VK_SUCCESS) {
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Debug Messenger Creation Failed"));
-        return;
+        return Error;
     }
+
+    return NoError;
 }
 
 static void DestroyDebugMessenger(VkInstance* instance, VkDebugUtilsMessengerEXT* messenger) {
@@ -87,7 +88,7 @@ static void DestroyDebugMessenger(VkInstance* instance, VkDebugUtilsMessengerEXT
 }
 
 
-static void CreateInstance(VkInstance* out, VkApplicationInfo* app) {
+static ErrorCode CreateInstance(VkInstance* out, VkApplicationInfo* app) {
     VkInstanceCreateInfo createInfo = {};
     memset(&createInfo, 0, sizeof(VkInstanceCreateInfo));
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -112,9 +113,8 @@ static void CreateInstance(VkInstance* out, VkApplicationInfo* app) {
 
     if (enableValidationLayers) {
         if (!checkValidationLayerSupport()) {
-            errno = NoValidationSupport;
             fprintf(stderr, ERR_COLOR("Requested Validation Layers Not Supported"));
-            return;
+            return Error;
         }
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
@@ -138,15 +138,14 @@ static void CreateInstance(VkInstance* out, VkApplicationInfo* app) {
 
     
     if (vkCreateInstance(&createInfo, NULL, out) != VK_SUCCESS) {
-        errno = FailedCreation;
         fprintf(stderr, ERR_COLOR("Failed To Create Instance"));
         free(extensions);
-        return;
+        return Error;
     }
 
     fprintf(stdout, TRACE_COLOR("Instance Created"));  
     free(extensions);
-    return;
+    return NoError;
 }
 
 

@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "error.h"
+#include <errno.h>
 
 typedef struct SizedBuffer {
     size_t size;
     char* buffer;
 } SizedBuffer;
+
+extern int errno;
 
 // Buffer is allocated with malloc, must be manually freed
 static void LoadFile(const char* filename, SizedBuffer* buffer) {

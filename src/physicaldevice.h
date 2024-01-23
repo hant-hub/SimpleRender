@@ -85,14 +85,13 @@ static int isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR* surface){
 }
 
 
-static void pickPhysicalDevice(VkPhysicalDevice* p, VkInstance* instance, VkSurfaceKHR* surface) {
+static ErrorCode pickPhysicalDevice(VkPhysicalDevice* p, VkInstance* instance, VkSurfaceKHR* surface) {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(*instance, &deviceCount, NULL);
 
     if (deviceCount == 0) {
-        errno = FailedSearch; 
         fprintf(stderr, ERR_COLOR("No Physical Device Found!"));
-        return;
+        return Error;
     }
 
     VkPhysicalDevice devices[deviceCount];
@@ -108,12 +107,11 @@ static void pickPhysicalDevice(VkPhysicalDevice* p, VkInstance* instance, VkSurf
     }
 
     if (*p == VK_NULL_HANDLE) {
-        errno = FailedSearch;
         fprintf(stderr, ERR_COLOR("Failed to find a suitable Physical Device"));
-        return;
+        return Error;
     }
     fprintf(stdout, TRACE_COLOR("Physical Device %d Selected"), index);
-    return;
+    return NoError;
 }
 
 #endif

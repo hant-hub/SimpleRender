@@ -1,24 +1,25 @@
 #ifndef IMAGE_VIEWS_H
 #define IMAGE_VIEWS_H
 #include "Vulkan.h"
+#include "error.h"
 #include "state.h"
-#include "swapchain.h"
+#include <vulkan/vulkan_core.h>
 
-static void CreateImageViews(SwapChainData* details, VkDevice logicalDevice) {
+static ErrorCode CreateImageViews(VkDevice logicalDevice, SwapChain* s) {
 
 
-    vkGetSwapchainImagesKHR(logicalDevice, details->swapchains[0], &details->imageCount, NULL); 
-    details->swapViews = (VkImageView*)malloc(sizeof(VkImageView) * details->imageCount);
+    vkGetSwapchainImagesKHR(logicalDevice, s->swapchain, &s->imageCount, NULL); 
+    s->swapViews = (VkImageView*)malloc(sizeof(VkImageView) * s->imageCount);
 
-    VkImage swapChainImages[details->imageCount];
-    vkGetSwapchainImagesKHR(logicalDevice, details->swapchains[0], &details->imageCount, swapChainImages); 
+    VkImage swapChainImages[s->imageCount];
+    vkGetSwapchainImagesKHR(logicalDevice, s->swapchain, &s->imageCount, swapChainImages); 
 
-    for (int i = 0; i < details->imageCount; i++) {
+    for (int i = 0; i < s->imageCount; i++) {
         VkImageViewCreateInfo viewCreateInfo = {};
         viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCreateInfo.image = swapChainImages[i];
         viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewCreateInfo.format = details->format;
+        viewCreateInfo.format = s->format;
 
         viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -31,16 +32,15 @@ static void CreateImageViews(SwapChainData* details, VkDevice logicalDevice) {
         viewCreateInfo.subresourceRange.baseArrayLayer = 0;
         viewCreateInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(logicalDevice, &viewCreateInfo, NULL, &details->swapViews[i]) != VK_SUCCESS) {
-            errno = FailedCreation;
+        if (vkCreateImageView(logicalDevice, &viewCreateInfo, NULL, &s->swapViews[i]) != VK_SUCCESS) {
             fprintf(stderr, ERR_COLOR("Failed to Create Image View: index=%d"), i);
+            for (int j = i; i >= 0; i--) vkDestroyImageView(logicalDevice, s->swapViews[j], NULL);
 
-            for (int j = i; i >= 0; i--) vkDestroyImageView(logicalDevice, details->swapViews[j], NULL);
-
-            return;
+            return Error;
         }
     }
     fprintf(stdout, TRACE_COLOR("Image Views Created"));
+    return NoError;
 }
 
 static void DestroyImageViews(VkDevice logicalDevice, VkImageView* swapViews, uint32_t imageCount) {

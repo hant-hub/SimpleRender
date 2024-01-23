@@ -19,31 +19,6 @@ typedef struct LogicalData {
     VkQueue presentQueue;
 } LogicalData;
 
-typedef struct CommandData {
-    uint32_t commandBufferCount;
-    VkCommandPool commandPool;
-    VkCommandBuffer* commandbuffers;
-} CommandData;
-
-typedef struct PipelineData {
-    uint32_t renderpassCount;
-    VkPipeline pipeline;
-    VkRenderPass* renderpasses;
-    VkPipelineLayout layout;
-    VkViewport view;
-    VkRect2D scissor;
-}PipelineData;
-
-typedef struct SwapChainData {
-    uint32_t imageCount;
-    uint32_t swapCount;
-    VkSwapchainKHR* swapchains;
-    VkImageView* swapViews;
-    VkFramebuffer* frameBuffers;
-    VkExtent2D extent;
-    VkFormat format;
-}SwapChainData;
-
 typedef enum InitStage {
     NONE = 0,
     INSTANCE,
@@ -61,31 +36,34 @@ typedef enum InitStage {
 }InitStage;
 
 
-
-typedef struct VulkanState {
-    InitStage stage;
+typedef struct VulkanDevice {
     GLFWwindow* w;
-    
-    VkDebugUtilsMessengerEXT debugMessenger;   
-
     VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
     PhysicalData physical;
     LogicalData logical;
+} VulkanDevice;
 
-    PipelineData pipe;
-    CommandData command;
-    SwapChainData swapData;
-    
-} VulkanState;
+typedef struct SwapChain {
+    VkSwapchainKHR swapchain;
+    uint32_t imageCount;
+    VkExtent2D extent;
+    VkFormat format;
+    VkImageView* swapViews;
+    VkFramebuffer* frameBuffers;
+} SwapChain;
 
+typedef struct Pipeline {
+    VkPipeline pipeline;
+    VkPipelineLayout layout;
+    VkRenderPass renderpass;
+} Pipeline;
 
-
-    
-
-
-
-
+typedef struct Command {
+    VkCommandPool pool;
+    VkCommandBuffer buffer;
+} Command;
 
 
 
