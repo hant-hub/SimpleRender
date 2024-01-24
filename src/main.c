@@ -9,7 +9,6 @@
 #include "lib/SimpleMath/src/include/misc.h"
 #include "pipeline.h"
 #include "framebuffer.h"
-#include "command.h"
 #include "state.h"
 #include "init.h"
 #include <GLFW/glfw3.h>
@@ -26,7 +25,7 @@ static const uint32_t HEIGHT = 1080;
 
 
 
-
+const int MAX_FRAMES_IN_FLIGHT = 2;
 
 
 
@@ -50,14 +49,14 @@ int main() {
     }
 
     SwapChain s = {0};
-    result = CreateSwapChain(&d, &s); 
+    result = CreateSwapChain(&d, &s, COMPLETE); 
     if (result == Error) {
         ExitVulkan(&d, COMPLETE);
         exit(EXIT_FAILURE);
     }
 
     Pipeline p = {0};
-    result = CreatePipeline(&d, &s, &p);
+    result = CreatePipeline(&d, &s, &p, COMPLETE);
     if (result == Error) {
         DestroySwapChain(&d, &s, COMPLETE);
         ExitVulkan(&d, COMPLETE);
@@ -65,7 +64,7 @@ int main() {
     }
     
     Command c = {0};
-    result = CreateCommandObjects(&c, &d);
+    result = CreateCommandObjects(&c, MAX_FRAMES_IN_FLIGHT, &d);
     if (result == Error) {
         DestroyPipeline(&d, &s, &p, COMPLETE);
         DestroySwapChain(&d, &s, COMPLETE);
@@ -76,9 +75,9 @@ int main() {
 
 
     //Sync Objects
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
+    VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
 
     VkSemaphoreCreateInfo semaphoreInfo = {0};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -86,50 +85,72 @@ int main() {
     VkFenceCreateInfo fenceInfo = {0};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateSemaphore(d.logical.device, &semaphoreInfo, NULL, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(d.logical.device, &semaphoreInfo, NULL, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(d.logical.device, &fenceInfo, NULL, &inFlightFences[i]) != VK_SUCCESS) {
+            vkDestroyCommandPool(d.logical.device, c.pool, NULL);
+            DestroyPipeline(&d, &s, &p, COMPLETE);
+            DestroySwapChain(&d, &s, COMPLETE);
+            ExitVulkan(&d, COMPLETE);
+            exit(EXIT_FAILURE);
 
-    if (vkCreateSemaphore(d.logical.device, &semaphoreInfo, NULL, &imageAvailableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(d.logical.device, &semaphoreInfo, NULL, &renderFinishedSemaphore) != VK_SUCCESS ||
-            vkCreateFence(d.logical.device, &fenceInfo, NULL, &inFlightFence) != VK_SUCCESS) {
-        vkDestroyCommandPool(d.logical.device, c.pool, NULL);
-        DestroyPipeline(&d, &s, &p, COMPLETE);
-        DestroySwapChain(&d, &s, COMPLETE);
-        ExitVulkan(&d, COMPLETE);
-        exit(EXIT_FAILURE);
-
+        }
     }
 
-    
+    uint32_t currentFrame = 0; 
 
     while (!glfwWindowShouldClose(d.w)){
         glfwPollEvents();
 
         //Draw Frame
-        vkWaitForFences(d.logical.device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(d.logical.device, 1, &inFlightFence); 
+        vkWaitForFences(d.logical.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(d.logical.device, s.swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(d.logical.device, s.swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-        vkResetCommandBuffer(c.buffer, 0);
-        RecordCommands(&c.buffer, &p, &s, imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR){
+            vkDeviceWaitIdle(d.logical.device);
+            
+            DestroyPipeline(&d, &s, &p, FRAMEBUFFER);
+            DestroySwapChain(&d, &s, IMAGEVIEWS);
+
+            CreateSwapChain(&d, &s, COMPLETE);
+            CreatePipeline(&d, &s, &p, FRAMEBUFFER);
+            continue;
+
+
+        } else if (result != VK_SUCCESS) {
+            break;
+        }
+
+        vkResetFences(d.logical.device, 1, &inFlightFences[currentFrame]); 
+
+
+
+
+
+        vkResetCommandBuffer(c.buffers[currentFrame], 0);
+        RecordCommands(&c.buffers[currentFrame], &p, &s, imageIndex);
 
         VkSubmitInfo submitInfo = {0};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &c.buffer;
+        submitInfo.pCommandBuffers = &c.buffers[currentFrame];
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(d.logical.graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+        if (vkQueueSubmit(d.logical.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
             vkDestroyCommandPool(d.logical.device, c.pool, NULL);
             DestroyPipeline(&d, &s, &p, COMPLETE);
             DestroySwapChain(&d, &s, COMPLETE);
@@ -149,18 +170,21 @@ int main() {
         presentInfo.pResults = NULL;
 
         vkQueuePresentKHR(d.logical.graphicsQueue, &presentInfo);
-
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
 
     }
 
     vkQueueWaitIdle(d.logical.graphicsQueue);
     vkDeviceWaitIdle(d.logical.device);
-    vkDestroySemaphore(d.logical.device, imageAvailableSemaphore, NULL);
-    vkDestroySemaphore(d.logical.device, renderFinishedSemaphore, NULL);
-    vkDestroyFence(d.logical.device, inFlightFence, NULL);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(d.logical.device, imageAvailableSemaphores[i], NULL);
+        vkDestroySemaphore(d.logical.device, renderFinishedSemaphores[i], NULL);
+        vkDestroyFence(d.logical.device, inFlightFences[i], NULL);
+    }
 
     vkDestroyCommandPool(d.logical.device, c.pool, NULL);
+    free(c.buffers);
     DestroyPipeline(&d, &s, &p, COMPLETE);
     DestroySwapChain(&d, &s, COMPLETE);
     ExitVulkan(&d, COMPLETE);

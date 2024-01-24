@@ -103,7 +103,9 @@ void DestroySwapChain(VulkanDevice* d, SwapChain* s, InitStage stage) {
     }
 }
 
-ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s){
+ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s, InitStage stage){
+
+
     //SwapChain Creation
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, NULL);
@@ -202,8 +204,6 @@ ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s){
         return Error;
     }
 
-    s->frameBuffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * s->imageCount);
-    memset(s->frameBuffers, 0, sizeof(VkFramebuffer) * s->imageCount);
 
     return NoError;
 }
@@ -211,47 +211,57 @@ ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s){
 void DestroyPipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stage) {
     switch (stage) {
         default:
+        case RENDERPASS:
+            vkDestroyRenderPass(d->logical.device, p->renderpass, NULL);
         case FRAMEBUFFER:
             for (int i = 0; i < s->imageCount; i++)
                 vkDestroyFramebuffer(d->logical.device, s->frameBuffers[i], NULL);
         case GRAPHPIPE:
             vkDestroyPipeline(d->logical.device, p->pipeline, NULL);
             vkDestroyPipelineLayout(d->logical.device, p->layout, NULL);
-        case RENDERPASS:
-            vkDestroyRenderPass(d->logical.device, p->renderpass, NULL);
             return;
     }
 
 }
 
-ErrorCode CreatePipeline(VulkanDevice* d, SwapChain* s, Pipeline* p) {
+ErrorCode CreatePipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stage) {
 
-    //Create Render passes
-    ErrorCode result = CreateRenderPass(&p->renderpass, d->logical.device, s->format);
-    if (result == Error) {
-        DestroyPipeline(d, s, p, RENDERPASS);
-        return Error;
+    ErrorCode result;
+    switch (stage) {
+        default:
+        case RENDERPASS:
+            //Create Render passes
+            result = CreateRenderPass(&p->renderpass, d->logical.device, s->format);
+            if (result == Error) {
+                DestroyPipeline(d, s, p, RENDERPASS);
+                return Error;
+            }
+        case FRAMEBUFFER:
+            s->frameBuffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * s->imageCount);
+            memset(s->frameBuffers, 0, sizeof(VkFramebuffer) * s->imageCount);
+            //Framebuffers
+            result = CreateFrameBuffers(d->logical.device, s, &p->renderpass);
+            if (result == Error) {
+                DestroySwapChain(d, s, FRAMEBUFFER);
+                return Error;
+            }
+
+        case GRAPHPIPE:
+            //create Graphics Pipeline
+            result = CreateGraphicsPipeline(d, s, p);
+            if (result == Error) {
+                DestroyPipeline(d, s, p, GRAPHPIPE);
+                return Error;
+            }
+
+            return NoError;
     }
 
-    //Framebuffers
-    result = CreateFrameBuffers(d->logical.device, s, &p->renderpass);
-    if (result == Error) {
-        DestroySwapChain(d, s, FRAMEBUFFER);
-        return Error;
-    }
-
-    //create Graphics Pipeline
-    result = CreateGraphicsPipeline(d, s, p);
-    if (result == Error) {
-        DestroyPipeline(d, s, p, GRAPHPIPE);
-        return Error;
-    }
-
-    return NoError;
 }
 
 
-ErrorCode CreateCommandObjects(Command* c, VulkanDevice* d) {
+ErrorCode CreateCommandObjects(Command* c, uint32_t bufferCount, VulkanDevice* d) {
+    c->buffers = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * bufferCount);
     //initialize Command pool
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -269,9 +279,9 @@ ErrorCode CreateCommandObjects(Command* c, VulkanDevice* d) {
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = c->pool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = bufferCount;
 
-    if (vkAllocateCommandBuffers(d->logical.device, &allocInfo, &c->buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(d->logical.device, &allocInfo, c->buffers) != VK_SUCCESS) {
         fprintf(stderr, ERR_COLOR("Failed to create Command Buffer"));
         return Error;
     }

@@ -62,7 +62,8 @@ typedef struct Pipeline {
 
 typedef struct Command {
     VkCommandPool pool;
-    VkCommandBuffer buffer;
+    uint32_t bufferCount;
+    VkCommandBuffer* buffers;
 } Command;
 
 
