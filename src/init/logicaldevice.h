@@ -1,7 +1,7 @@
 #ifndef LOGICAL_DEVICE_H
 #define LOGICAL_DEVICE_H
-#include "Vulkan.h"
-#include "error.h"
+#include "../Vulkan.h"
+#include "../error.h"
 #include "instance.h"
 #include "physicaldevice.h"
 #include <stdint.h>

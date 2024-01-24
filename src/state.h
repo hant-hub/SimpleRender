@@ -1,7 +1,7 @@
 #ifndef STATE_H
 #define STATE_H
 #include "Vulkan.h"
-#include "physicaldevice.h"
+#include "init/physicaldevice.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
@@ -66,7 +66,12 @@ typedef struct Command {
     VkCommandBuffer* buffers;
 } Command;
 
-
+typedef struct SyncObjects {
+    uint32_t FRAMES_IN_FLIGHT;
+    VkSemaphore* imageAvalible;
+    VkSemaphore* renderFinished;
+    VkFence* fences;
+} SyncObjects;
 
 
 #endif

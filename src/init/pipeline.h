@@ -1,9 +1,9 @@
 #ifndef PIPELINE_H
 #define PIPELINE_H
-#include "Vulkan.h"
+#include "../Vulkan.h"
 #include "error.h"
-#include "state.h"
-#include "util.h"
+#include "../state.h"
+#include "../util.h"
 #include <vulkan/vulkan_core.h>
 
 

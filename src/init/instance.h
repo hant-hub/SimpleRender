@@ -1,7 +1,7 @@
 #ifndef INSTANCE_H
 #define INSTANCE_H
 
-#include "Vulkan.h"
+#include "../Vulkan.h"
 #include "error.h"
 #include <vulkan/vulkan_core.h>
 

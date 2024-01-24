@@ -1,8 +1,8 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
-#include "Vulkan.h"
+#include "../Vulkan.h"
 #include "error.h"
-#include "state.h"
+#include "../state.h"
 #include <vulkan/vulkan_core.h>
 
 static ErrorCode CreateFrameBuffers(VkDevice logicalDevice, SwapChain* s, VkRenderPass* renderPass) {

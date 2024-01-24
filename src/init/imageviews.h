@@ -1,8 +1,8 @@
 #ifndef IMAGE_VIEWS_H
 #define IMAGE_VIEWS_H
-#include "Vulkan.h"
+#include "../Vulkan.h"
 #include "error.h"
-#include "state.h"
+#include "../state.h"
 #include <vulkan/vulkan_core.h>
 
 static ErrorCode CreateImageViews(VkDevice logicalDevice, SwapChain* s) {

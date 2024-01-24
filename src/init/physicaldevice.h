@@ -2,9 +2,9 @@
 #define PHYSICAL_H
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "Vulkan.h"
+#include "../Vulkan.h"
 #include "error.h"
-#include "optional.h"
+#include "../util.h"
 
 DEF_OPTIONAL(uint32_t)
 

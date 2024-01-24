@@ -1,7 +1,7 @@
-#include "init.h"
+#include "../init.h"
 #include "error.h"
 #include "instance.h"
-#include "state.h"
+#include "../state.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -104,108 +104,114 @@ void DestroySwapChain(VulkanDevice* d, SwapChain* s, InitStage stage) {
 }
 
 ErrorCode CreateSwapChain(VulkanDevice* d, SwapChain* s, InitStage stage){
+    switch (stage) {
+        default:
+        case SWAPCHAIN: {
+
+            //SwapChain Creation
+            uint32_t formatCount;
+            vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, NULL);
+            VkSurfaceFormatKHR formats[formatCount];
+            if (formatCount != 0) {
+                vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, formats);
+            }
+
+            VkSurfaceFormatKHR format = formats[0];
+            for (int i = 0; i < formatCount; i++) {
+                if (formats[i].format == VK_FORMAT_B8G8R8_SRGB &&
+                        formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                    format = formats[i];
+                }
+            }
+
+            uint32_t presentCount;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, NULL);
+            VkPresentModeKHR presentmodes[presentCount];
+            if (formatCount != 0) {
+                vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, presentmodes);
+            }
+
+            VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;    
+            for (int i = 0; i < presentCount; i++) {
+                if (presentmodes[i] == VK_PRESENT_MODE_MAILBOX_KHR) 
+                    mode = presentmodes[i];
+            }
+
+            VkSurfaceCapabilitiesKHR capabilities;
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->physical.device, d->surface, &capabilities);
+            VkExtent2D extent = {0, 0};
+
+            if (capabilities.currentExtent.width != UINT32_MAX) {
+                extent = capabilities.currentExtent;
+            } else {
+                int width, height;
+                glfwGetFramebufferSize(d->w, &width, &height);
+
+                extent.width = (uint32_t)width;
+                extent.height = (uint32_t)height;
+
+                extent.width = clampf(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+                extent.height = clampf(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+            }
+
+            uint32_t imageCount = capabilities.minImageCount + 1;
+            if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
+                imageCount = capabilities.maxImageCount;
+            }
+
+            VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+            swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+            swapchainCreateInfo.surface = d->surface;
+
+            swapchainCreateInfo.minImageCount = imageCount;
+            swapchainCreateInfo.imageFormat = format.format;
+            swapchainCreateInfo.imageColorSpace = format.colorSpace;
+            swapchainCreateInfo.imageExtent = extent;
+            swapchainCreateInfo.imageArrayLayers = 1;
+            swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+            s->extent = extent;
+            s->format = format.format;
+
+            QueueFamilyIndicies indicies = findQueueFamily(&d->physical.device, &d->surface); 
+            uint32_t values[] = {indicies.graphicsQueue.value, indicies.presentQueue.value};
+            if (values[0] != values[1]) {
+                swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+                swapchainCreateInfo.queueFamilyIndexCount = 2;
+                swapchainCreateInfo.pQueueFamilyIndices = values;
+            } else {
+                swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                swapchainCreateInfo.queueFamilyIndexCount = 0;
+                swapchainCreateInfo.pQueueFamilyIndices = NULL;
+            }
+
+            swapchainCreateInfo.preTransform = capabilities.currentTransform;
+            swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+            swapchainCreateInfo.presentMode = mode;
+            swapchainCreateInfo.clipped = VK_TRUE;
+            swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+
+            if (vkCreateSwapchainKHR(d->logical.device, &swapchainCreateInfo, NULL, &s->swapchain) != VK_SUCCESS) {
+                fprintf(stderr, ERR_COLOR("Swap Chain Creation Failed"));
+                DestroySwapChain(d, s, SWAPCHAIN);
+                return Error;
+            }
+            fprintf(stdout, TRACE_COLOR("Swap Chain Created"));
+                        }
+
+        case IMAGEVIEWS: {
+
+            //SwapChain Image Views
+            ErrorCode result = CreateImageViews(d->logical.device, s);
+            if (result == Error) {
+                DestroySwapChain(d, s, IMAGEVIEWS);
+                return Error;
+            }
 
 
-    //SwapChain Creation
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, NULL);
-    VkSurfaceFormatKHR formats[formatCount];
-    if (formatCount != 0) {
-        vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical.device, d->surface, &formatCount, formats);
+            return NoError;
+                         }
     }
-    
-    VkSurfaceFormatKHR format = formats[0];
-    for (int i = 0; i < formatCount; i++) {
-        if (formats[i].format == VK_FORMAT_B8G8R8_SRGB &&
-            formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            format = formats[i];
-        }
-    }
-
-    uint32_t presentCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, NULL);
-    VkPresentModeKHR presentmodes[presentCount];
-    if (formatCount != 0) {
-        vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical.device, d->surface, &presentCount, presentmodes);
-    }
-
-    VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;    
-    for (int i = 0; i < presentCount; i++) {
-        if (presentmodes[i] == VK_PRESENT_MODE_MAILBOX_KHR) 
-            mode = presentmodes[i];
-    }
-
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->physical.device, d->surface, &capabilities);
-    VkExtent2D extent = {0, 0};
-    
-    if (capabilities.currentExtent.width != UINT32_MAX) {
-        extent = capabilities.currentExtent;
-    } else {
-        int width, height;
-        glfwGetFramebufferSize(d->w, &width, &height);
-        
-        extent.width = (uint32_t)width;
-        extent.height = (uint32_t)height;
-
-        extent.width = clampf(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        extent.height = clampf(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-    }
-
-    uint32_t imageCount = capabilities.minImageCount + 1;
-    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
-        imageCount = capabilities.maxImageCount;
-    }
-
-    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
-    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.surface = d->surface;
-
-    swapchainCreateInfo.minImageCount = imageCount;
-    swapchainCreateInfo.imageFormat = format.format;
-    swapchainCreateInfo.imageColorSpace = format.colorSpace;
-    swapchainCreateInfo.imageExtent = extent;
-    swapchainCreateInfo.imageArrayLayers = 1;
-    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    s->extent = extent;
-    s->format = format.format;
-
-    QueueFamilyIndicies indicies = findQueueFamily(&d->physical.device, &d->surface); 
-    uint32_t values[] = {indicies.graphicsQueue.value, indicies.presentQueue.value};
-    if (values[0] != values[1]) {
-        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swapchainCreateInfo.queueFamilyIndexCount = 2;
-        swapchainCreateInfo.pQueueFamilyIndices = values;
-    } else {
-        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapchainCreateInfo.queueFamilyIndexCount = 0;
-        swapchainCreateInfo.pQueueFamilyIndices = NULL;
-    }
-
-    swapchainCreateInfo.preTransform = capabilities.currentTransform;
-    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchainCreateInfo.presentMode = mode;
-    swapchainCreateInfo.clipped = VK_TRUE;
-    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-
-   if (vkCreateSwapchainKHR(d->logical.device, &swapchainCreateInfo, NULL, &s->swapchain) != VK_SUCCESS) {
-        fprintf(stderr, ERR_COLOR("Swap Chain Creation Failed"));
-        DestroySwapChain(d, s, SWAPCHAIN);
-        return Error;
-    }
-    fprintf(stdout, TRACE_COLOR("Swap Chain Created"));
-
-
-    //SwapChain Image Views
-    ErrorCode result = CreateImageViews(d->logical.device, s);
-    if (result == Error) {
-        DestroySwapChain(d, s, IMAGEVIEWS);
-        return Error;
-    }
-
-
-    return NoError;
 }
 
 void DestroyPipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stage) {
@@ -283,6 +289,7 @@ ErrorCode CreateCommandObjects(Command* c, uint32_t bufferCount, VulkanDevice* d
 
     if (vkAllocateCommandBuffers(d->logical.device, &allocInfo, c->buffers) != VK_SUCCESS) {
         fprintf(stderr, ERR_COLOR("Failed to create Command Buffer"));
+        free(c->buffers);
         return Error;
     }
     fprintf(stdout, TRACE_COLOR("Created Command Buffer"));
@@ -325,4 +332,56 @@ ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, Pipeline* p, SwapChain*
 
     return NoError;
 }
+
+void DestroySyncObjects(VulkanDevice* d, SyncObjects* s) {
+    
+    for (int i = 0; i < s->FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(d->logical.device, s->imageAvalible[i], NULL);
+        vkDestroySemaphore(d->logical.device, s->renderFinished[i], NULL);
+        vkDestroyFence(d->logical.device, s->fences[i], NULL);
+    }
+
+    free(s->fences);
+    free(s->renderFinished);
+    free(s->imageAvalible);
+}
+
+ErrorCode CreateSyncObjects(VulkanDevice* d, Command* c, SyncObjects* s, uint32_t MAX_FRAMES_IN_FLIGHT) {
+    //Sync Objects
+    s->imageAvalible = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    s->renderFinished = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    s->fences = (VkFence*)malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
+
+    VkSemaphoreCreateInfo semaphoreInfo = {0};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo = {0};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateSemaphore(d->logical.device, &semaphoreInfo, NULL, &s->imageAvalible[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(d->logical.device, &semaphoreInfo, NULL, &s->renderFinished[i]) != VK_SUCCESS ||
+                vkCreateFence(d->logical.device, &fenceInfo, NULL, &s->fences[i]) != VK_SUCCESS) {
+
+            fprintf(stderr, ERR_COLOR("Failed to Create Sync objects"));
+            for (int j = i; j >= 0; j--) {
+                vkDestroySemaphore(d->logical.device, s->imageAvalible[j], NULL);
+                vkDestroySemaphore(d->logical.device, s->renderFinished[j], NULL);
+                vkDestroyFence(d->logical.device, s->fences[j], NULL);
+            }
+            free(s->fences);
+            free(s->renderFinished);
+            free(s->imageAvalible);
+            return Error;
+        }
+    }
+    fprintf(stdout, TRACE_COLOR("Sync objects created"));
+    s->FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
+
+    return NoError;
+}
+
+
+
 

@@ -13,6 +13,14 @@ typedef struct SizedBuffer {
 
 extern int errno;
 
+#define DEF_OPTIONAL(type) \
+    typedef struct optional_##type { \
+        unsigned int has_value : 1; \
+        type value; \
+    } optional_##type;
+
+#define optional(type) optional_##type 
+
 // Buffer is allocated with malloc, must be manually freed
 static void LoadFile(const char* filename, SizedBuffer* buffer) {
     errno = 0;
