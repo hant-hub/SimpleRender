@@ -1,9 +1,10 @@
 #include "frame.h"
+#include "vert/types.h"
 
 
 
-ErrorCode DrawFrame(VulkanDevice* d, SwapChain* s, Command* c, Pipeline* p,
-                    SyncObjects* sync, int* framebufferResized, uint32_t currentFrame) {
+ErrorCode DrawFrame(VulkanDevice* d, SwapChain* s, Command* c, Pipeline* p, VertexBuffer* vb, IndexBuffer* ib,
+                    SyncObjects* sync, int* framebufferResized, int* minimized, uint32_t currentFrame) {
 
         glfwPollEvents();
 
@@ -29,7 +30,7 @@ ErrorCode DrawFrame(VulkanDevice* d, SwapChain* s, Command* c, Pipeline* p,
         vkResetFences(d->logical.device, 1, &sync->fences[currentFrame]); 
 
         vkResetCommandBuffer(c->buffers[currentFrame], 0);
-        RecordCommands(&c->buffers[currentFrame], p, s, imageIndex);
+        RecordCommands(&c->buffers[currentFrame], vb, ib, p, s, imageIndex);
 
         VkSubmitInfo submitInfo = {0};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -63,11 +64,11 @@ ErrorCode DrawFrame(VulkanDevice* d, SwapChain* s, Command* c, Pipeline* p,
         presentInfo.pResults = NULL;
 
         result = vkQueuePresentKHR(d->logical.graphicsQueue, &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || *framebufferResized){
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || *framebufferResized || *minimized){
             *framebufferResized = 0;
             int width = 0, height = 0;
             glfwGetFramebufferSize(d->w, &width, &height);
-            while (width == 0 || height == 0) {
+            while (width == 0 || height == 0 || *minimized) {
                 printf("hit\n");
                 glfwGetFramebufferSize(d->w, &width, &height);
                 glfwWaitEvents();

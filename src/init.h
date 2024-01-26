@@ -13,6 +13,7 @@
 #include <vulkan/vulkan_core.h>
 #include "Vulkan.h"
 #include "state.h"
+#include "vert/types.h"
 
 
 ErrorCode InitVulkan(VulkanDevice* deviceData);
@@ -26,7 +27,7 @@ void DestroyPipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stage
 ErrorCode CreatePipeline(VulkanDevice* d, SwapChain* s, Pipeline* p, InitStage stagg);
 
 ErrorCode CreateCommandObjects(Command* c, uint32_t bufferCount, VulkanDevice* d);
-ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, Pipeline* p, SwapChain* s, uint32_t imageIndex);
+ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, VertexBuffer* vb, IndexBuffer* ib, Pipeline* p, SwapChain* s, uint32_t imageIndex);
 
 ErrorCode CreateSyncObjects(VulkanDevice* d, Command* c, SyncObjects* s, uint32_t MAX_FRAMES_IN_FLIGHT);
 void DestroySyncObjects(VulkanDevice* d, SyncObjects* s);

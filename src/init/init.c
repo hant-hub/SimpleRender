@@ -296,7 +296,7 @@ ErrorCode CreateCommandObjects(Command* c, uint32_t bufferCount, VulkanDevice* d
     return NoError;
 }
 
-ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, Pipeline* p, SwapChain* s, uint32_t imageIndex) {
+ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, VertexBuffer* vb, IndexBuffer* ib, Pipeline* p, SwapChain* s, uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -322,7 +322,13 @@ ErrorCode RecordCommands(VkCommandBuffer* commandBuffer, Pipeline* p, SwapChain*
     vkCmdBeginRenderPass(*commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipeline);
 
-    vkCmdDraw(*commandBuffer, 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = {vb->buffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(*commandBuffer, 0, 1, vertexBuffers, offsets);
+
+    vkCmdBindIndexBuffer(*commandBuffer, ib->buffer, 0, VK_INDEX_TYPE_UINT16);
+
+    vkCmdDrawIndexed(*commandBuffer, sizeof(indicies)/sizeof(indicies[0]), 1, 0, 0, 0);
     vkCmdEndRenderPass(*commandBuffer);
 
     if (vkEndCommandBuffer(*commandBuffer) != VK_SUCCESS) {

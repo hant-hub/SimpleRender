@@ -4,6 +4,7 @@
 #include "error.h"
 #include "../state.h"
 #include "../util.h"
+#include "../vertex.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -132,13 +133,15 @@ static ErrorCode CreateGraphicsPipeline(VulkanDevice* d, SwapChain* s, Pipeline*
     dynamicCreateInfo.dynamicStateCount = sizeof(dynamicStates)/sizeof(dynamicStates[0]); 
     dynamicCreateInfo.pDynamicStates = dynamicStates;
 
+    VkVertexInputBindingDescription binddescrip = GetVertexBindingDescription();
+    VertexAttrDescription attrs = GetVertexAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = NULL;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = NULL;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &binddescrip;
+    vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    vertexInputInfo.pVertexAttributeDescriptions = attrs.val;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
     inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
