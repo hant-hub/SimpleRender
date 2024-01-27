@@ -1,0 +1,109 @@
+\hypertarget{vec2_8h}{}\doxysection{src/include/vec2.h File Reference}
+\label{vec2_8h}\index{src/include/vec2.h@{src/include/vec2.h}}
+{\ttfamily \#include \char`\"{}types.\+h\char`\"{}}\newline
+Include dependency graph for vec2.\+h\+:
+% FIG 0
+This graph shows which files directly or indirectly include this file\+:
+% FIG 1
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{vec2_8h_ac27065fe0db609331c0b6fd60922fea7}{def\+\_\+vector}} (float, 2)
+\item 
+static int \mbox{\hyperlink{vec2_8h_a73f4d33db247b265192e262e4a94b432}{vec2float\+\_\+eq}} (vec2float a, vec2float b)
+\begin{DoxyCompactList}\small\item\em Determine Whether two vec2float are equivalent. \end{DoxyCompactList}\item 
+static const float \mbox{\hyperlink{vec2_8h_abcc29c411b1b2e937825e08e4ab42277}{vec2dot}} (vec2float a, vec2float b)
+\begin{DoxyCompactList}\small\item\em Take the dot product of two vectors. \end{DoxyCompactList}\item 
+static const vec2float \mbox{\hyperlink{vec2_8h_a32e989cd7197bd4b0d89de6930d27768}{vec2mult}} (vec2float a, vec2float b)
+\begin{DoxyCompactList}\small\item\em Do a Component-\/wise multiplication. \end{DoxyCompactList}\item 
+static const vec2float \mbox{\hyperlink{vec2_8h_ac87a392015dfe0f703fc1d3148612628}{vec2add}} (vec2float a, vec2float b)
+\begin{DoxyCompactList}\small\item\em Add vectors component wise. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{vec2_8h_ac27065fe0db609331c0b6fd60922fea7}\label{vec2_8h_ac27065fe0db609331c0b6fd60922fea7}} 
+\index{vec2.h@{vec2.h}!def\_vector@{def\_vector}}
+\index{def\_vector@{def\_vector}!vec2.h@{vec2.h}}
+\doxysubsubsection{\texorpdfstring{def\_vector()}{def\_vector()}}
+{\footnotesize\ttfamily def\+\_\+vector (\begin{DoxyParamCaption}\item[{float}]{,  }\item[{2}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{vec2_8h_ac87a392015dfe0f703fc1d3148612628}\label{vec2_8h_ac87a392015dfe0f703fc1d3148612628}} 
+\index{vec2.h@{vec2.h}!vec2add@{vec2add}}
+\index{vec2add@{vec2add}!vec2.h@{vec2.h}}
+\doxysubsubsection{\texorpdfstring{vec2add()}{vec2add()}}
+{\footnotesize\ttfamily static const vec2float vec2add (\begin{DoxyParamCaption}\item[{vec2float}]{a,  }\item[{vec2float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Add vectors component wise. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Two component Floating point vector. \\
+\hline
+{\em b} & Two component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a vector containing the component wise addition. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec2_8h_abcc29c411b1b2e937825e08e4ab42277}\label{vec2_8h_abcc29c411b1b2e937825e08e4ab42277}} 
+\index{vec2.h@{vec2.h}!vec2dot@{vec2dot}}
+\index{vec2dot@{vec2dot}!vec2.h@{vec2.h}}
+\doxysubsubsection{\texorpdfstring{vec2dot()}{vec2dot()}}
+{\footnotesize\ttfamily static const float vec2dot (\begin{DoxyParamCaption}\item[{vec2float}]{a,  }\item[{vec2float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Take the dot product of two vectors. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Two component Floating point vector. \\
+\hline
+{\em b} & Two component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns the float result of dot product. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec2_8h_a73f4d33db247b265192e262e4a94b432}\label{vec2_8h_a73f4d33db247b265192e262e4a94b432}} 
+\index{vec2.h@{vec2.h}!vec2float\_eq@{vec2float\_eq}}
+\index{vec2float\_eq@{vec2float\_eq}!vec2.h@{vec2.h}}
+\doxysubsubsection{\texorpdfstring{vec2float\_eq()}{vec2float\_eq()}}
+{\footnotesize\ttfamily static int vec2float\+\_\+eq (\begin{DoxyParamCaption}\item[{vec2float}]{a,  }\item[{vec2float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Determine Whether two vec2float are equivalent. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Two component Floating point vector. \\
+\hline
+{\em b} & Two component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a boolean which evaluates whether two vectors are equivalent. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec2_8h_a32e989cd7197bd4b0d89de6930d27768}\label{vec2_8h_a32e989cd7197bd4b0d89de6930d27768}} 
+\index{vec2.h@{vec2.h}!vec2mult@{vec2mult}}
+\index{vec2mult@{vec2mult}!vec2.h@{vec2.h}}
+\doxysubsubsection{\texorpdfstring{vec2mult()}{vec2mult()}}
+{\footnotesize\ttfamily static const vec2float vec2mult (\begin{DoxyParamCaption}\item[{vec2float}]{a,  }\item[{vec2float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Do a Component-\/wise multiplication. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Two component Floating point vector. \\
+\hline
+{\em b} & Two component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a vector containing the component wise multiplication. 
+\end{DoxyReturn}

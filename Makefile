@@ -3,12 +3,14 @@ TARGET_EXEC := test
 
 BUILD_DIR := ./build
 SRC_DIRS := ./src
+INC_SEARCH = ./src ./lib
 SHADER_DIR := ./src/shaders
+
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. The shell will incorrectly expand these otherwise, but we want to send the * directly to the find command.
 SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-SHADERS := $(shell find $(SHADER_DIRS) -name '*.vert' -or -name '*.frag')
+SHADERS := $(shell find $(SHADER_DIRS) -name '*.vert' -o -name '*.frag')
 SHADER_NAMES := $(notdir $(SHADERS))
 
 # Prepends BUILD_DIR and appends .o to every src file
@@ -21,15 +23,15 @@ COMPSHADERS := $(SHADER_NAMES:%=$(BUILD_DIR)/shaders/%.spv)
 DEPS := $(OBJS:.o=.d)
 
 # Every folder in ./src will need to be passed to GCC so that it can find header files
-INC_DIRS := $(shell find $(SRC_DIRS)/.. -type d)
+INC_DIRS := $(shell find $(INC_SEARCH)/ -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CFLAGS := $(INC_FLAGS) -MMD -MP
+CFLAGS := $(INC_FLAGS) -MMD -MP -D $(BUILD)
 
-LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 
 # The final build step.
@@ -58,6 +60,7 @@ clean:
 
 test: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
+	compiledb -n make
 	cd $(BUILD_DIR); \
 	./$(notdir $<); \
 	cd ..;

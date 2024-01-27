@@ -1,0 +1,131 @@
+\hypertarget{vec3_8h}{}\doxysection{src/include/vec3.h File Reference}
+\label{vec3_8h}\index{src/include/vec3.h@{src/include/vec3.h}}
+{\ttfamily \#include \char`\"{}types.\+h\char`\"{}}\newline
+Include dependency graph for vec3.\+h\+:
+% FIG 0
+This graph shows which files directly or indirectly include this file\+:
+% FIG 1
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{vec3_8h_a454a76ee071acd73f879e77032c061d4}{def\+\_\+vector}} (float, 3)
+\item 
+static int \mbox{\hyperlink{vec3_8h_af1e5a02cc6d93a363e4a7820e06a34f1}{vec3float\+\_\+eq}} (vec3float a, vec3float b)
+\begin{DoxyCompactList}\small\item\em Determine Whether two vec3float are equivalent. \end{DoxyCompactList}\item 
+static const float \mbox{\hyperlink{vec3_8h_add9c8af7f2061a6cd1815cdd5e51ea04}{vec3dot}} (vec3float a, vec3float b)
+\begin{DoxyCompactList}\small\item\em Take the dot product of three vectors. \end{DoxyCompactList}\item 
+static const vec3float \mbox{\hyperlink{vec3_8h_a0140447db2a6314fc1aeedaddd28fea7}{vec3mult}} (vec3float a, vec3float b)
+\begin{DoxyCompactList}\small\item\em Do a Component-\/wise multiplication. \end{DoxyCompactList}\item 
+static const vec3float \mbox{\hyperlink{vec3_8h_a036845f1b939b44704f5945fdc5b68d7}{vec3add}} (vec3float a, vec3float b)
+\begin{DoxyCompactList}\small\item\em Add vectors component wise. \end{DoxyCompactList}\item 
+static const vec3float \mbox{\hyperlink{vec3_8h_a6e516f7b84e7ed3d00b301b12417531c}{vec3cross}} (vec3float a, vec3float b)
+\begin{DoxyCompactList}\small\item\em Right Handed Cross Product. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{vec3_8h_a454a76ee071acd73f879e77032c061d4}\label{vec3_8h_a454a76ee071acd73f879e77032c061d4}} 
+\index{vec3.h@{vec3.h}!def\_vector@{def\_vector}}
+\index{def\_vector@{def\_vector}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{def\_vector()}{def\_vector()}}
+{\footnotesize\ttfamily def\+\_\+vector (\begin{DoxyParamCaption}\item[{float}]{,  }\item[{3}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{vec3_8h_a036845f1b939b44704f5945fdc5b68d7}\label{vec3_8h_a036845f1b939b44704f5945fdc5b68d7}} 
+\index{vec3.h@{vec3.h}!vec3add@{vec3add}}
+\index{vec3add@{vec3add}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{vec3add()}{vec3add()}}
+{\footnotesize\ttfamily static const vec3float vec3add (\begin{DoxyParamCaption}\item[{vec3float}]{a,  }\item[{vec3float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Add vectors component wise. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Three component Floating point vector. \\
+\hline
+{\em b} & Three component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a vector containing the component wise addition. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec3_8h_a6e516f7b84e7ed3d00b301b12417531c}\label{vec3_8h_a6e516f7b84e7ed3d00b301b12417531c}} 
+\index{vec3.h@{vec3.h}!vec3cross@{vec3cross}}
+\index{vec3cross@{vec3cross}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{vec3cross()}{vec3cross()}}
+{\footnotesize\ttfamily static const vec3float vec3cross (\begin{DoxyParamCaption}\item[{vec3float}]{a,  }\item[{vec3float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Right Handed Cross Product. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Three component Floating point vector. \\
+\hline
+{\em b} & Three component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a vector which is the right handed cross product of a and b. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec3_8h_add9c8af7f2061a6cd1815cdd5e51ea04}\label{vec3_8h_add9c8af7f2061a6cd1815cdd5e51ea04}} 
+\index{vec3.h@{vec3.h}!vec3dot@{vec3dot}}
+\index{vec3dot@{vec3dot}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{vec3dot()}{vec3dot()}}
+{\footnotesize\ttfamily static const float vec3dot (\begin{DoxyParamCaption}\item[{vec3float}]{a,  }\item[{vec3float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Take the dot product of three vectors. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Three component Floating point vector. \\
+\hline
+{\em b} & Three component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns the float result of dot product. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec3_8h_af1e5a02cc6d93a363e4a7820e06a34f1}\label{vec3_8h_af1e5a02cc6d93a363e4a7820e06a34f1}} 
+\index{vec3.h@{vec3.h}!vec3float\_eq@{vec3float\_eq}}
+\index{vec3float\_eq@{vec3float\_eq}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{vec3float\_eq()}{vec3float\_eq()}}
+{\footnotesize\ttfamily static int vec3float\+\_\+eq (\begin{DoxyParamCaption}\item[{vec3float}]{a,  }\item[{vec3float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Determine Whether two vec3float are equivalent. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Three component Floating point vector. \\
+\hline
+{\em b} & Three component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a boolean which evaluates whether two vectors are equivalent. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{vec3_8h_a0140447db2a6314fc1aeedaddd28fea7}\label{vec3_8h_a0140447db2a6314fc1aeedaddd28fea7}} 
+\index{vec3.h@{vec3.h}!vec3mult@{vec3mult}}
+\index{vec3mult@{vec3mult}!vec3.h@{vec3.h}}
+\doxysubsubsection{\texorpdfstring{vec3mult()}{vec3mult()}}
+{\footnotesize\ttfamily static const vec3float vec3mult (\begin{DoxyParamCaption}\item[{vec3float}]{a,  }\item[{vec3float}]{b }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Do a Component-\/wise multiplication. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & Three component Floating point vector. \\
+\hline
+{\em b} & Three component Floating point vector.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns a vector containing the component wise multiplication. 
+\end{DoxyReturn}
