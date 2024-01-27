@@ -49,8 +49,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 
 static ErrorCode CreateDebugMessenger(VkDebugUtilsMessengerEXT* messenger, VkInstance* instance) {
-    VkDebugUtilsMessengerCreateInfoEXT createInfo = (VkDebugUtilsMessengerCreateInfoEXT){};
-    memset(&createInfo, 0, sizeof(VkDebugUtilsMessengerCreateInfoEXT));
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = (VkDebugUtilsMessengerCreateInfoEXT){0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -133,8 +132,24 @@ ErrorCode CreateInstance(VulkanContext* context) {
 #ifdef DEBUG
     instanceInfo.enabledLayerCount = ARRAY_SIZE(validationLayers);
     instanceInfo.ppEnabledLayerNames = validationLayers;
+
+
+    VkDebugUtilsMessengerCreateInfoEXT debugInfo = (VkDebugUtilsMessengerCreateInfoEXT){0};
+    debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debugInfo.pfnUserCallback = debugCallback;
+    debugInfo.pUserData = NULL;
+
+    instanceInfo.pNext = &debugInfo;
+
 #else
     instanceInfo.enabledLayerCount = 0;
+    istanceInfo.pNext = NULL;
 #endif
 
 
