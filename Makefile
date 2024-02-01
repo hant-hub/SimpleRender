@@ -33,6 +33,7 @@ CFLAGS := $(INC_FLAGS) -MMD -MP -D $(BUILD)
 
 LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
+.PHONY: clean test
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS)
@@ -54,9 +55,8 @@ $(BUILD_DIR)/%.c.o: %.c
 
 
 
-.PHONY: clean test
 clean:
-	rm -r $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)
 
 test: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear

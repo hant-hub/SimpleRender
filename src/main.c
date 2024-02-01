@@ -9,12 +9,11 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-static void ExitProg(GLFWwindow* window, VulkanContext* context) {
-#ifdef DEBUG
-    DestroyDebugMessenger(context);
-#endif
+static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device) {
     
-    vkDestroyInstance(context->instance, NULL);
+    DestroyDevice(device);
+    
+    DestroyContext(context);
 
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -28,10 +27,17 @@ int main() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "SimpleRender", NULL, NULL);
-    VulkanContext context;
+
+    VulkanContext context = {0};
+    VulkanDevice device = {0};
+
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context);
+        ExitProg(window, &context, &device);
+
+    result = CreateDevices(&device, &context);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device);
 
     
 
@@ -40,6 +46,6 @@ int main() {
         glfwPollEvents();
     }
 
-    ExitProg(window, &context);
+    ExitProg(window, &context, &device);
     return 0;
 }

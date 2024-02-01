@@ -1,16 +1,11 @@
 #include "../init.h"
-#include "error.h"
 #include "log.h"
-#include "../util.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
 #include <string.h>
 #include <stdlib.h>
 
-const char* validationLayers[] = {
-    "VK_LAYER_KHRONOS_validation"
-};
 
 static bool CheckValidationLayerSupport() {
     uint32_t layerCount;
@@ -84,6 +79,17 @@ void DestroyDebugMessenger(VulkanContext* context) {
 }
 
 #endif
+
+
+void DestroyContext(VulkanContext* context) {
+#ifdef DEBUG
+    DestroyDebugMessenger(context);
+    SR_LOG_DEB("Debug Messenger Destroyed");
+#endif
+    vkDestroyInstance(context->instance, NULL);
+    SR_LOG_DEB("Instance Destroyed");
+}
+
 
 
 ErrorCode CreateInstance(VulkanContext* context) {
