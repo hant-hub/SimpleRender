@@ -10,6 +10,7 @@
 
 typedef struct {
     VkInstance instance;
+    VkSurfaceKHR surface;
 #ifdef DEBUG
     VkDebugUtilsMessengerEXT debug;
 #endif
@@ -20,12 +21,15 @@ typedef struct {
     VkPhysicalDevice p;
     VkDevice l;
     VkQueue graph;
+    VkQueue present;
 } VulkanDevice;
 
 
 static const char* validationLayers[] = {
     "VK_LAYER_KHRONOS_validation"
 };
+
+ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window); 
 
 void DestroyContext(VulkanContext* context); 
 ErrorCode CreateInstance(VulkanContext* context);

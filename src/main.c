@@ -35,6 +35,10 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device);
 
+    result = CreateSurface(&context, window);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device);
+
     result = CreateDevices(&device, &context);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device);

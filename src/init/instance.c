@@ -1,4 +1,5 @@
 #include "../init.h"
+#include "error.h"
 #include "log.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_platform.h>
@@ -82,12 +83,17 @@ void DestroyDebugMessenger(VulkanContext* context) {
 
 
 void DestroyContext(VulkanContext* context) {
+    vkDestroySurfaceKHR(context->instance, context->surface, NULL);
+    SR_LOG_DEB("Surface Destroyed");
+
 #ifdef DEBUG
     DestroyDebugMessenger(context);
     SR_LOG_DEB("Debug Messenger Destroyed");
 #endif
     vkDestroyInstance(context->instance, NULL);
     SR_LOG_DEB("Instance Destroyed");
+
+
 }
 
 
@@ -178,6 +184,17 @@ ErrorCode CreateInstance(VulkanContext* context) {
         return SR_CREATE_FAIL;
     }
 #endif
+
+    return SR_NO_ERROR;
+}
+
+
+ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window) {
+    if (glfwCreateWindowSurface(context->instance, window, NULL, &context->surface) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to create window Surface");
+        return SR_CREATE_FAIL;
+    }
+    SR_LOG_DEB("Surface Created");
 
     return SR_NO_ERROR;
 }
