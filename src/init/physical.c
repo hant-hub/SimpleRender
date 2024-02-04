@@ -88,7 +88,8 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
     
     return indicies.graphicsFamily.exist && 
            indicies.presentFamily.exist &&
-           (extensionsFound == ARRAY_SIZE(deviceExtensions));
+           (extensionsFound == ARRAY_SIZE(deviceExtensions)) &&
+           AvalibleFormats;
 }
 
 
@@ -122,6 +123,7 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
     for (int i = 0; i < deviceCount; i++) {
         if (isDeviceSuitable(devices[i], context->surface)) {
             d->p = devices[i];
+            querySwapDetails(&d->swapDetails, d->p, context->surface);
 #ifdef DEBUG
             printf("Device %i selected\n", i);
 #endif

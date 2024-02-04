@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 typedef struct {
+    GLFWwindow* w;
     VkInstance instance;
     VkSurfaceKHR surface;
 #ifdef DEBUG

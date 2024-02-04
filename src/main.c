@@ -34,6 +34,7 @@ int main() {
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device);
+    context.w = window;
 
     result = CreateSurface(&context, window);
     if (result != SR_NO_ERROR)
