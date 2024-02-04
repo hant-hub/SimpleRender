@@ -1,3 +1,6 @@
 [submodule "src/lib/SimpleMath"]
 	path = src/lib/SimpleMath
 	url = git@github.com:hant-hub/SimpleMath.git
+[submodule "lib/SimpleMath"]
+	path = lib/SimpleMath
+	url = git@github.com:hant-hub/SimpleMath.git
