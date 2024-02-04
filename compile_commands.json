@@ -4,6 +4,7 @@
   "arguments": [
    "cc",
    "-I./src",
+   "-I./src/swap",
    "-I./src/init",
    "-I./lib/",
    "-I./lib/SimpleMath",
@@ -38,6 +39,7 @@
   "arguments": [
    "cc",
    "-I./src",
+   "-I./src/swap",
    "-I./src/init",
    "-I./lib/",
    "-I./lib/SimpleMath",
@@ -72,6 +74,7 @@
   "arguments": [
    "cc",
    "-I./src",
+   "-I./src/swap",
    "-I./src/init",
    "-I./lib/",
    "-I./lib/SimpleMath",
@@ -100,5 +103,40 @@
    "build/./src/init/physical.c.o"
   ],
   "file": "src/init/physical.c"
+ },
+ {
+  "directory": "/home/elijah/Desktop/Dev/Git/repos/SimpleRender",
+  "arguments": [
+   "cc",
+   "-I./src",
+   "-I./src/swap",
+   "-I./src/init",
+   "-I./lib/",
+   "-I./lib/SimpleMath",
+   "-I./lib/SimpleMath/src",
+   "-I./lib/SimpleMath/src/include",
+   "-I./lib/SimpleMath/src/include/proj",
+   "-I./lib/SimpleMath/src/include/complex",
+   "-I./lib/SimpleMath/src/include/trig",
+   "-I./lib/SimpleMath/src/include/misc",
+   "-I./lib/SimpleMath/src/include/linAlg",
+   "-I./lib/SimpleMath/src/test",
+   "-I./lib/SimpleMath/build",
+   "-I./lib/SimpleMath/build/src",
+   "-I./lib/SimpleMath/build/src/test",
+   "-I./lib/SimpleMath/docs",
+   "-I./lib/SimpleMath/docs/latex",
+   "-I./lib/SimpleMath/docs/html",
+   "-I./lib/SimpleMath/docs/html/search",
+   "-MMD",
+   "-MP",
+   "-D",
+   "DEBUG",
+   "-c",
+   "src/swap/swapchain.c",
+   "-o",
+   "build/./src/swap/swapchain.c.o"
+  ],
+  "file": "src/swap/swapchain.c"
  }
 ]

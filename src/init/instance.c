@@ -161,7 +161,7 @@ ErrorCode CreateInstance(VulkanContext* context) {
 
 #else
     instanceInfo.enabledLayerCount = 0;
-    istanceInfo.pNext = NULL;
+    instanceInfo.pNext = NULL;
 #endif
 
 

@@ -7,6 +7,7 @@
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <stdlib.h>
 
 typedef struct {
     VkInstance instance;
@@ -16,18 +17,31 @@ typedef struct {
 #endif
 } VulkanContext;
 
+typedef struct {
+    VkSurfaceCapabilitiesKHR capabilities;
+    uint32_t formatCount;
+    uint32_t modeCount;
+    VkSurfaceFormatKHR* formats;
+    VkPresentModeKHR* modes;
+}SwapChainDetails;
 
 typedef struct {
     VkPhysicalDevice p;
     VkDevice l;
     VkQueue graph;
     VkQueue present;
+    SwapChainDetails swapDetails;
 } VulkanDevice;
 
 
 static const char* validationLayers[] = {
     "VK_LAYER_KHRONOS_validation"
 };
+
+static const char* deviceExtensions[] = {
+    "VK_KHR_swapchain",
+};
+
 
 ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window); 
 

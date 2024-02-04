@@ -15,7 +15,7 @@ typedef int bool;
 
 
 #define optional(type) optional##type
-#define ARRAY_SIZE(x) sizeof( x )/sizeof( x [0])
+#define ARRAY_SIZE(x) sizeof( x )/sizeof( x[0] )
 
 DEF_OPTIONAL(uint32_t);
 

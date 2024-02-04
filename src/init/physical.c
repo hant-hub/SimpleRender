@@ -2,6 +2,7 @@
 #include "error.h"
 #include "log.h"
 #include "util.h"
+#include <string.h>
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
@@ -9,8 +10,25 @@ typedef struct {
     optional(uint32_t) presentFamily;
 } QueueFamilyIndicies;
 
+
+ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s) {
+    vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, NULL);
+    swapDetails->formats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR) * swapDetails->formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, swapDetails->formats);
+    
+    vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, NULL); 
+    swapDetails->modes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR) * swapDetails->modeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, swapDetails->modes); 
+     
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(p, s, &swapDetails->capabilities);
+
+    return SR_NO_ERROR;
+}
+
+
+
 static QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface) {
-    QueueFamilyIndicies indicies;
+    QueueFamilyIndicies indicies = {0};
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(p, &queueFamilyCount, NULL);
@@ -41,13 +59,45 @@ static QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR su
 
 static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
     QueueFamilyIndicies indicies = findQueueFamilies(p, surface);
-    return indicies.graphicsFamily.exist && indicies.presentFamily.exist;
+
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(p, NULL, &extensionCount, NULL); 
+    VkExtensionProperties props[extensionCount];
+    vkEnumerateDeviceExtensionProperties(p, NULL, &extensionCount, props); 
+    
+    uint32_t extensionsFound = 0;
+    for (int i = 0; i < ARRAY_SIZE(props); ++i) {
+        for (int j = 0; j < ARRAY_SIZE(deviceExtensions); ++j) {
+            if (strcmp(props[i].extensionName, deviceExtensions[j])) {
+                extensionsFound += 1;
+            }
+            if (extensionsFound == ARRAY_SIZE(deviceExtensions)) break;
+        }
+        if (extensionsFound == ARRAY_SIZE(deviceExtensions)) break;
+    }
+
+
+    bool AvalibleFormats = FALSE;
+    SwapChainDetails details = {};
+    querySwapDetails(&details, p, surface);
+    if (details.modeCount && details.formatCount)
+        AvalibleFormats = TRUE;
+
+    free(details.modes);
+    free(details.formats);
+    
+    return indicies.graphicsFamily.exist && 
+           indicies.presentFamily.exist &&
+           (extensionsFound == ARRAY_SIZE(deviceExtensions));
 }
 
 
 
 
 void DestroyDevice(VulkanDevice* d) {
+    free(d->swapDetails.formats);
+    free(d->swapDetails.modes);
+
     vkDestroyDevice(d->l, NULL);
     SR_LOG_DEB("Logical Device Destroyed");
 }
@@ -72,6 +122,9 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
     for (int i = 0; i < deviceCount; i++) {
         if (isDeviceSuitable(devices[i], context->surface)) {
             d->p = devices[i];
+#ifdef DEBUG
+            printf("Device %i selected\n", i);
+#endif
             break;
         }
     }
@@ -93,7 +146,7 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
 
     VkDeviceQueueCreateInfo presentInfo = {0};
     presentInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    presentInfo.queueFamilyIndex = indicies.graphicsFamily.val;
+    presentInfo.queueFamilyIndex = indicies.presentFamily.val;
     presentInfo.queueCount = 1;
     presentInfo.pQueuePriorities = &priority;
 
@@ -112,7 +165,8 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
         deviceInfo.queueCreateInfoCount = 1;
     }
 
-    deviceInfo.enabledExtensionCount = 0;
+    deviceInfo.enabledExtensionCount = ARRAY_SIZE(deviceExtensions);
+    deviceInfo.ppEnabledExtensionNames = deviceExtensions;
 #ifdef DEBUG
     deviceInfo.enabledLayerCount = ARRAY_SIZE(validationLayers);
     deviceInfo.ppEnabledLayerNames = validationLayers;
