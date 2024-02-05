@@ -34,6 +34,10 @@ typedef struct {
     SwapChainDetails swapDetails;
 } VulkanDevice;
 
+typedef struct {
+    optional(uint32_t) graphicsFamily;
+    optional(uint32_t) presentFamily;
+} QueueFamilyIndicies;
 
 static const char* validationLayers[] = {
     "VK_LAYER_KHRONOS_validation"
@@ -44,6 +48,7 @@ static const char* deviceExtensions[] = {
 };
 
 
+QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface);
 ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window); 
 
 void DestroyContext(VulkanContext* context); 

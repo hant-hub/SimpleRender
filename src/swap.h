@@ -12,10 +12,14 @@ typedef struct {
     VkSurfaceFormatKHR format;
     VkPresentModeKHR mode;
     VkExtent2D extent;
+    uint32_t imgCount;
+    VkSwapchainKHR swapChain;
+    VkImageView* views;
 } SwapChain;
 
 
-ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s);
+void DestroySwapChain(VkDevice l, SwapChain* s);
+ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old);
 
 
 

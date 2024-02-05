@@ -5,10 +5,6 @@
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 
-typedef struct {
-    optional(uint32_t) graphicsFamily;
-    optional(uint32_t) presentFamily;
-} QueueFamilyIndicies;
 
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s) {
@@ -27,7 +23,7 @@ ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, Vk
 
 
 
-static QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface) {
+QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface) {
     QueueFamilyIndicies indicies = {0};
 
     uint32_t queueFamilyCount = 0;
@@ -128,6 +124,7 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
             printf("Device %i selected\n", i);
 #endif
             break;
+
         }
     }
 
