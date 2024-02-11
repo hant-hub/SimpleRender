@@ -117,17 +117,59 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
     }
     SR_LOG_DEB("\tImage Views Created");
 
+
+
     
     return SR_NO_ERROR;
 }
 
+ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, VulkanPipelineConfig* c) {
+    s->buffers = (VkFramebuffer*)malloc(s->imgCount*sizeof(VkFramebuffer));
+    for (size_t i = 0; i < s->imgCount; i++) {
+        VkImageView attachments[] = {
+            s->views[i]
+        };
+
+        VkFramebufferCreateInfo createInfo = {0};
+        createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        createInfo.renderPass = c->pass;
+        createInfo.attachmentCount = 1;
+        createInfo.pAttachments = attachments;
+        createInfo.width = s->extent.width;
+        createInfo.height = s->extent.height;
+        createInfo.layers = 1;
+
+        if (vkCreateFramebuffer(d->l, &createInfo, NULL, &s->buffers[i]) != VK_SUCCESS) {
+            SR_LOG_ERR("Failed to create Framebuffer");
+            for (int j = 0; j <= i; j--){
+                vkDestroyFramebuffer(d->l, s->buffers[j], NULL);
+            }
+            free(s->buffers);
+            return SR_CREATE_FAIL;
+        }
+    }
+    SR_LOG_DEB("\tFrameBuffers Created");
+
+
+    return SR_NO_ERROR;
+}
 
 void DestroySwapChain(VkDevice l, SwapChain* s) {
     for (int i = 0; i < s->imgCount; i++) {
         vkDestroyImageView(l, s->views[i], NULL);
     }
+    
+
+    if (s->buffers != NULL) {
+        for (int i = 0; i < s->imgCount; i++) {
+            vkDestroyFramebuffer(l, s->buffers[i], NULL);
+        }
+        free(s->buffers);
+        SR_LOG_DEB("\tFrameBuffers Destroyed");
+    }
     free(s->views);
     SR_LOG_DEB("\tImage Views Destroyed");
+
 
     vkDestroySwapchainKHR(l, s->swapChain, NULL);
     SR_LOG_DEB("SwapChain Destroyed");

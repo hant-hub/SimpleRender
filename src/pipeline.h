@@ -15,11 +15,32 @@ typedef struct {
 } VulkanShader;
 
 typedef struct {
+    VkRenderPass pass;
+    VkPipelineLayout layout;
+    VkDynamicState states[2];
+    VkPipelineDynamicStateCreateInfo dynamic;
+    VkPipelineVertexInputStateCreateInfo vertInput;
+    VkPipelineInputAssemblyStateCreateInfo assembly;
+    VkPipelineViewportStateCreateInfo view;
+    VkPipelineRasterizationStateCreateInfo raster;
+    VkPipelineMultisampleStateCreateInfo multisample;
+    VkPipelineColorBlendStateCreateInfo colorState;
+    VkPipelineShaderStageCreateInfo stages[2];
+} VulkanPipelineConfig;
+
+typedef struct {
+    VkViewport view;
+    VkRect2D scissor;
+    VkPipeline pipeline;
 } VulkanPipeline;
 
+void DestroyShaderProg(VkDevice d, VulkanShader* s);
+void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p);
+void DestroyPipeline(VkDevice d, VulkanPipeline* p);
 
 ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, VulkanShader* s);
-ErrorCode CreatePipeline(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipeline* p);
+ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapFormat, VulkanShader* s, VulkanPipelineConfig* p);
+ErrorCode CreatePipeline(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p);
 
 
 

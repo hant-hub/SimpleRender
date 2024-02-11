@@ -19,8 +19,8 @@ ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, Vul
     fseek(vertFile, 0, SEEK_SET);
 
     char vertmem[vertSize + sizeof(uint32_t)-1];
-    uint32_t* vertRaw = (uint32_t*)((uintptr_t)vertmem & ~0x1F);
-    if (fread(vertRaw, vertSize, 1, vertFile) < 0) {
+    uint32_t* vertRaw = (uint32_t*)((uintptr_t)vertmem & ~0xF);
+    if (fread(vertRaw, 1, vertSize, vertFile) < 0) {
         fclose(vertFile);
         SR_LOG_ERR("File read failed");
         return SR_INVALID;
@@ -38,8 +38,8 @@ ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, Vul
     fseek(fragFile, 0, SEEK_SET);
 
     char fragmem[fragSize + sizeof(uint32_t)-1];
-    uint32_t* fragRaw = (uint32_t*)((uintptr_t)fragmem & ~0x1F);
-    if (fread(fragRaw, fragSize, 1, fragFile) < 0) {
+    uint32_t* fragRaw = (uint32_t*)((uintptr_t)fragmem & ~0xF);
+    if (fread(fragRaw, 1, fragSize, fragFile) < 0) {
         fclose(fragFile);
         SR_LOG_ERR("File read failed");
         return SR_INVALID;
@@ -67,6 +67,8 @@ ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, Vul
         SR_LOG_ERR("Failed to Create fragment shader Module");
         return SR_CREATE_FAIL;
     }
+
+    SR_LOG_DEB("Shader Modules Created");
 
 
     return SR_NO_ERROR;

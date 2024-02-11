@@ -5,6 +5,7 @@
 #include "log.h"
 #include "error.h"
 #include "util.h"
+#include "pipeline.h"
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
@@ -15,11 +16,13 @@ typedef struct {
     uint32_t imgCount;
     VkSwapchainKHR swapChain;
     VkImageView* views;
+    VkFramebuffer* buffers;
 } SwapChain;
 
 
 void DestroySwapChain(VkDevice l, SwapChain* s);
 ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old);
+ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, VulkanPipelineConfig* c); 
 
 
 
