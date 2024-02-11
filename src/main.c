@@ -45,11 +45,9 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain);
 
-
     result = CreateSwapChain(&device, &context, &swapchain, VK_NULL_HANDLE);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain);
-
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

@@ -6,6 +6,7 @@ typedef enum {
     SR_CREATE_FAIL,
     SR_EXTENSION_MISSING,
     SR_DEVICE_NOT_FOUND,
+    SR_INVALID,
     
 #ifdef DEBUG
     SR_VALIDATION_MISSING,

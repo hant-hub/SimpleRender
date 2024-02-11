@@ -4,13 +4,13 @@ TARGET_EXEC := test
 BUILD_DIR := ./build
 SRC_DIRS := ./src
 INC_SEARCH = ./src ./lib
-SHADER_DIR := ./src/shaders
+SHADER_DIR := ./shaders
 
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. The shell will incorrectly expand these otherwise, but we want to send the * directly to the find command.
 SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-SHADERS := $(shell find $(SHADER_DIRS) -name '*.vert' -o -name '*.frag')
+SHADERS := $(shell find $(SHADER_DIRS) -name '*.glsl')
 SHADER_NAMES := $(notdir $(SHADERS))
 
 # Prepends BUILD_DIR and appends .o to every src file
@@ -33,20 +33,16 @@ CFLAGS := $(INC_FLAGS) -MMD -MP -D $(BUILD)
 
 LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
-.PHONY: clean test
 
 # The final build step.
-$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS)
+$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS) clean
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
 	
 # Shaders
-$(BUILD_DIR)/shaders/%.vert.spv: $(SHADER_DIR)/%.vert 
+$(BUILD_DIR)/shaders/%.spv: $(SHADER_DIR)/%.glsl 
 	mkdir -p $(dir $@)
 	glslc $< -o $@  
 
-$(BUILD_DIR)/shaders/%.frag.spv: $(SHADER_DIR)/%.frag 
-	mkdir -p $(dir $@)
-	glslc $< -o $@  
 
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
@@ -66,6 +62,7 @@ test: $(BUILD_DIR)/$(TARGET_EXEC)
 	cd ..;
 	
 
+.PHONY: clean test
 
 # Include the .d makefiles. The - at the front suppresses the errors of missing
 # Makefiles. Initially, all the .d files will be missing, and we don't want those
