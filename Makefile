@@ -10,7 +10,7 @@ SHADER_DIR := ./shaders
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. The shell will incorrectly expand these otherwise, but we want to send the * directly to the find command.
 SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-SHADERS := $(shell find $(SHADER_DIRS) -name '*.glsl')
+SHADERS := $(shell find $(SHADER_DIRS) -name '*.vert' -o -name '*.frag')
 SHADER_NAMES := $(notdir $(SHADERS))
 
 # Prepends BUILD_DIR and appends .o to every src file
@@ -35,11 +35,11 @@ LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -
 
 
 # The final build step.
-$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS) clean
+$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
 	
 # Shaders
-$(BUILD_DIR)/shaders/%.spv: $(SHADER_DIR)/%.glsl 
+$(BUILD_DIR)/shaders/%.spv: $(SHADER_DIR)/% 
 	mkdir -p $(dir $@)
 	glslc $< -o $@  
 
