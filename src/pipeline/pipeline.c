@@ -176,6 +176,8 @@ ErrorCode CreatePipeline(VulkanDevice* d, VulkanContext* c, VulkanShader* s, Vul
         SR_LOG_ERR("Failed to Create Graphics Pipeline");
         return SR_CREATE_FAIL;
     }
+
+    p->pass = con->pass;
     SR_LOG_DEB("Graphics Pipeline Created");
     return SR_NO_ERROR;
 }

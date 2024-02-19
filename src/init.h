@@ -19,6 +19,11 @@ typedef struct {
 } VulkanContext;
 
 typedef struct {
+    optional(uint32_t) graphicsFamily;
+    optional(uint32_t) presentFamily;
+} QueueFamilyIndicies;
+
+typedef struct {
     VkSurfaceCapabilitiesKHR capabilities;
     uint32_t formatCount;
     uint32_t modeCount;
@@ -34,10 +39,6 @@ typedef struct {
     SwapChainDetails swapDetails;
 } VulkanDevice;
 
-typedef struct {
-    optional(uint32_t) graphicsFamily;
-    optional(uint32_t) presentFamily;
-} QueueFamilyIndicies;
 
 static const char* validationLayers[] = {
     "VK_LAYER_KHRONOS_validation"

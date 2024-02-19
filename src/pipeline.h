@@ -32,6 +32,7 @@ typedef struct {
     VkViewport view;
     VkRect2D scissor;
     VkPipeline pipeline;
+    VkRenderPass pass;
 } VulkanPipeline;
 
 void DestroyShaderProg(VkDevice d, VulkanShader* s);
