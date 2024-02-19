@@ -80,19 +80,20 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     VkPipelineColorBlendAttachmentState blendInfo = {0};
     blendInfo.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendInfo.blendEnable = VK_FALSE;
-    //blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    //blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    //blendInfo.colorBlendOp = VK_BLEND_OP_ADD;
-    //blendInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    //blendInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    //blendInfo.alphaBlendOp = VK_BLEND_OP_ADD;
+    blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    blendInfo.colorBlendOp = VK_BLEND_OP_ADD;
+    blendInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    blendInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    blendInfo.alphaBlendOp = VK_BLEND_OP_ADD;
+    p->colorattachment = blendInfo;
 
     VkPipelineColorBlendStateCreateInfo blendStateInfo = {0};
     blendStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     blendStateInfo.logicOpEnable = VK_FALSE;
     blendStateInfo.logicOp = VK_LOGIC_OP_COPY;
     blendStateInfo.attachmentCount = 1;
-    blendStateInfo.pAttachments = &blendInfo;
+    blendStateInfo.pAttachments = &p->colorattachment;
     blendStateInfo.blendConstants[0] = 0.0f;
     blendStateInfo.blendConstants[1] = 0.0f;
     blendStateInfo.blendConstants[2] = 0.0f;

@@ -25,6 +25,7 @@ typedef struct {
     VkPipelineRasterizationStateCreateInfo raster;
     VkPipelineMultisampleStateCreateInfo multisample;
     VkPipelineColorBlendStateCreateInfo colorState;
+    VkPipelineColorBlendAttachmentState colorattachment;
     VkPipelineShaderStageCreateInfo stages[2];
 } VulkanPipelineConfig;
 
@@ -33,6 +34,7 @@ typedef struct {
     VkRect2D scissor;
     VkPipeline pipeline;
     VkRenderPass pass;
+
 } VulkanPipeline;
 
 void DestroyShaderProg(VkDevice d, VulkanShader* s);
