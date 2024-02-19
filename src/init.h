@@ -36,12 +36,13 @@ typedef struct {
     VkDevice l;
     VkQueue graph;
     VkQueue present;
+    QueueFamilyIndicies indicies;
     SwapChainDetails swapDetails;
 } VulkanDevice;
 
 
 static const char* validationLayers[] = {
-    "VK_LAYER_KHRONOS_validation"
+    "VK_LAYER_KHRONOS_validation", 
 };
 
 static const char* deviceExtensions[] = {

@@ -80,12 +80,12 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     VkPipelineColorBlendAttachmentState blendInfo = {0};
     blendInfo.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendInfo.blendEnable = VK_FALSE;
-    blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    blendInfo.colorBlendOp = VK_BLEND_OP_ADD;
-    blendInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    blendInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    blendInfo.alphaBlendOp = VK_BLEND_OP_ADD;
+    //blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    //blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    //blendInfo.colorBlendOp = VK_BLEND_OP_ADD;
+    //blendInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    //blendInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    //blendInfo.alphaBlendOp = VK_BLEND_OP_ADD;
 
     VkPipelineColorBlendStateCreateInfo blendStateInfo = {0};
     blendStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -133,6 +133,14 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     subDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subDescription.colorAttachmentCount = 1;
     subDescription.pColorAttachments = &colorAttachRef;
+
+    VkSubpassDependency dependency = {0};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     
     VkRenderPassCreateInfo renderInfo = {0};
     renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -140,6 +148,8 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     renderInfo.pAttachments = &colorAttachment;
     renderInfo.subpassCount = 1;
     renderInfo.pSubpasses = &subDescription;
+    renderInfo.dependencyCount = 1;
+    renderInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(d->l, &renderInfo, NULL, &p->pass) != VK_SUCCESS) {
         SR_LOG_WAR("Failed to Create Render Pass");

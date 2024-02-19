@@ -64,7 +64,7 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
     uint32_t extensionsFound = 0;
     for (int i = 0; i < ARRAY_SIZE(props); ++i) {
         for (int j = 0; j < ARRAY_SIZE(deviceExtensions); ++j) {
-            if (strcmp(props[i].extensionName, deviceExtensions[j])) {
+            if (strcmp(props[i].extensionName, deviceExtensions[j]) == 0) {
                 extensionsFound += 1;
             }
             if (extensionsFound == ARRAY_SIZE(deviceExtensions)) break;
@@ -181,5 +181,6 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
 
     vkGetDeviceQueue(d->l, indicies.graphicsFamily.val, 0, &d->graph);
     vkGetDeviceQueue(d->l, indicies.presentFamily.val, 0, &d->present);
+    d->indicies = indicies;
     return SR_NO_ERROR;
 }

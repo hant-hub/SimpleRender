@@ -11,11 +11,10 @@
 
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
     
-    QueueFamilyIndicies indicies = findQueueFamilies(d->p, c->surface);
     VkCommandPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = indicies.graphicsFamily.val;
+    poolInfo.queueFamilyIndex = d->indicies.graphicsFamily.val;
 
     if (vkCreateCommandPool(d->l, &poolInfo, NULL, &cmd->pool) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Command Pool");
@@ -35,6 +34,22 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
         return SR_CREATE_FAIL;
     }
     SR_LOG_DEB("Created Command Buffers");
+
+
+    VkFenceCreateInfo fenceInfo = {0};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    VkSemaphoreCreateInfo semaphoreInfo = {0};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateFence(d->l, &fenceInfo, NULL, &cmd->inFlight) != VK_SUCCESS ||
+        vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->imageAvalible) != VK_SUCCESS ||
+        vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->renderFinished) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Create all Sync Objects");
+        return SR_CREATE_FAIL;
+    }
+    SR_LOG_DEB("Sync Objects Created");
 
     return SR_NO_ERROR;
 }
@@ -88,13 +103,18 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cm
         SR_LOG_ERR("Failed to End Command Buffer");
         return SR_CREATE_FAIL;
     }
-    SR_LOG_DEB("Command Buffer recorded");
+    //SR_LOG_DEB("Command Buffer recorded");
 
     return SR_NO_ERROR;
 }
 
 
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d){
+    vkDestroyFence(d->l, cmd->inFlight, NULL);
+    vkDestroySemaphore(d->l, cmd->renderFinished, NULL);
+    vkDestroySemaphore(d->l, cmd->imageAvalible, NULL);
+    SR_LOG_DEB("Destroyed Sync Objects");
+
     vkDestroyCommandPool(d->l, cmd->pool, NULL);
     SR_LOG_DEB("Destroyed Command Pool");
 }
