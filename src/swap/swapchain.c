@@ -29,6 +29,7 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
     if (capabilities.currentExtent.width != UINT32_MAX) {
         s->extent = capabilities.currentExtent;
     } else {
+        SR_LOG_DEB("unlimited");
         int width, height;
         glfwGetFramebufferSize(c->w, &width, &height);
 

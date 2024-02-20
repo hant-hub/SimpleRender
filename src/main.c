@@ -4,14 +4,16 @@
 #include "log.h"
 #include "pipeline.h"
 #include "swap.h"
+#include "util.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <vulkan/vulkan_core.h>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+static uint32_t WIDTH = 800;
+static uint32_t HEIGHT = 600;
 
+static bool frameBufferResized;
 
 static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device, SwapChain* swap,
                      VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd) {
@@ -27,13 +29,35 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
     glfwTerminate();
 }
 
-static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
+static void ResizeCallback(GLFWwindow* window, int width, int height) {
+    WIDTH = width;
+    HEIGHT = height;
+    frameBufferResized = TRUE;
+}
+
+static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, VulkanContext* context, VulkanShader* s,
+                      VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
-    vkResetFences(device->l, 1, &cmd->inFlight[frame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device->l, swapchain->swapChain, UINT64_MAX, cmd->imageAvalible[frame], NULL, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(device->l, swapchain->swapChain, UINT64_MAX, cmd->imageAvalible[frame], NULL, &imageIndex);
 
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+
+        vkDeviceWaitIdle(device->l);
+        DestroySwapChain(device->l, swapchain);
+
+        ErrorCode code = CreateSwapChain(device, context, swapchain, NULL);
+        if (code != SR_NO_ERROR) return;
+        code = CreateFrameBuffers(device, swapchain, config);
+        if (code != SR_NO_ERROR) return;
+
+
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        SR_LOG_ERR("Bad things are happening");
+    }
+
+    vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
     RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], imageIndex);
 
@@ -69,7 +93,23 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, SwapChain* swapc
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(device->present, &presentInfo);
+    result = vkQueuePresentKHR(device->present, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR ||
+        result == VK_SUBOPTIMAL_KHR ||
+        frameBufferResized) {
+
+        frameBufferResized = FALSE;
+        vkDeviceWaitIdle(device->l);
+        DestroySwapChain(device->l, swapchain);
+
+        ErrorCode code = CreateSwapChain(device, context, swapchain, NULL);
+        if (code != SR_NO_ERROR) return;
+        code = CreateFrameBuffers(device, swapchain, config);
+        if (code != SR_NO_ERROR) return;
+
+    } else if (result != VK_SUCCESS) {
+        SR_LOG_ERR("Bad things are happening");
+    }
 }
 
 int main() {
@@ -77,9 +117,10 @@ int main() {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "SimpleRender", NULL, NULL);
+    glfwSetFramebufferSizeCallback(window, ResizeCallback);
 
     VulkanContext context = {0};
     VulkanDevice device = {0};
@@ -131,7 +172,7 @@ int main() {
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        DrawFrame(&device, &cmd, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        DrawFrame(&device, &cmd, &context, &shader, &config, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         frameCounter = frameCounter + 1;
     }
 
