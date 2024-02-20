@@ -27,6 +27,51 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
     glfwTerminate();
 }
 
+static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
+    vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
+    vkResetFences(device->l, 1, &cmd->inFlight[frame]);
+
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(device->l, swapchain->swapChain, UINT64_MAX, cmd->imageAvalible[frame], NULL, &imageIndex);
+
+    vkResetCommandBuffer(cmd->buffer[frame], 0);
+    RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], imageIndex);
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {cmd->imageAvalible[frame]};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd->buffer[frame];
+
+    VkSemaphore signalSemaphores[] = {cmd->renderFinished[frame]};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(device->graph, 1, &submitInfo, cmd->inFlight[frame]) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Submit Queue");
+        return;
+    }
+
+    VkPresentInfoKHR presentInfo = {0};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = {swapchain->swapChain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    vkQueuePresentKHR(device->present, &presentInfo);
+}
+
 int main() {
 
     glfwInit();
@@ -83,51 +128,11 @@ int main() {
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
 
 
-
+    unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        vkWaitForFences(device.l, 1, &cmd.inFlight, VK_TRUE, UINT64_MAX);
-        vkResetFences(device.l, 1, &cmd.inFlight);
-
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(device.l, swapchain.swapChain, UINT64_MAX, cmd.imageAvalible, NULL, &imageIndex);
-
-        vkResetCommandBuffer(cmd.buffer, 0);
-        RecordCommandBuffer(&swapchain, &pipeline, &cmd, imageIndex);
-
-        VkSubmitInfo submitInfo = {0};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore waitSemaphores[] = {cmd.imageAvalible};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &cmd.buffer;
-
-        VkSemaphore signalSemaphores[] = {cmd.renderFinished};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        if (vkQueueSubmit(device.graph, 1, &submitInfo, cmd.inFlight) != VK_SUCCESS) {
-            SR_LOG_ERR("Failed to Submit Queue");
-            return 1;
-        }
-
-        VkPresentInfoKHR presentInfo = {0};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {swapchain.swapChain};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-
-        vkQueuePresentKHR(device.present, &presentInfo);
+        DrawFrame(&device, &cmd, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        frameCounter = frameCounter + 1;
     }
 
     vkDeviceWaitIdle(device.l);

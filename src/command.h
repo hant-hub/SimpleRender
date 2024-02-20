@@ -7,17 +7,20 @@
 #include "pipeline.h"
 #include "swap.h"
 
+#define SR_MAX_FRAMES_IN_FLIGHT 2
+
 typedef struct {
     VkCommandPool pool;
-    VkCommandBuffer buffer;
-    VkSemaphore imageAvalible;
-    VkSemaphore renderFinished;
-    VkFence inFlight;
+    VkCommandBuffer buffer[SR_MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore imageAvalible[SR_MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore renderFinished[SR_MAX_FRAMES_IN_FLIGHT];
+    VkFence inFlight[SR_MAX_FRAMES_IN_FLIGHT];
 } VulkanCommand;
 
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cmd, uint32_t imageIndex); 
+ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VkCommandBuffer* buffer, uint32_t imageIndex); 
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);
+
 
 
 

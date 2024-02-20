@@ -27,9 +27,9 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = cmd->pool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = SR_MAX_FRAMES_IN_FLIGHT;
 
-    if (vkAllocateCommandBuffers(d->l, &allocInfo, &cmd->buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(d->l, &allocInfo, cmd->buffer) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Allocate Command Buffer");
         return SR_CREATE_FAIL;
     }
@@ -43,11 +43,13 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
     VkSemaphoreCreateInfo semaphoreInfo = {0};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    if (vkCreateFence(d->l, &fenceInfo, NULL, &cmd->inFlight) != VK_SUCCESS ||
-        vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->imageAvalible) != VK_SUCCESS ||
-        vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->renderFinished) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Create all Sync Objects");
-        return SR_CREATE_FAIL;
+    for (unsigned int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateFence(d->l, &fenceInfo, NULL, &cmd->inFlight[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->imageAvalible[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->renderFinished[i]) != VK_SUCCESS) {
+            SR_LOG_ERR("Failed to Create all Sync Objects");
+            return SR_CREATE_FAIL;
+        }
     }
     SR_LOG_DEB("Sync Objects Created");
 
@@ -55,13 +57,13 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
 }
 
 
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cmd, uint32_t imageIndex) {
+ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VkCommandBuffer* buffer, uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = NULL;
 
-    if (vkBeginCommandBuffer(cmd->buffer, &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(*buffer, &beginInfo) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Begin Command Buffer");
         return SR_CREATE_FAIL;
     }
@@ -77,9 +79,9 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cm
     renderInfo.clearValueCount = 1;
     renderInfo.pClearValues = &clearColor;
 
-    vkCmdBeginRenderPass(cmd->buffer, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(*buffer, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(cmd->buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipeline);
+    vkCmdBindPipeline(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipeline);
 
     VkViewport viewport = {0};
     viewport.x = 0.0f;
@@ -88,18 +90,18 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cm
     viewport.height = s->extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(cmd->buffer, 0, 1, &viewport);
+    vkCmdSetViewport(*buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset = (VkOffset2D){0, 0};
     scissor.extent = s->extent;
-    vkCmdSetScissor(cmd->buffer, 0, 1, &scissor);
+    vkCmdSetScissor(*buffer, 0, 1, &scissor);
 
-    vkCmdDraw(cmd->buffer, 3, 1, 0, 0);
-    vkCmdEndRenderPass(cmd->buffer);
+    vkCmdDraw(*buffer, 3, 1, 0, 0);
+    vkCmdEndRenderPass(*buffer);
 
 
-    if (vkEndCommandBuffer(cmd->buffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(*buffer) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to End Command Buffer");
         return SR_CREATE_FAIL;
     }
@@ -110,10 +112,13 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanCommand* cm
 
 
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d){
-    vkDestroyFence(d->l, cmd->inFlight, NULL);
-    vkDestroySemaphore(d->l, cmd->renderFinished, NULL);
-    vkDestroySemaphore(d->l, cmd->imageAvalible, NULL);
+    for (unsigned int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyFence(d->l, cmd->inFlight[i], NULL);
+        vkDestroySemaphore(d->l, cmd->renderFinished[i], NULL);
+        vkDestroySemaphore(d->l, cmd->imageAvalible[i], NULL);
+    }
     SR_LOG_DEB("Destroyed Sync Objects");
+
 
     vkDestroyCommandPool(d->l, cmd->pool, NULL);
     SR_LOG_DEB("Destroyed Command Pool");
