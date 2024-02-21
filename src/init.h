@@ -60,4 +60,6 @@ void DestroyDevice(VulkanDevice* d);
 ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context);
 
 
+ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s);
+
 #endif

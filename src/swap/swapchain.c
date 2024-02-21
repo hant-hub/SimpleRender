@@ -11,6 +11,9 @@
 
 
 ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old) {
+
+    querySwapDetails(&d->swapDetails, d->p, c->surface);
+
     //Pick Format
     s->format = d->swapDetails.formats[0];
     for (int i = 0; i < d->swapDetails.formatCount; i++) {
@@ -33,8 +36,8 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
         int width, height;
         glfwGetFramebufferSize(c->w, &width, &height);
 
-        s->extent.width = clampi(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.height);
-        s->extent.height = clampi(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        s->extent.width = (uint32_t)clampi((uint32_t)width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        s->extent.height = (uint32_t)clampi((uint32_t)height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     }
     s->imgCount = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && s->imgCount > capabilities.maxImageCount) {
