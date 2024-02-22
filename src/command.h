@@ -5,6 +5,7 @@
 #include "error.h"
 #include "init.h"
 #include "pipeline.h"
+#include "vertex.h"
 #include "swap.h"
 
 #define SR_MAX_FRAMES_IN_FLIGHT 2
@@ -18,7 +19,7 @@ typedef struct {
 } VulkanCommand;
 
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VkCommandBuffer* buffer, uint32_t imageIndex); 
+ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VkCommandBuffer* buffer, VertexBuffer* verts, uint32_t imageIndex);
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);
 
 

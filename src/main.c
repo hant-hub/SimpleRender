@@ -5,6 +5,7 @@
 #include "pipeline.h"
 #include "swap.h"
 #include "util.h"
+#include "vertex.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,9 +16,16 @@ static uint32_t HEIGHT = 600;
 
 static bool frameBufferResized;
 
+static const Vertex verticies[] = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+
 static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device, SwapChain* swap,
-                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd) {
+                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, VertexBuffer* buffer) {
     
+    DestroyBuffer(device->l, buffer);
     DestroyCommand(cmd, device);
     DestroyPipeline(device->l, pipeline);
     DestroyShaderProg(device->l, shader);
@@ -27,6 +35,7 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
     DestroyContext(context);
     glfwDestroyWindow(window);
     glfwTerminate();
+    exit(1);
 }
 
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
@@ -35,8 +44,9 @@ static void ResizeCallback(GLFWwindow* window, int width, int height) {
     frameBufferResized = TRUE;
 }
 
-static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, VulkanContext* context, VulkanShader* s,
+static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, VertexBuffer* buffer, VulkanContext* context, VulkanShader* s,
                       VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
+
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
@@ -59,7 +69,7 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, VulkanContext* c
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
-    RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], imageIndex);
+    RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], buffer, imageIndex);
 
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -129,54 +139,58 @@ int main() {
     VulkanPipelineConfig config = {0};
     VulkanPipeline pipeline = {0};
     VulkanCommand cmd = {0};
+    VertexBuffer buffer = {0};
 
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
     context.w = window;
 
     result = CreateSurface(&context, window);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
     result = CreateDevices(&device, &context);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
     result = CreateSwapChain(&device, &context, &swapchain, VK_NULL_HANDLE);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
     
     result = CreateShaderProg(device.l, "shaders/standard.vert.spv", "shaders/standard.frag.spv", &shader);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
     result = CreatePipelineConfig(&device, &context, swapchain.format.format, &shader, &config);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
     result = CreateFrameBuffers(&device, &swapchain, &config);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
-
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
     
     result = CreatePipeline(&device, &context, &shader, &config, &pipeline);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
     result = CreateCommand(&cmd, &context, &device);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+
+    result = CreateVertexBuffer(&buffer, verticies, sizeof(verticies), &device);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        DrawFrame(&device, &cmd, &context, &shader, &config, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         frameCounter = frameCounter + 1;
     }
 
     vkDeviceWaitIdle(device.l);
-    ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd);
+    ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
     return 0;
 }

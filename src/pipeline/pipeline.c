@@ -3,6 +3,7 @@
 #include "init.h"
 #include "log.h"
 #include "util.h"
+#include "vertex.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <vulkan/vulkan_core.h>
@@ -32,10 +33,10 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
 
     VkPipelineVertexInputStateCreateInfo vertInputInfo = {0};
     vertInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertInputInfo.vertexBindingDescriptionCount = 0;
-    vertInputInfo.pVertexBindingDescriptions = NULL;
-    vertInputInfo.vertexAttributeDescriptionCount = 0;
-    vertInputInfo.pVertexAttributeDescriptions = NULL;
+    vertInputInfo.vertexBindingDescriptionCount = 1;
+    vertInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertInputInfo.vertexAttributeDescriptionCount = 2;
+    vertInputInfo.pVertexAttributeDescriptions = attrDescription;
     p->vertInput = vertInputInfo;
 
     VkPipelineInputAssemblyStateCreateInfo assemInfo = {0};
