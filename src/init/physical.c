@@ -92,8 +92,6 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
 
 
 void DestroyDevice(VulkanDevice* d) {
-    free(d->swapDetails.formats);
-    free(d->swapDetails.modes);
 
     vkDestroyDevice(d->l, NULL);
     SR_LOG_DEB("Logical Device Destroyed");

@@ -12,14 +12,15 @@
 
 ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old) {
 
-    querySwapDetails(&d->swapDetails, d->p, c->surface);
+    SwapChainDetails swapDetails;
+    querySwapDetails(&swapDetails, d->p, c->surface);
 
     //Pick Format
-    s->format = d->swapDetails.formats[0];
-    for (int i = 0; i < d->swapDetails.formatCount; i++) {
-        if (d->swapDetails.formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && 
-            d->swapDetails.formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            s->format = d->swapDetails.formats[i];
+    s->format = swapDetails.formats[0];
+    for (int i = 0; i < swapDetails.formatCount; i++) {
+        if (swapDetails.formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && 
+            swapDetails.formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            s->format = swapDetails.formats[i];
             break;
         }
     }
@@ -28,7 +29,7 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
     s->mode = VK_PRESENT_MODE_FIFO_KHR;
 
     //pick Extent
-    VkSurfaceCapabilitiesKHR capabilities = d->swapDetails.capabilities;
+    VkSurfaceCapabilitiesKHR capabilities = swapDetails.capabilities;
     if (capabilities.currentExtent.width != UINT32_MAX) {
         s->extent = capabilities.currentExtent;
     } else {
@@ -43,6 +44,8 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
     if (capabilities.maxImageCount > 0 && s->imgCount > capabilities.maxImageCount) {
         s->imgCount = capabilities.maxImageCount;
     }
+    free(swapDetails.formats);
+    free(swapDetails.modes);
 
     //Create Swapchain
     VkSwapchainCreateInfoKHR swapInfo = {0};

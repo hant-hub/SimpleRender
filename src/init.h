@@ -37,7 +37,6 @@ typedef struct {
     VkQueue graph;
     VkQueue present;
     QueueFamilyIndicies indicies;
-    SwapChainDetails swapDetails;
 } VulkanDevice;
 
 
