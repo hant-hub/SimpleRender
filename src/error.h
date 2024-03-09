@@ -1,6 +1,7 @@
 #ifndef SR_ERROR_H
 #define SR_ERROR_H
 
+
 typedef enum {
     SR_NO_ERROR = 0,
     SR_CREATE_FAIL,

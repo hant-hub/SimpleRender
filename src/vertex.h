@@ -2,10 +2,12 @@
 #define SR_VERTEX_H
 #include "vec2.h"
 #include "vec3.h"
+#include "mat4x4.h"
 #include "error.h"
 #include "init.h"
 #include <vulkan/vulkan_core.h>
 
+typedef struct VulkanCommand VulkanCommand;
 
 typedef struct {
     vec2float pos;
@@ -16,7 +18,20 @@ typedef struct {
     VkBuffer buf;
     uint32_t size;
     VkDeviceMemory mem;
-} VertexBuffer;
+} Buffer;
+
+typedef struct {
+    Buffer vertexBuffer;
+    Buffer indexBuffer;
+    uint32_t indexCount;
+} GeometryBuffer;
+
+
+typedef struct {
+    mat4x4_float model;
+    mat4x4_float view;
+    mat4x4_float proj;
+} UniformBuffer;
 
 static const VkVertexInputBindingDescription bindingDescription = {
     0,                              //binding
@@ -42,7 +57,7 @@ static const VkVertexInputAttributeDescription attrDescription[2] = {
 };
 
 
-ErrorCode CreateVertexBuffer(VertexBuffer* buffer, const void* data, uint32_t bufSize, VulkanDevice* d);
-void DestroyBuffer(VkDevice d, VertexBuffer* buffer);
+ErrorCode CreateStaticGeometry(GeometryBuffer* buffer, const void* verticies, const void* indicies, uint32_t vertSize, uint32_t indSize, VulkanDevice* d, VulkanCommand* c);
+void DestroyBuffer(VkDevice d, GeometryBuffer* buffer);
 
 #endif

@@ -17,13 +17,18 @@ static uint32_t HEIGHT = 600;
 static bool frameBufferResized;
 
 static const Vertex verticies[] = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+static const uint16_t indicies[] = {
+    0, 1, 2, 2, 3, 0
 };
 
 static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device, SwapChain* swap,
-                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, VertexBuffer* buffer) {
+                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer) {
     
     DestroyBuffer(device->l, buffer);
     DestroyCommand(cmd, device);
@@ -44,7 +49,7 @@ static void ResizeCallback(GLFWwindow* window, int width, int height) {
     frameBufferResized = TRUE;
 }
 
-static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, VertexBuffer* buffer, VulkanContext* context, VulkanShader* s,
+static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer, VulkanContext* context, VulkanShader* s,
                       VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
@@ -139,7 +144,7 @@ int main() {
     VulkanPipelineConfig config = {0};
     VulkanPipeline pipeline = {0};
     VulkanCommand cmd = {0};
-    VertexBuffer buffer = {0};
+    GeometryBuffer buffer = {0};
 
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
@@ -178,7 +183,7 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
-    result = CreateVertexBuffer(&buffer, verticies, sizeof(verticies), &device);
+    result = CreateStaticGeometry(&buffer, verticies, indicies, sizeof(verticies), sizeof(indicies), &device, &cmd);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
 
