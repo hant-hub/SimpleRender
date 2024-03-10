@@ -12,7 +12,7 @@ layout(binding = 0) uniform UniformBuffer {
 } ub;
 
 void main() {
-    gl_Position = vec4(inPosition, 0.0, 1.0);
+    gl_Position = ub.proj * ub.view * ub.model * vec4(inPosition, 0.0, 1.0);
     fragColor = inColor;
 }
 

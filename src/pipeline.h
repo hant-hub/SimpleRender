@@ -16,6 +16,7 @@ typedef struct {
 
 typedef struct {
     VkRenderPass pass;
+    VkDescriptorSetLayout descriptors;
     VkPipelineLayout layout;
     VkDynamicState states[2];
     VkPipelineDynamicStateCreateInfo dynamic;

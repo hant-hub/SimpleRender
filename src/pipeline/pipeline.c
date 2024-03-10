@@ -101,11 +101,20 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     blendStateInfo.blendConstants[3] = 0.0f;
     p->colorState = blendStateInfo;
 
+    VkDescriptorSetLayoutCreateInfo descriptorInfo = {0};
+    descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorInfo.bindingCount = 1;
+    descriptorInfo.pBindings = &uboLayoutBinding;
+
+    if (vkCreateDescriptorSetLayout(d->l, &descriptorInfo, NULL, &p->descriptors) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Create Descriptor Layout");
+        return SR_CREATE_FAIL;
+    }
 
     VkPipelineLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.setLayoutCount = 0;
-    layoutInfo.pSetLayouts = NULL;
+    layoutInfo.setLayoutCount = 1;
+    layoutInfo.pSetLayouts = &p->descriptors;
     layoutInfo.pushConstantRangeCount = 0;
     layoutInfo.pPushConstantRanges = NULL;
 
@@ -113,6 +122,8 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
         SR_LOG_ERR("Failed to Create Pipeline Layout");
         return SR_CREATE_FAIL;
     }
+
+
 
     //Make RenderPass
     VkAttachmentDescription colorAttachment = {0};
@@ -200,6 +211,7 @@ void DestroyShaderProg(VkDevice d, VulkanShader* s) {
 }
 
 void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p) {
+    vkDestroyDescriptorSetLayout(d, p->descriptors, NULL);
     vkDestroyPipelineLayout(d, p->layout, NULL);
     vkDestroyRenderPass(d, p->pass, NULL);
     SR_LOG_DEB("Pipeline Config Destroyed");

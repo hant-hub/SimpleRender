@@ -39,6 +39,14 @@ static const VkVertexInputBindingDescription bindingDescription = {
     VK_VERTEX_INPUT_RATE_VERTEX     //Input Rate
 };
 
+static const VkDescriptorSetLayoutBinding uboLayoutBinding = {
+    0,                                      //Binding
+    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,      //type
+    1,                                      //Count
+    VK_SHADER_STAGE_VERTEX_BIT,             //stage flag
+    NULL                                    //Samplers
+};
+
 static const VkVertexInputAttributeDescription attrDescription[2] = {
     //Position
     {
