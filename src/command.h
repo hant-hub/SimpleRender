@@ -8,7 +8,6 @@
 #include "vertex.h"
 #include "swap.h"
 
-#define SR_MAX_FRAMES_IN_FLIGHT 2
 
 typedef struct VulkanCommand {
     VkCommandPool pool;

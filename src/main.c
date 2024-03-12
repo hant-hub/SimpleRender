@@ -2,6 +2,7 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
+#include "mat4x4.h"
 #include "pipeline.h"
 #include "swap.h"
 #include "util.h"
@@ -9,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <vulkan/vulkan_core.h>
 
 static uint32_t WIDTH = 800;
@@ -28,12 +30,14 @@ static const uint16_t indicies[] = {
 };
 
 static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device, SwapChain* swap,
-                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer) {
+                     VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer,
+                     UniformHandles* uniforms) {
     
     DestroyBuffer(device->l, buffer);
     DestroyCommand(cmd, device);
     DestroyPipeline(device->l, pipeline);
     DestroyShaderProg(device->l, shader);
+    DestroyUniformBuffer(device->l, uniforms);
     DestroyPipelineConfig(device->l, config);
     DestroySwapChain(device->l, swap);
     DestroyDevice(device);
@@ -50,7 +54,7 @@ static void ResizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer, VulkanContext* context, VulkanShader* s,
-                      VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, unsigned int frame) {
+                      VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, UniformHandles* uniforms, unsigned int frame) {
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
 
@@ -75,6 +79,15 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
     RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], buffer, imageIndex);
+
+    //update uniforms
+    UniformObj obj = {0};
+    memcpy(&obj.proj, &mat4x4_float_identity, sizeof(float) * 4 * 4);
+    memcpy(&obj.view, &mat4x4_float_identity, sizeof(float) * 4 * 4);
+    memcpy(&obj.model, &mat4x4_float_identity, sizeof(float) * 4 * 4);
+    memcpy(&uniforms->objs[imageIndex], &obj, sizeof(obj));
+
+
 
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -145,57 +158,61 @@ int main() {
     VulkanPipeline pipeline = {0};
     VulkanCommand cmd = {0};
     GeometryBuffer buffer = {0};
+    UniformHandles uniforms = {0};
 
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     context.w = window;
 
     result = CreateSurface(&context, window);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreateDevices(&device, &context);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreateSwapChain(&device, &context, &swapchain, VK_NULL_HANDLE);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     
     result = CreateShaderProg(device.l, "shaders/standard.vert.spv", "shaders/standard.frag.spv", &shader);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreatePipelineConfig(&device, &context, swapchain.format.format, &shader, &config);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreateFrameBuffers(&device, &swapchain, &config);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     
     result = CreatePipeline(&device, &context, &shader, &config, &pipeline);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreateCommand(&cmd, &context, &device);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     result = CreateStaticGeometry(&buffer, verticies, indicies, sizeof(verticies), sizeof(indicies), &device, &cmd);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
+    result = CreateUniformBuffer(&uniforms, &device);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         frameCounter = frameCounter + 1;
     }
 
     vkDeviceWaitIdle(device.l);
-    ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer);
+    ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
 }

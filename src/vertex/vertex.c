@@ -4,6 +4,7 @@
 #include "init.h"
 #include "log.h"
 #include "util.h"
+#include <stddef.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 
@@ -100,6 +101,26 @@ static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size
     vkFreeCommandBuffers(d->l, c->pool, 1, &cmd);
 }
 
+
+ErrorCode CreateUniformBuffer(UniformHandles* handles, VulkanDevice* d) {
+    VkDeviceSize bufSize = sizeof(UniformObj);
+
+    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        CreateBuffer(d, bufSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     &handles->bufs[i], &handles->mem[i]);
+
+        vkMapMemory(d->l, handles->mem[i], 0, bufSize, 0, (void*)&handles->objs[i]);
+    }
+    return SR_NO_ERROR;
+}
+
+void DestroyUniformBuffer(VkDevice d, UniformHandles* handles) {
+    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(d, handles->bufs[i], NULL);
+        vkFreeMemory(d, handles->mem[i], NULL);
+    }
+}
 
 
 ErrorCode CreateStaticGeometry(GeometryBuffer* buffer, const void* verticies, const void* indicies, uint32_t vertSize, uint32_t indSize, VulkanDevice* d, VulkanCommand* c) {

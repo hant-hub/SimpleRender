@@ -9,6 +9,8 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 
+#define SR_MAX_FRAMES_IN_FLIGHT 2
+
 typedef struct {
     GLFWwindow* w;
     VkInstance instance;

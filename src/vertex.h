@@ -31,7 +31,13 @@ typedef struct {
     mat4x4_float model;
     mat4x4_float view;
     mat4x4_float proj;
-} UniformBuffer;
+} UniformObj;
+
+typedef struct {
+    VkBuffer bufs[SR_MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory mem[SR_MAX_FRAMES_IN_FLIGHT];
+    UniformObj objs[SR_MAX_FRAMES_IN_FLIGHT];
+} UniformHandles;
 
 static const VkVertexInputBindingDescription bindingDescription = {
     0,                              //binding
@@ -67,5 +73,10 @@ static const VkVertexInputAttributeDescription attrDescription[2] = {
 
 ErrorCode CreateStaticGeometry(GeometryBuffer* buffer, const void* verticies, const void* indicies, uint32_t vertSize, uint32_t indSize, VulkanDevice* d, VulkanCommand* c);
 void DestroyBuffer(VkDevice d, GeometryBuffer* buffer);
+ErrorCode CreateUniformBuffer(UniformHandles* handles, VulkanDevice* d);
+void DestroyUniformBuffer(VkDevice d, UniformHandles* handles);
+
+
+
 
 #endif
