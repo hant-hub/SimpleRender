@@ -5,6 +5,7 @@
 #include "mat4x4.h"
 #include "error.h"
 #include "init.h"
+#include "pipeline.h"
 #include <vulkan/vulkan_core.h>
 
 typedef struct VulkanCommand VulkanCommand;
@@ -28,15 +29,15 @@ typedef struct {
 
 
 typedef struct {
-    mat4x4_float model;
-    mat4x4_float view;
-    mat4x4_float proj;
+    float model[16];
+    float view[16];
+    float proj[16];
 } UniformObj;
 
 typedef struct {
     VkBuffer bufs[SR_MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory mem[SR_MAX_FRAMES_IN_FLIGHT];
-    UniformObj objs[SR_MAX_FRAMES_IN_FLIGHT];
+    void* objs[SR_MAX_FRAMES_IN_FLIGHT];
 } UniformHandles;
 
 static const VkVertexInputBindingDescription bindingDescription = {
@@ -45,13 +46,6 @@ static const VkVertexInputBindingDescription bindingDescription = {
     VK_VERTEX_INPUT_RATE_VERTEX     //Input Rate
 };
 
-static const VkDescriptorSetLayoutBinding uboLayoutBinding = {
-    0,                                      //Binding
-    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,      //type
-    1,                                      //Count
-    VK_SHADER_STAGE_VERTEX_BIT,             //stage flag
-    NULL                                    //Samplers
-};
 
 static const VkVertexInputAttributeDescription attrDescription[2] = {
     //Position
@@ -73,7 +67,7 @@ static const VkVertexInputAttributeDescription attrDescription[2] = {
 
 ErrorCode CreateStaticGeometry(GeometryBuffer* buffer, const void* verticies, const void* indicies, uint32_t vertSize, uint32_t indSize, VulkanDevice* d, VulkanCommand* c);
 void DestroyBuffer(VkDevice d, GeometryBuffer* buffer);
-ErrorCode CreateUniformBuffer(UniformHandles* handles, VulkanDevice* d);
+ErrorCode CreateUniformBuffer(UniformHandles* handles, VulkanPipelineConfig* config, VulkanDevice* d);
 void DestroyUniformBuffer(VkDevice d, UniformHandles* handles);
 
 

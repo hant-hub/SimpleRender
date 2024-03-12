@@ -37,8 +37,8 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
     DestroyCommand(cmd, device);
     DestroyPipeline(device->l, pipeline);
     DestroyShaderProg(device->l, shader);
-    DestroyUniformBuffer(device->l, uniforms);
     DestroyPipelineConfig(device->l, config);
+    DestroyUniformBuffer(device->l, uniforms);
     DestroySwapChain(device->l, swap);
     DestroyDevice(device);
     DestroyContext(context);
@@ -75,17 +75,30 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* 
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         SR_LOG_ERR("Bad things are happening");
     }
+    UniformObj uniformData = {
+        //model
+        {1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         0, 0, 0, 1},
+        //view
+        {1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         0, 0, 0, 1},
+        //proj
+        {1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         0, 0, 0, 1},
+    };
+    memcpy(uniforms->objs[frame], &uniformData, sizeof(UniformObj));
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
-    RecordCommandBuffer(swapchain, pipe, &cmd->buffer[frame], buffer, imageIndex);
+    RecordCommandBuffer(swapchain, pipe, config, &cmd->buffer[frame], buffer, imageIndex, frame);
 
     //update uniforms
-    UniformObj obj = {0};
-    memcpy(&obj.proj, &mat4x4_float_identity, sizeof(float) * 4 * 4);
-    memcpy(&obj.view, &mat4x4_float_identity, sizeof(float) * 4 * 4);
-    memcpy(&obj.model, &mat4x4_float_identity, sizeof(float) * 4 * 4);
-    memcpy(&uniforms->objs[imageIndex], &obj, sizeof(obj));
 
 
 
@@ -201,15 +214,15 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = CreateUniformBuffer(&uniforms, &device);
+    result = CreateUniformBuffer(&uniforms, &config, &device);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         frameCounter = frameCounter + 1;
+        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
     }
 
     vkDeviceWaitIdle(device.l);

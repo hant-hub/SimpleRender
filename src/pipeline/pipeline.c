@@ -4,6 +4,7 @@
 #include "log.h"
 #include "util.h"
 #include "vertex.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <vulkan/vulkan_core.h>
@@ -100,21 +101,64 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     blendStateInfo.blendConstants[2] = 0.0f;
     blendStateInfo.blendConstants[3] = 0.0f;
     p->colorState = blendStateInfo;
+    
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {0};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = NULL;
 
     VkDescriptorSetLayoutCreateInfo descriptorInfo = {0};
     descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorInfo.bindingCount = 1;
     descriptorInfo.pBindings = &uboLayoutBinding;
 
-    if (vkCreateDescriptorSetLayout(d->l, &descriptorInfo, NULL, &p->descriptors) != VK_SUCCESS) {
+
+    if (vkCreateDescriptorSetLayout(d->l, &descriptorInfo, NULL, &p->descriptorLayout) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Descriptor Layout");
         return SR_CREATE_FAIL;
     }
 
+    VkDescriptorPoolSize poolSize = {0};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+
+    VkDescriptorPoolCreateInfo poolInfo = {0};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+
+    poolInfo.maxSets = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+
+    if (vkCreateDescriptorPool(d->l, &poolInfo, NULL, &p->descriptorPool) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Create Descriptor Pool");
+        return SR_CREATE_FAIL;
+    }
+
+    VkDescriptorSetLayout layouts[] = {
+        p->descriptorLayout,
+        p->descriptorLayout,
+        p->descriptorLayout
+    };
+    VkDescriptorSetAllocateInfo descpAlloc = {0};
+    descpAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descpAlloc.descriptorPool = p->descriptorPool;
+    descpAlloc.descriptorSetCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+    descpAlloc.pSetLayouts = layouts;
+
+    printf("hit\n");
+    if (vkAllocateDescriptorSets(d->l, &descpAlloc, p->descriptorSet) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Create Descriptor Set");
+        return SR_CREATE_FAIL;
+    }
+
+
     VkPipelineLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     layoutInfo.setLayoutCount = 1;
-    layoutInfo.pSetLayouts = &p->descriptors;
+    layoutInfo.pSetLayouts = &p->descriptorLayout;
     layoutInfo.pushConstantRangeCount = 0;
     layoutInfo.pPushConstantRanges = NULL;
 
@@ -211,7 +255,8 @@ void DestroyShaderProg(VkDevice d, VulkanShader* s) {
 }
 
 void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p) {
-    vkDestroyDescriptorSetLayout(d, p->descriptors, NULL);
+    vkDestroyDescriptorPool(d, p->descriptorPool, NULL);
+    vkDestroyDescriptorSetLayout(d, p->descriptorLayout, NULL);
     vkDestroyPipelineLayout(d, p->layout, NULL);
     vkDestroyRenderPass(d, p->pass, NULL);
     SR_LOG_DEB("Pipeline Config Destroyed");

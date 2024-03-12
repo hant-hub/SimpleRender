@@ -18,7 +18,7 @@ typedef struct VulkanCommand {
 } VulkanCommand;
 
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex);
+ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex, uint32_t frame);
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);
 
 

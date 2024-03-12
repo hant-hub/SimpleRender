@@ -16,7 +16,9 @@ typedef struct {
 
 typedef struct {
     VkRenderPass pass;
-    VkDescriptorSetLayout descriptors;
+    VkDescriptorSetLayout descriptorLayout;
+    VkDescriptorPool descriptorPool;
+    VkDescriptorSet descriptorSet[SR_MAX_FRAMES_IN_FLIGHT];
     VkPipelineLayout layout;
     VkDynamicState states[2];
     VkPipelineDynamicStateCreateInfo dynamic;
