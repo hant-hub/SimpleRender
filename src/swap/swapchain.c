@@ -1,13 +1,17 @@
 #include "../swap.h"
-#include "clamp.h"
 #include "error.h"
 #include "init.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "SimpleMath/src/include/misc.h"
 #include "../init.h"
 #include "log.h"
+
+
+static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {
+    const uint32_t t = in < min ? min : in;
+    return t > max ? max : t;
+}
 
 
 ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old) {

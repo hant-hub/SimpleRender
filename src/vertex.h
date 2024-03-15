@@ -2,7 +2,7 @@
 #define SR_VERTEX_H
 #include "vec2.h"
 #include "vec3.h"
-#include "mat4x4.h"
+#include "mat4.h"
 #include "error.h"
 #include "init.h"
 #include "pipeline.h"
@@ -11,8 +11,8 @@
 typedef struct VulkanCommand VulkanCommand;
 
 typedef struct {
-    vec2float pos;
-    vec3float color;
+    sm_vec2f pos;
+    sm_vec3f color;
 } Vertex;
 
 typedef struct {
@@ -29,9 +29,9 @@ typedef struct {
 
 
 typedef struct {
-    float model[16];
-    float view[16];
-    float proj[16];
+    sm_mat4f model;
+    sm_mat4f view;
+    sm_mat4f proj;
 } UniformObj;
 
 typedef struct {

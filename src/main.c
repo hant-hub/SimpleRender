@@ -2,7 +2,7 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
-#include "mat4x4.h"
+#include "mat4.h"
 #include "pipeline.h"
 #include "swap.h"
 #include "util.h"
@@ -75,23 +75,35 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* 
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         SR_LOG_ERR("Bad things are happening");
     }
-    UniformObj uniformData = {
-        //model
-        {1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 1, 0,
-         0, 0, 0, 1},
-        //view
-        {1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 1, 0,
-         0, 0, 0, 1},
-        //proj
-        {1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 1, 0,
-         0, 0, 0, 1},
+
+    static sm_mat4f model = {
+        {1.0f, 0, 0, 0},
+        {0, 1.0f, 0, 0},
+        {0, 0, 1.0f, 0},
+        {0, 0, 0, 1.0f}
     };
+
+
+    sm_mat4f scaler = {
+        {1.0f, 0, 0, 0},
+        {0, 1.0f, 0, 0},
+        {0, 0, 1.0f, 0},
+        {0, 0, 0, 1.0f}
+    };
+
+    sm_vec3f mov = (sm_vec3f) {0.01f, 0, 0};
+
+
+    UniformObj uniformData = {0};
+    sm_mat4_f32_identity(&uniformData.model);
+    sm_mat4_f32_identity(&uniformData.view);
+    sm_mat4_f32_identity(&uniformData.proj);
+
+    sm_mat4_f32_comp(&model, &model, &scaler);
+    sm_mat4_f32_translate(&model, mov);
+    sm_mat4_f32_comp(&uniformData.model, &uniformData.model, &model);
+
+
     memcpy(uniforms->objs[frame], &uniformData, sizeof(UniformObj));
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
