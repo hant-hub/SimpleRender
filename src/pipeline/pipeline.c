@@ -148,7 +148,6 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapF
     descpAlloc.descriptorSetCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
     descpAlloc.pSetLayouts = layouts;
 
-    printf("hit\n");
     if (vkAllocateDescriptorSets(d->l, &descpAlloc, p->descriptorSet) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Descriptor Set");
         return SR_CREATE_FAIL;

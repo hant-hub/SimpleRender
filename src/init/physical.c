@@ -72,6 +72,8 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
         if (extensionsFound == ARRAY_SIZE(deviceExtensions)) break;
     }
 
+    VkPhysicalDeviceFeatures supported;
+    vkGetPhysicalDeviceFeatures(p, &supported);
 
     bool AvalibleFormats = FALSE;
     SwapChainDetails details = {};
@@ -85,7 +87,8 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
     return indicies.graphicsFamily.exist && 
            indicies.presentFamily.exist &&
            (extensionsFound == ARRAY_SIZE(deviceExtensions)) &&
-           AvalibleFormats;
+           AvalibleFormats &&
+           supported.samplerAnisotropy;
 }
 
 
@@ -150,6 +153,7 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
 
 
     VkPhysicalDeviceFeatures deviceFeatures = {0};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo deviceInfo = {0};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

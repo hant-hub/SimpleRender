@@ -5,6 +5,7 @@
 #include "mat4.h"
 #include "pipeline.h"
 #include "swap.h"
+#include "texture.h"
 #include "util.h"
 #include "vertex.h"
 #include "uniform.h"
@@ -185,6 +186,7 @@ int main() {
     VulkanCommand cmd = {0};
     GeometryBuffer buffer = {0};
     UniformHandles uniforms = {0};
+    Texture test = {0};
 
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
@@ -231,6 +233,8 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
+    result = createImage(&device, &cmd, &test);
+
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -238,6 +242,7 @@ int main() {
         DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
     }
 
+    DestroyImage(device.l, &test);
     vkDeviceWaitIdle(device.l);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
