@@ -7,6 +7,7 @@
 #include "swap.h"
 #include "util.h"
 #include "vertex.h"
+#include "uniform.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -33,7 +34,7 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
                      VulkanShader* shader, VulkanPipelineConfig* config, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer,
                      UniformHandles* uniforms) {
     
-    DestroyBuffer(device->l, buffer);
+    DestroyGeometryBuffer(device->l, buffer);
     DestroyCommand(cmd, device);
     DestroyPipeline(device->l, pipeline);
     DestroyShaderProg(device->l, shader);

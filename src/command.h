@@ -17,6 +17,11 @@ typedef struct VulkanCommand {
     VkFence inFlight[SR_MAX_FRAMES_IN_FLIGHT];
 } VulkanCommand;
 
+
+
+VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool);
+void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice* d);
+
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
 ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex, uint32_t frame);
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);

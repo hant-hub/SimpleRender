@@ -131,3 +131,38 @@ void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d){
     vkDestroyCommandPool(d->l, cmd->pool, NULL);
     SR_LOG_DEB("Destroyed Command Pool");
 }
+
+
+
+VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool) {
+    VkCommandBufferAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = pool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer cmd;
+    vkAllocateCommandBuffers(d, &allocInfo, &cmd);
+
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    return cmd;
+}
+
+void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice* d) {
+    vkEndCommandBuffer(cmd);
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+
+    vkQueueSubmit(d->graph, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(d->graph);
+
+    vkFreeCommandBuffers(d->l, pool, 1, &cmd);
+}

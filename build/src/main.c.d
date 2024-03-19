@@ -5,7 +5,8 @@ build/./src/main.c.o: src/main.c src/command.h src/error.h src/init.h \
  lib/SimpleMath/src/include/vec/vec3.h \
  lib/SimpleMath/src/include/common.h \
  lib/SimpleMath/src/include/mat/mat4.h \
- lib/SimpleMath/src/include/vec/vec4.h src/swap.h
+ lib/SimpleMath/src/include/vec/vec4.h src/memory.h src/swap.h \
+ src/uniform.h
 
 src/command.h:
 
@@ -33,4 +34,8 @@ lib/SimpleMath/src/include/mat/mat4.h:
 
 lib/SimpleMath/src/include/vec/vec4.h:
 
+src/memory.h:
+
 src/swap.h:
+
+src/uniform.h:
