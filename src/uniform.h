@@ -8,6 +8,8 @@
 #include "memory.h"
 #include <vulkan/vulkan_core.h>
 
+#include "texture.h"
+
 typedef struct {
     sm_mat4f model;
     sm_mat4f view;
@@ -20,7 +22,7 @@ typedef struct {
     void* objs[SR_MAX_FRAMES_IN_FLIGHT];
 } UniformHandles;
 
-ErrorCode CreateUniformBuffer(UniformHandles* handles, VulkanPipelineConfig* config, VulkanDevice* d);
+ErrorCode CreateUniformBuffer(UniformHandles* handles, Texture* t, VulkanPipelineConfig* config, VulkanDevice* d);
 void DestroyUniformBuffer(VkDevice d, UniformHandles* handles);
 
 

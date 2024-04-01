@@ -13,6 +13,7 @@ typedef struct VulkanCommand VulkanCommand;
 
 typedef struct {
     sm_vec2f pos;
+    sm_vec2f uv;
     sm_vec3f color;
 } Vertex;
 
@@ -31,7 +32,7 @@ static const VkVertexInputBindingDescription bindingDescription = {
 };
 
 
-static const VkVertexInputAttributeDescription attrDescription[2] = {
+static const VkVertexInputAttributeDescription attrDescription[3] = {
     //Position
     {
         0,                          //location
@@ -39,13 +40,20 @@ static const VkVertexInputAttributeDescription attrDescription[2] = {
         VK_FORMAT_R32G32_SFLOAT,    //format
         offsetof(Vertex, pos)       //offset
     },
-    //Color
+    //UV
     {
         1,                          //location
         0,                          //binding
+        VK_FORMAT_R32G32_SFLOAT, //format
+        offsetof(Vertex, uv)     //offset
+    },
+    //Color
+    {
+        2,                          //location
+        0,                          //binding
         VK_FORMAT_R32G32B32_SFLOAT, //format
         offsetof(Vertex, color)     //offset
-    }
+    },
 };
 
 

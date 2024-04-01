@@ -5,6 +5,8 @@
 #include "log.h"
 #include "stb_image.h"
 #include "memory.h"
+#include "fcntl.h"
+#include <stdio.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 
@@ -63,11 +65,13 @@ void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFor
 
 
 ErrorCode createImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
+
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("resouces/textures/texture.jpg",
+    stbi_uc* pixels = stbi_load("resources/textures/texture.jpg",
                                 &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    if (!pixels) 
+    if (pixels == NULL) 
         return SR_LOAD_FAIL;
+    printf("hit\n");
 
     VkDeviceSize imgSize = texWidth * texHeight * 4;
 
@@ -165,7 +169,7 @@ ErrorCode createImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = t->image;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = VK_FORMAT_R8G8B8_SRGB;
+    viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
@@ -211,7 +215,6 @@ ErrorCode createImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
         SR_LOG_ERR("Failed to create Texture Sampler");
         return SR_CREATE_FAIL;
     }
-
 
     return SR_NO_ERROR;
 }

@@ -21,10 +21,11 @@ static uint32_t HEIGHT = 600;
 static bool frameBufferResized;
 
 static const Vertex verticies[] = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+//     Position          UV             Color
+    {{-0.5f, -0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{ 0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
 };
 
 static const uint16_t indicies[] = {
@@ -101,9 +102,9 @@ static void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* 
     sm_mat4_f32_identity(&uniformData.view);
     sm_mat4_f32_identity(&uniformData.proj);
 
-    sm_mat4_f32_comp(&model, &model, &scaler);
-    sm_mat4_f32_translate(&model, mov);
-    sm_mat4_f32_comp(&uniformData.model, &uniformData.model, &model);
+    //sm_mat4_f32_comp(&model, &model, &scaler);
+    //sm_mat4_f32_translate(&model, mov);
+    //sm_mat4_f32_comp(&uniformData.model, &uniformData.model, &model);
 
 
     memcpy(uniforms->objs[frame], &uniformData, sizeof(UniformObj));
@@ -229,11 +230,15 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = CreateUniformBuffer(&uniforms, &config, &device);
+    result = createImage(&device, &cmd, &test);
+    if (result != SR_NO_ERROR) {
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
+    }
+
+    result = CreateUniformBuffer(&uniforms, &test, &config, &device);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = createImage(&device, &cmd, &test);
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
@@ -242,8 +247,8 @@ int main() {
         DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
     }
 
-    DestroyImage(device.l, &test);
     vkDeviceWaitIdle(device.l);
+    DestroyImage(device.l, &test);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
 }

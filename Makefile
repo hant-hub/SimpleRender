@@ -5,12 +5,13 @@ BUILD_DIR := ./build
 SRC_DIRS := ./src
 INC_SEARCH = ./src ./lib
 SHADER_DIR := ./shaders
+RESOURCE_DIR := ./resources
 
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. The shell will incorrectly expand these otherwise, but we want to send the * directly to the find command.
 SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-SHADERS := $(shell find $(SHADER_DIRS) -name '*.vert' -o -name '*.frag')
+SHADERS := $(shell find $(SHADER_DIR) -name '*.vert' -o -name '*.frag')
 SHADER_NAMES := $(notdir $(SHADERS))
 
 # Prepends BUILD_DIR and appends .o to every src file
@@ -35,7 +36,7 @@ LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -
 
 
 # The final build step.
-$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS)
+$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS) resources
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
 	
 # Shaders
@@ -43,6 +44,11 @@ $(BUILD_DIR)/shaders/%.spv: $(SHADER_DIR)/%
 	mkdir -p $(dir $@)
 	glslc $< -o $@  
 
+#resources
+resources :
+	rm -rf $(BUILD_DIR)/resources
+	mkdir -p $(RESOURCE_DIR)
+	cp $(RESOURCE_DIR) -r $(BUILD_DIR)/resources 
 
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
@@ -62,7 +68,7 @@ test: $(BUILD_DIR)/$(TARGET_EXEC)
 	cd ..;
 	
 
-.PHONY: clean test
+.PHONY: clean test resources
 
 # Include the .d makefiles. The - at the front suppresses the errors of missing
 # Makefiles. Initially, all the .d files will be missing, and we don't want those
