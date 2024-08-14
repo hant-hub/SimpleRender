@@ -28,7 +28,7 @@ typedef struct {
 static const VkVertexInputBindingDescription bindingDescription = {
     0,                              //binding
     sizeof(Vertex),                 //Stride
-    VK_VERTEX_INPUT_RATE_VERTEX     //Input Rate
+    VK_VERTEX_INPUT_RATE_VERTEX   //Input Rate
 };
 
 

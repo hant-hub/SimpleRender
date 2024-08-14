@@ -1,9 +1,10 @@
 #include "uniform.h"
+#include "init.h"
 #include <vulkan/vulkan_core.h>
 
 
 ErrorCode CreateUniformBuffer(UniformHandles* handles, Texture* t, VulkanPipelineConfig* config, VulkanDevice* d) {
-    VkDeviceSize bufSize = sizeof(UniformObj);
+    VkDeviceSize bufSize = sizeof(UniformObj) * SR_MAX_INSTANCES;
 
     for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         CreateBuffer(d, bufSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,

@@ -14,7 +14,7 @@ typedef struct {
 } Texture;
 
 
-ErrorCode createImage(VulkanDevice* d, VulkanCommand* c, Texture* t);
+ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t);
 void DestroyImage(VkDevice d, Texture* t);
 
 #endif

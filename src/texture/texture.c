@@ -64,14 +64,13 @@ void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFor
 }
 
 
-ErrorCode createImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
+ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
 
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load("resources/textures/texture.jpg",
                                 &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (pixels == NULL) 
         return SR_LOAD_FAIL;
-    printf("hit\n");
 
     VkDeviceSize imgSize = texWidth * texHeight * 4;
 

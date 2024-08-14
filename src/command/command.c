@@ -58,7 +58,8 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
 }
 
 
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex, uint32_t frame) {
+ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex, uint32_t frame,
+        u32 numSprites) {
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -105,7 +106,7 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineCon
 
     vkCmdBindDescriptorSets(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descriptorSet[frame], 0, NULL);
 
-    vkCmdDrawIndexed(*buffer, verts->indexCount, 1, 0, 0, 0);
+    vkCmdDrawIndexed(*buffer, verts->indexCount, numSprites, 0, 0, 0);
     vkCmdEndRenderPass(*buffer);
 
 

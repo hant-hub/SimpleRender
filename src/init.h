@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #define SR_MAX_FRAMES_IN_FLIGHT 2
+#define SR_MAX_INSTANCES 10
 
 typedef struct {
     GLFWwindow* w;
