@@ -1,6 +1,6 @@
 *.o
 *.d
 src/lib/SimpleMath/*
-.cache/*
+.cache/
 compile_commands.json
-build/*
+build/
