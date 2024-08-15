@@ -1,4 +1,5 @@
 #include "frame.h"
+#include "mat4.h"
 #include "sprite.h"
 
 
@@ -27,30 +28,27 @@ void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer,
         SR_LOG_ERR("Bad things are happening");
     }
 
-    static sm_mat4f model = {
+    static sm_mat4f view = {
         {1.0f, 0, 0, 0},
         {0, 1.0f, 0, 0},
         {0, 0, 1.0f, 0},
         {0, 0, 0, 1.0f}
     };
 
-    static sm_mat4f model2 = {
+    static sm_mat4f proj = {
         {1.0f, 0, 0, 0},
         {0, 1.0f, 0, 0},
         {0, 0, 1.0f, 0},
         {0, 0, 0, 1.0f}
     };
 
-    sm_mat4f scaler = {
-        {1.0f, 0, 0, 0},
-        {0, 1.0f, 0, 0},
-        {0, 0, 1.0f, 0},
-        {0, 0, 0, 1.0f}
-    };
 
-    sm_vec3f mov = (sm_vec3f) {0.01f, 0, 0};
+//    sm_vec3f mov = (sm_vec3f) {0.01f, 0, 0};
+//    sm_mat4_f32_translate(&view, mov);
 
-    PushBuffer(uniforms->objs[frame]);
+    memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
+    memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
+    PushBuffer(uniforms->objs[frame] + sizeof(sm_mat4f) * 2);
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);

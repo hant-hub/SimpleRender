@@ -3,3 +3,4 @@
 src/lib/SimpleMath/*
 .cache/*
 compile_commands.json
+build/*

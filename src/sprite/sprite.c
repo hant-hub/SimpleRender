@@ -87,6 +87,5 @@ sm_mat4f* GetModel(SpriteHandle s) {
 
 
 u32 GetNum() {
-    printf("%d\n", denseSize);
     return denseSize;
 }
