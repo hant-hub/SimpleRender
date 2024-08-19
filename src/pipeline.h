@@ -3,50 +3,44 @@
 
 #include "error.h"
 #include "init.h"
+#include "config.h"
 #include "log.h"
 #include "error.h"
 #include "util.h"
+#include <GLFW/glfw3.h>
+#include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-typedef struct {
-    VkShaderModule vertex;
-    VkShaderModule fragment;
-} VulkanShader;
 
-typedef struct {
-    VkRenderPass pass;
-    VkDescriptorSetLayout descriptorLayout;
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSet descriptorSet[SR_MAX_FRAMES_IN_FLIGHT];
-    VkPipelineLayout layout;
-    VkDynamicState states[2];
-    VkPipelineDynamicStateCreateInfo dynamic;
-    VkPipelineVertexInputStateCreateInfo vertInput;
-    VkPipelineInputAssemblyStateCreateInfo assembly;
-    VkPipelineViewportStateCreateInfo view;
-    VkPipelineRasterizationStateCreateInfo raster;
-    VkPipelineMultisampleStateCreateInfo multisample;
-    VkPipelineColorBlendStateCreateInfo colorState;
-    VkPipelineColorBlendAttachmentState colorattachment;
-    VkPipelineShaderStageCreateInfo stages[2];
-} VulkanPipelineConfig;
 
 typedef struct {
     VkViewport view;
     VkRect2D scissor;
     VkPipeline pipeline;
-    VkRenderPass pass;
-
+    RenderPass* pass;
 } VulkanPipeline;
 
+typedef struct {
+    VkSurfaceFormatKHR format;
+    VkPresentModeKHR mode;
+    VkExtent2D extent;
+    uint32_t imgCount;
+    VkSwapchainKHR swapChain;
+    VkImageView* views;
+    VkFramebuffer* buffers;
+} SwapChain;
+
+
+ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, SwapChain* s, VkSwapchainKHR old);
+//ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r);
+ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, VulkanShader* s);
+ErrorCode CreatePipeline(VulkanDevice* d, VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r);
+
+void DestroySwapChain(VkDevice l, SwapChain* s);
 void DestroyShaderProg(VkDevice d, VulkanShader* s);
-void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p);
 void DestroyPipeline(VkDevice d, VulkanPipeline* p);
 
-ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, VulkanShader* s);
-ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VkFormat swapFormat, VulkanShader* s, VulkanPipelineConfig* p);
-ErrorCode CreatePipeline(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p);
 
 
 

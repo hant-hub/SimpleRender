@@ -1,11 +1,5 @@
-#include "../swap.h"
-#include "error.h"
-#include "init.h"
-#include <GLFW/glfw3.h>
-#include <stdint.h>
-#include <vulkan/vulkan_core.h>
-#include "../init.h"
-#include "log.h"
+#include "config.h"
+#include "pipeline.h"
 
 
 static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {
@@ -13,8 +7,38 @@ static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {
     return t > max ? max : t;
 }
 
+ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
+    s->buffers = (VkFramebuffer*)malloc(s->imgCount*sizeof(VkFramebuffer));
+    for (size_t i = 0; i < s->imgCount; i++) {
+        VkImageView attachments[] = {
+            s->views[i]
+        };
 
-ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwapchainKHR old) {
+        VkFramebufferCreateInfo createInfo = {0};
+        createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        createInfo.renderPass = r->pass;
+        createInfo.attachmentCount = 1;
+        createInfo.pAttachments = attachments;
+        createInfo.width = s->extent.width;
+        createInfo.height = s->extent.height;
+        createInfo.layers = 1;
+
+        if (vkCreateFramebuffer(d->l, &createInfo, NULL, &s->buffers[i]) != VK_SUCCESS) {
+            SR_LOG_ERR("Failed to create Framebuffer");
+            for (int j = 0; j <= i; j--){
+                vkDestroyFramebuffer(d->l, s->buffers[j], NULL);
+            }
+            free(s->buffers);
+            return SR_CREATE_FAIL;
+        }
+    }
+    SR_LOG_DEB("\tFrameBuffers Created");
+
+
+    return SR_NO_ERROR;
+}
+
+ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
 
     SwapChainDetails swapDetails;
     querySwapDetails(&swapDetails, d->p, c->surface);
@@ -128,42 +152,13 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, SwapChain* s, VkSwa
     }
     SR_LOG_DEB("\tImage Views Created");
 
-
-
-    
+    CreateFrameBuffers(d, s, r);
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, VulkanPipelineConfig* c) {
-    s->buffers = (VkFramebuffer*)malloc(s->imgCount*sizeof(VkFramebuffer));
-    for (size_t i = 0; i < s->imgCount; i++) {
-        VkImageView attachments[] = {
-            s->views[i]
-        };
-
-        VkFramebufferCreateInfo createInfo = {0};
-        createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        createInfo.renderPass = c->pass;
-        createInfo.attachmentCount = 1;
-        createInfo.pAttachments = attachments;
-        createInfo.width = s->extent.width;
-        createInfo.height = s->extent.height;
-        createInfo.layers = 1;
-
-        if (vkCreateFramebuffer(d->l, &createInfo, NULL, &s->buffers[i]) != VK_SUCCESS) {
-            SR_LOG_ERR("Failed to create Framebuffer");
-            for (int j = 0; j <= i; j--){
-                vkDestroyFramebuffer(d->l, s->buffers[j], NULL);
-            }
-            free(s->buffers);
-            return SR_CREATE_FAIL;
-        }
-    }
-    SR_LOG_DEB("\tFrameBuffers Created");
 
 
-    return SR_NO_ERROR;
-}
+
 
 void DestroySwapChain(VkDevice l, SwapChain* s) {
     for (int i = 0; i < s->imgCount; i++) {

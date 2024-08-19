@@ -8,15 +8,23 @@
 
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s) {
-    vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, NULL);
-    swapDetails->formats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR) * swapDetails->formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, swapDetails->formats);
-    
-    vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, NULL); 
-    swapDetails->modes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR) * swapDetails->modeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, swapDetails->modes); 
-     
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(p, s, &swapDetails->capabilities);
+    static SwapChainDetails cached = {0};
+    static bool cached_flag = FALSE; 
+
+    if (!cached_flag) {
+        vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, NULL);
+        swapDetails->formats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR) * swapDetails->formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(p, s, &swapDetails->formatCount, swapDetails->formats);
+
+        vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, NULL); 
+        swapDetails->modes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR) * swapDetails->modeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(p, s, &swapDetails->modeCount, swapDetails->modes); 
+
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(p, s, &swapDetails->capabilities);
+        cached = *swapDetails;
+    } else {
+        *swapDetails = cached; 
+    }
 
     return SR_NO_ERROR;
 }

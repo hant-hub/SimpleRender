@@ -3,7 +3,6 @@
 #include "init.h"
 #include "log.h"
 #include "pipeline.h"
-#include "swap.h"
 #include "vertex.h"
 #include <vulkan/vulkan_core.h>
 
@@ -72,7 +71,7 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineCon
     
     VkRenderPassBeginInfo renderInfo = {0};
     renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderInfo.renderPass = p->pass;
+    renderInfo.renderPass = p->pass->pass;
     renderInfo.framebuffer = s->buffers[imageIndex];
     renderInfo.renderArea.offset = (VkOffset2D){0, 0};
     renderInfo.renderArea.extent = s->extent;
@@ -90,21 +89,20 @@ ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineCon
     vkCmdBindVertexBuffers(*buffer, 0, 1, vertBufs, offsets);
     vkCmdBindIndexBuffer(*buffer, verts->indexBuffer.buf, 0, VK_INDEX_TYPE_UINT16); 
 
-    VkViewport viewport = {0};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = s->extent.width;
-    viewport.height = s->extent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(*buffer, 0, 1, &viewport);
+    
+    p->view.x = 0.0f;
+    p->view.y = 0.0f;
+    p->view.width = s->extent.width;
+    p->view.height = s->extent.height;
+    p->view.minDepth = 0.0f;
+    p->view.maxDepth = 1.0f;
+    vkCmdSetViewport(*buffer, 0, 1, &p->view);
 
-    VkRect2D scissor = {0};
-    scissor.offset = (VkOffset2D){0, 0};
-    scissor.extent = s->extent;
-    vkCmdSetScissor(*buffer, 0, 1, &scissor);
+    p->scissor.offset = (VkOffset2D){0, 0};
+    p->scissor.extent = s->extent;
+    vkCmdSetScissor(*buffer, 0, 1, &p->scissor);
 
-    vkCmdBindDescriptorSets(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descriptorSet[frame], 0, NULL);
+    vkCmdBindDescriptorSets(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
 
     vkCmdDrawIndexed(*buffer, verts->indexCount, numSprites, 0, 0, 0);
     vkCmdEndRenderPass(*buffer);

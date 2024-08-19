@@ -1,12 +1,14 @@
 #include "frame.h"
+#include "config.h"
 #include "mat4.h"
+#include "pipeline.h"
 #include "sprite.h"
 
 
 
 
 void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer, VulkanContext* context, VulkanShader* s,
-                      VulkanPipelineConfig* config, SwapChain* swapchain, VulkanPipeline* pipe, UniformHandles* uniforms, unsigned int frame) {
+                      VulkanPipelineConfig* config, RenderPass* pass, SwapChain* swapchain, VulkanPipeline* pipe, UniformHandles* uniforms, unsigned int frame) {
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
 
@@ -18,9 +20,7 @@ void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer,
         vkDeviceWaitIdle(device->l);
         DestroySwapChain(device->l, swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, swapchain, NULL);
-        if (code != SR_NO_ERROR) return;
-        code = CreateFrameBuffers(device, swapchain, config);
+        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, swapchain->swapChain); 
         if (code != SR_NO_ERROR) return;
 
 
@@ -99,9 +99,7 @@ void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer,
         vkDeviceWaitIdle(device->l);
         DestroySwapChain(device->l, swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, swapchain, NULL);
-        if (code != SR_NO_ERROR) return;
-        code = CreateFrameBuffers(device, swapchain, config);
+        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, NULL);
         if (code != SR_NO_ERROR) return;
 
     } else if (result != VK_SUCCESS) {

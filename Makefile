@@ -30,8 +30,18 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CFLAGS := $(INC_FLAGS) -MMD -MP -D $(BUILD)
 
+BUILD_FLAGS := -g
+
+ifeq ($(BUILD), DEBUG)
+	BUILD_FLAGS = -g
+endif
+
+ifeq ($(BUILD), RELEASE)
+	BUILD_FLAGS = -O2
+endif
+
+CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD)
 LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 

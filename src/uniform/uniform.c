@@ -27,7 +27,7 @@ ErrorCode CreateUniformBuffer(UniformHandles* handles, Texture* t, VulkanPipelin
 
         VkWriteDescriptorSet write[2] = {0};
         write[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write[0].dstSet = config->descriptorSet[i];
+        write[0].dstSet = config->descrip.descriptorSet[i];
         write[0].dstBinding = 0;
         write[0].dstArrayElement = 0;
         write[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -37,7 +37,7 @@ ErrorCode CreateUniformBuffer(UniformHandles* handles, Texture* t, VulkanPipelin
         write[0].pTexelBufferView = NULL;
 
         write[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write[1].dstSet = config->descriptorSet[i];
+        write[1].dstSet = config->descrip.descriptorSet[i];
         write[1].dstBinding = 1;
         write[1].dstArrayElement = 0;
         write[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

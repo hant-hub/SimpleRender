@@ -6,7 +6,7 @@
 #include "init.h"
 #include "pipeline.h"
 #include "vertex.h"
-#include "swap.h"
+#include "config.h"
 
 
 typedef struct VulkanCommand {

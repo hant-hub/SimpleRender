@@ -8,7 +8,6 @@
 #include "log.h"
 #include "mat4.h"
 #include "pipeline.h"
-#include "swap.h"
 #include "texture.h"
 #include "util.h"
 #include "vertex.h"
@@ -25,17 +24,8 @@
 static bool frameBufferResized;
 
 
-void DrawFrame(VulkanDevice* device,
-               VulkanCommand* cmd,
-               GeometryBuffer* buffer,
-               VulkanContext* context,
-               VulkanShader* s,
-               VulkanPipelineConfig* config,
-               SwapChain* swapchain,
-               VulkanPipeline* pipe,
-               UniformHandles* uniforms,
-               u32 frame);
-
+void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer, VulkanContext* context, VulkanShader* s,
+                      VulkanPipelineConfig* config, RenderPass* pass, SwapChain* swapchain, VulkanPipeline* pipe, UniformHandles* uniforms, unsigned int frame);
 
 
 
