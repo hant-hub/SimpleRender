@@ -96,66 +96,66 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
     blendStateInfo.blendConstants[3] = 0.0f;
     p->colorState = blendStateInfo;
 
-    VkDescriptorSetLayoutBinding layoutBindings[2] = {0}; 
-    
-    layoutBindings[0].binding = 0;
-    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBindings[0].descriptorCount = 1;
-
-    layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layoutBindings[0].pImmutableSamplers = NULL;
-
-    layoutBindings[1].binding = 1;
-    layoutBindings[1].descriptorCount = 1;
-    layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    layoutBindings[1].pImmutableSamplers = NULL;
-    layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-
-    VkDescriptorSetLayoutCreateInfo descriptorInfo = {0};
-    descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorInfo.bindingCount = 2;
-    descriptorInfo.pBindings = layoutBindings;
-
-
-    if (vkCreateDescriptorSetLayout(d->l, &descriptorInfo, NULL, &p->descrip.descriptorLayout) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Create Descriptor Layout");
-        return SR_CREATE_FAIL;
-    }
-
-    VkDescriptorPoolSize poolSize[2] = {0};
-    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize[0].descriptorCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
-    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize[1].descriptorCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
-
-    VkDescriptorPoolCreateInfo poolInfo = {0};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 2;
-    poolInfo.pPoolSizes = poolSize;
-
-    poolInfo.maxSets = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
-
-    if (vkCreateDescriptorPool(d->l, &poolInfo, NULL, &p->descrip.descriptorPool) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Create Descriptor Pool");
-        return SR_CREATE_FAIL;
-    }
-
-    VkDescriptorSetLayout layouts[] = {
-        p->descrip.descriptorLayout,
-        p->descrip.descriptorLayout,
-        p->descrip.descriptorLayout
-    };
-    VkDescriptorSetAllocateInfo descpAlloc = {0};
-    descpAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descpAlloc.descriptorPool = p->descrip.descriptorPool;
-    descpAlloc.descriptorSetCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
-    descpAlloc.pSetLayouts = layouts;
-
-    if (vkAllocateDescriptorSets(d->l, &descpAlloc, p->descrip.descriptorSet) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Create Descriptor Set");
-        return SR_CREATE_FAIL;
-    }
+//    VkDescriptorSetLayoutBinding layoutBindings[2] = {0}; 
+//    
+//    layoutBindings[0].binding = 0;
+//    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//    layoutBindings[0].descriptorCount = 1;
+//
+//    layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+//    layoutBindings[0].pImmutableSamplers = NULL;
+//
+//    layoutBindings[1].binding = 1;
+//    layoutBindings[1].descriptorCount = 1;
+//    layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//    layoutBindings[1].pImmutableSamplers = NULL;
+//    layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+//
+//
+//    VkDescriptorSetLayoutCreateInfo descriptorInfo = {0};
+//    descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//    descriptorInfo.bindingCount = 2;
+//    descriptorInfo.pBindings = layoutBindings;
+//
+//
+//    if (vkCreateDescriptorSetLayout(d->l, &descriptorInfo, NULL, &p->descrip.descriptorLayout) != VK_SUCCESS) {
+//        SR_LOG_ERR("Failed to Create Descriptor Layout");
+//        return SR_CREATE_FAIL;
+//    }
+//
+//    VkDescriptorPoolSize poolSize[2] = {0};
+//    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//    poolSize[0].descriptorCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+//    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//    poolSize[1].descriptorCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+//
+//    VkDescriptorPoolCreateInfo poolInfo = {0};
+//    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+//    poolInfo.poolSizeCount = 2;
+//    poolInfo.pPoolSizes = poolSize;
+//
+//    poolInfo.maxSets = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+//
+//    if (vkCreateDescriptorPool(d->l, &poolInfo, NULL, &p->descrip.descriptorPool) != VK_SUCCESS) {
+//        SR_LOG_ERR("Failed to Create Descriptor Pool");
+//        return SR_CREATE_FAIL;
+//    }
+//
+//    VkDescriptorSetLayout layouts[] = {
+//        p->descrip.descriptorLayout,
+//        p->descrip.descriptorLayout,
+//        p->descrip.descriptorLayout
+//    };
+//    VkDescriptorSetAllocateInfo descpAlloc = {0};
+//    descpAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+//    descpAlloc.descriptorPool = p->descrip.descriptorPool;
+//    descpAlloc.descriptorSetCount = (uint32_t) SR_MAX_FRAMES_IN_FLIGHT;
+//    descpAlloc.pSetLayouts = layouts;
+//
+//    if (vkAllocateDescriptorSets(d->l, &descpAlloc, p->descrip.descriptorSet) != VK_SUCCESS) {
+//        SR_LOG_ERR("Failed to Create Descriptor Set");
+//        return SR_CREATE_FAIL;
+//    }
 
 
     VkPipelineLayoutCreateInfo layoutInfo = {0};

@@ -64,10 +64,10 @@ void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFor
 }
 
 
-ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t) {
+ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char* path) {
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("resources/textures/texture.jpg",
+    stbi_uc* pixels = stbi_load(path,
                                 &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (pixels == NULL) 
         return SR_LOAD_FAIL;

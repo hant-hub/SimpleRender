@@ -10,7 +10,6 @@
 #include "util.h"
 #include "vec3.h"
 #include "vertex.h"
-#include "uniform.h"
 #include "frame.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
@@ -24,15 +23,22 @@ static uint32_t HEIGHT = 600;
 
 static const Vertex verticies[] = {
 //     Position          UV             Color
-    {{-0.5f, -0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{ 0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f,  0.5f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{ 0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
 };
 
 static const uint16_t indicies[] = {
     0, 1, 2, 2, 3, 0
 };
+
+void DestroyUniformBuffer(VkDevice d, UniformHandles* handles) {
+    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(d, handles->bufs[i], NULL);
+        vkFreeMemory(d, handles->mem[i], NULL);
+    }
+}
 
 static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* device, SwapChain* swap,
                      VulkanShader* shader, VulkanPipelineConfig* config, RenderPass* r, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer,
@@ -81,6 +87,7 @@ int main() {
     GeometryBuffer buffer = {0};
     UniformHandles uniforms = {0};
     Texture test = {0};
+    Texture test2 = {0};
 
     ErrorCode result = CreateInstance(&context);
     if (result != SR_NO_ERROR)
@@ -98,6 +105,13 @@ int main() {
     result = CreateShaderProg(device.l, "shaders/standard.vert.spv", "shaders/standard.frag.spv", &shader);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
+    DescriptorType uniformconfig[3] = {SR_DESC_BUF, SR_DESC_SAMPLER, SR_DESC_SAMPLER};
+    VkShaderStageFlags flags[3] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    result = CreateDescriptorSetConfig(&device, &config, uniformconfig, flags, 3);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
 
     result = CreatePipelineConfig(&device, &context, &shader, &config);
     if (result != SR_NO_ERROR)
@@ -123,12 +137,26 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = CreateImage(&device, &cmd, &test);
+    result = CreateImage(&device, &cmd, &test, "resources/textures/texture.jpg");
     if (result != SR_NO_ERROR) {
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     }
 
-    result = CreateUniformBuffer(&uniforms, &test, &config, &device);
+    result = CreateImage(&device, &cmd, &test2, "resources/textures/duck.jpg");
+    if (result != SR_NO_ERROR) {
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+    }
+
+//    result = CreateUniformBuffer(&uniforms, &test2, &config, &device);
+    result = SetImage(&device, test.view, test.sampler, &config, 1);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
+    result = SetImage(&device, test2.view, test2.sampler, &config, 2);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
+    result = SetBuffer(&device, &config, &uniforms, 0);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -143,12 +171,14 @@ int main() {
         glfwPollEvents();
         frameCounter = frameCounter + 1;
         DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &pass, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        
 //        sm_mat4f* model = GetModel(s1);
 //        sm_mat4_f32_translate(model, (sm_vec3f){0.01f, 0.0f, 0.0f});
     }
 
     vkDeviceWaitIdle(device.l);
     DestroyImage(device.l, &test);
+    DestroyImage(device.l, &test2);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
 }

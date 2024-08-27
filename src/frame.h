@@ -11,7 +11,6 @@
 #include "texture.h"
 #include "util.h"
 #include "vertex.h"
-#include "uniform.h"
 #include "sprite.h"
 #include <stdlib.h>
 #include <stdint.h>
