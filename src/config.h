@@ -33,6 +33,7 @@ typedef struct {
     VkDescriptorSetLayout descriptorLayout;
     VkDescriptorPool descriptorPool;
     VkDescriptorSet descriptorSet[SR_MAX_FRAMES_IN_FLIGHT];
+    u32 bindPoint;
 } VulkanDescriptorInfo;
 
 typedef enum {
@@ -40,6 +41,10 @@ typedef enum {
     SR_DESC_SAMPLER
 } DescriptorType;
 
+typedef struct {
+    VkShaderStageFlagBits stage;
+    u32 misc;
+} DescriptorDetail;
 
 
 typedef struct {
@@ -69,8 +74,9 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
 void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p);
 
 //bindings
-ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* config, DescriptorType* layout, VkShaderStageFlagBits* access, u32 size);
-ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index);
+ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size);
+ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
+//ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
 ErrorCode SetBuffer(VulkanDevice* d, VulkanPipelineConfig* config, UniformHandles* handles, u32 index);
 
 

@@ -106,9 +106,9 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    DescriptorType uniformconfig[3] = {SR_DESC_BUF, SR_DESC_SAMPLER, SR_DESC_SAMPLER};
-    VkShaderStageFlags flags[3] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    result = CreateDescriptorSetConfig(&device, &config, uniformconfig, flags, 3);
+    DescriptorType uniformconfig[2] = {SR_DESC_BUF, SR_DESC_SAMPLER};
+    DescriptorDetail flags[2] = {{VK_SHADER_STAGE_VERTEX_BIT, 0}, {VK_SHADER_STAGE_FRAGMENT_BIT, 2}};
+    result = CreateDescriptorSetConfig(&device, &config, uniformconfig, flags, 2);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -148,11 +148,11 @@ int main() {
     }
 
 //    result = CreateUniformBuffer(&uniforms, &test2, &config, &device);
-    result = SetImage(&device, test.view, test.sampler, &config, 1);
+    result = SetImage(&device, test.view, test.sampler, &config, 1, 0);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = SetImage(&device, test2.view, test2.sampler, &config, 2);
+    result = SetImage(&device, test2.view, test2.sampler, &config, 1, 1);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
