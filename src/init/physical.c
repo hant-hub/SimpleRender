@@ -129,7 +129,7 @@ ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
         if (isDeviceSuitable(devices[i], context->surface)) {
             d->p = devices[i];
 #ifdef DEBUG
-            printf("Device %i selected\n", i);
+            SR_LOG_DEB("Device %i selected", i);
 #endif
             break;
 
