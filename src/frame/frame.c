@@ -1,4 +1,5 @@
 #include "frame.h"
+#include "common.h"
 #include "config.h"
 #include "mat4.h"
 #include "pipeline.h"
@@ -43,8 +44,13 @@ void DrawFrame(VulkanDevice* device, VulkanCommand* cmd, GeometryBuffer* buffer,
     };
 
 
-//    sm_vec3f mov = (sm_vec3f) {0.01f, 0, 0};
-//    sm_mat4_f32_translate(&view, mov);
+    
+    sm_mat4_f32_perspective(&proj, 1.0f, 10.0f, SM_PI/4, SM_PI/4);
+//    sm_mat4_f32_ortho(&proj, 1.0f, 10.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    
+//    sm_mat4_f32_transpose(&proj, &proj);
+//    sm_mat4_f32_identity(&view);
+
 
     memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
     memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));

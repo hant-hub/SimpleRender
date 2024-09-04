@@ -1,5 +1,6 @@
 #include "config.h"
 #include "vertex.h"
+#include <vulkan/vulkan_core.h>
 
 
 ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipelineConfig* p) {

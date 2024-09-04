@@ -160,10 +160,9 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    SpriteHandle s1 = CreateSprite((sm_vec3f){-0.5f, 0.5f, 0}, (sm_vec3f){1, 1, 0});
-    SpriteHandle s2 = CreateSprite((sm_vec3f){0.5f, 0.5f, 0}, (sm_vec3f){1, 1, 0});
-    SpriteHandle s3 = CreateSprite((sm_vec3f){0.5f, -0.5f, 0}, (sm_vec3f){1, 1, 0});
-    SpriteHandle s4 = CreateSprite((sm_vec3f){-0.5f, -0.5f, 0}, (sm_vec3f){1, 1, 0});
+    SpriteHandle s1 = CreateSprite((sm_vec3f){0.0f, 0.0f, 1.0f}, (sm_vec3f){1, 1, 0});
+    sm_mat4f* model = GetModel(s1); 
+    model->c.z = 1.0f;
 
 
     unsigned int frameCounter = 0;

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "pipeline.h"
+#include <vulkan/vulkan_core.h>
 
 
 static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {

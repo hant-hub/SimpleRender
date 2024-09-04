@@ -23,8 +23,8 @@ layout(binding = 0) uniform UniformBuffer {
 
 
 void main() {
-    gl_Position = ub.proj * ub.view * ub.Modeldata[gl_InstanceIndex].model 
-                       * vec4(inPosition, 0.0, 1.0);
+    gl_Position = ub.proj * ub.view * ub.Modeldata[gl_InstanceIndex].model * vec4(inPosition, 1.0f, 1.0f);
+
     fragColor = vec3(0);
     fragUV = inTexCoords;
     index = gl_InstanceIndex;
