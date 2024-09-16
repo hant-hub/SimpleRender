@@ -63,6 +63,41 @@ typedef struct {
 } VulkanPipelineConfig;
 
 
+//vertex
+
+typedef struct {
+    VkVertexInputRate rate;
+    VkFormat format;
+    u32 size;
+} AttrConfig;
+
+typedef struct {
+    VkVertexInputAttributeDescription* attrs;
+    VkVertexInputBindingDescription* bindings;
+    u32 size;
+} VulkanMultiVertexInput;
+
+typedef struct {
+    VkVertexInputAttributeDescription* attrs;
+    VkVertexInputBindingDescription binding;
+    u32 size;
+} VulkanVertexInput;
+
+#define VulkanVertToConfig(v) \
+    (VulkanConfigInput){v.attrs, v.bindings, v.size, 1}
+
+#define VulkanMultiVertToConfig(v) \
+    (VulkanConfigInput){v.attrs, v.bindings, v.size, v.size}
+
+
+typedef struct {
+    VkVertexInputAttributeDescription* attrs;
+    VkVertexInputBindingDescription* bindings;
+    u32 asize;
+    u32 bsize;
+} VulkanConfigInput;
+
+ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 
 //renderpass
@@ -70,14 +105,15 @@ ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c);
 void DestroyPass(VkDevice d, RenderPass* r);
 
 //pipeline Config
-ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipelineConfig* p);
+ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p);
 void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p);
 
 //bindings
 ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size);
 ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
-//ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
+ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
 ErrorCode SetBuffer(VulkanDevice* d, VulkanPipelineConfig* config, UniformHandles* handles, u32 index);
+
 
 
 #endif

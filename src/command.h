@@ -5,7 +5,6 @@
 #include "error.h"
 #include "init.h"
 #include "pipeline.h"
-#include "vertex.h"
 #include "config.h"
 
 
@@ -23,7 +22,6 @@ VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool);
 void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice* d);
 
 ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, u32 imageIndex, u32 frame, u32 numSprites);
 void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);
 
 

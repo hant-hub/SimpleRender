@@ -3,7 +3,6 @@
 #include "init.h"
 #include "log.h"
 #include "pipeline.h"
-#include "vertex.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -52,67 +51,6 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
         }
     }
     SR_LOG_DEB("Sync Objects Created");
-
-    return SR_NO_ERROR;
-}
-
-
-ErrorCode RecordCommandBuffer(SwapChain* s, VulkanPipeline* p, VulkanPipelineConfig* config, VkCommandBuffer* buffer, GeometryBuffer* verts, uint32_t imageIndex, uint32_t frame,
-        u32 numSprites) {
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;
-    beginInfo.pInheritanceInfo = NULL;
-
-    if (vkBeginCommandBuffer(*buffer, &beginInfo) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Begin Command Buffer");
-        return SR_CREATE_FAIL;
-    }
-    
-    VkRenderPassBeginInfo renderInfo = {0};
-    renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderInfo.renderPass = p->pass->pass;
-    renderInfo.framebuffer = s->buffers[imageIndex];
-    renderInfo.renderArea.offset = (VkOffset2D){0, 0};
-    renderInfo.renderArea.extent = s->extent;
-
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderInfo.clearValueCount = 1;
-    renderInfo.pClearValues = &clearColor;
-
-    vkCmdBeginRenderPass(*buffer, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipeline);
-
-    VkBuffer vertBufs[] = {verts->vertexBuffer.buf};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(*buffer, 0, 1, vertBufs, offsets);
-    vkCmdBindIndexBuffer(*buffer, verts->indexBuffer.buf, 0, VK_INDEX_TYPE_UINT16); 
-
-    
-    p->view.x = 0.0f;
-    p->view.y = 0.0f;
-    p->view.width = s->extent.width;
-    p->view.height = s->extent.height;
-    p->view.minDepth = 0.0f;
-    p->view.maxDepth = 1.0f;
-    vkCmdSetViewport(*buffer, 0, 1, &p->view);
-
-    p->scissor.offset = (VkOffset2D){0, 0};
-    p->scissor.extent = s->extent;
-    vkCmdSetScissor(*buffer, 0, 1, &p->scissor);
-
-    vkCmdBindDescriptorSets(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
-
-    vkCmdDrawIndexed(*buffer, verts->indexCount, numSprites, 0, 0, 0);
-    vkCmdEndRenderPass(*buffer);
-
-
-    if (vkEndCommandBuffer(*buffer) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to End Command Buffer");
-        return SR_CREATE_FAIL;
-    }
-    //SR_LOG_DEB("Command Buffer recorded");
 
     return SR_NO_ERROR;
 }

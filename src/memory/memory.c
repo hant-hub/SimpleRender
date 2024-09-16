@@ -2,6 +2,7 @@
 #include "command.h"
 #include "error.h"
 #include "init.h"
+#include <string.h>
 #include <vulkan/vulkan_core.h>
 
 ErrorCode findMemoryType(uint32_t typefilter, VkPhysicalDevice p, VkMemoryPropertyFlags properties, uint32_t* out) {
@@ -95,7 +96,44 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, Vulka
 }
 
 
-void DestroyBuffer(VkDevice d, Buffer* b) {
+void DestroyStaticBuffer(VkDevice d, StaticBuffer* b) {
     vkDestroyBuffer(d, b->buf, NULL);
     vkFreeMemory(d, b->mem, NULL);
+}
+
+void DestroyDynamicBuffer(VkDevice d, DynamicBuffer* b) {
+    vkDestroyBuffer(d, b->buf, NULL);
+    vkFreeMemory(d, b->mem, NULL);
+}
+
+
+
+ErrorCode CreateStaticBuffer(VulkanDevice* d, VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf) {
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingMemory;
+    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 &stagingBuffer, &stagingMemory);
+
+    void* dest;
+    vkMapMemory(d->l, stagingMemory, 0, size, 0, &dest);
+    memcpy(dest, data, size);
+    vkUnmapMemory(d->l, stagingMemory);
+
+    buf->size = size;
+    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 &buf->buf, &buf->mem);
+
+    CopyBuffer(stagingBuffer, buf->buf, size, d, cmd);
+    vkDestroyBuffer(d->l, stagingBuffer, NULL);
+    vkFreeMemory(d->l, stagingMemory, NULL);
+    return SR_NO_ERROR;
+}
+
+ErrorCode CreateDynamicBuffer(VulkanDevice* d, VulkanCommand* cmd, u32 size, DynamicBuffer* buf, VkBufferUsageFlags usage) {
+    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 &buf->buf, &buf->mem);
+    vkMapMemory(d->l, buf->mem, 0, size, 0, &buf->buffer);
+    return SR_NO_ERROR;
 }

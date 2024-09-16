@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanPipelineConfig* p) {
+ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p) {
 
     //Shader stage creation
     p->stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -29,10 +29,10 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
 
     VkPipelineVertexInputStateCreateInfo vertInputInfo = {0};
     vertInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertInputInfo.vertexBindingDescriptionCount = 1;
-    vertInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertInputInfo.vertexAttributeDescriptionCount = 3;
-    vertInputInfo.pVertexAttributeDescriptions = attrDescription;
+    vertInputInfo.vertexBindingDescriptionCount = v.asize;
+    vertInputInfo.pVertexBindingDescriptions = v.bindings;
+    vertInputInfo.vertexAttributeDescriptionCount = v.bsize;
+    vertInputInfo.pVertexAttributeDescriptions = v.attrs;
     p->vertInput = vertInputInfo;
 
     VkPipelineInputAssemblyStateCreateInfo assemInfo = {0};

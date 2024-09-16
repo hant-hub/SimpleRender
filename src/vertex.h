@@ -1,15 +1,12 @@
 #ifndef SR_VERTEX_H
 #define SR_VERTEX_H
+#include "memory.h"
 #include "vec2.h"
 #include "vec3.h"
-#include "mat4.h"
 #include "error.h"
 #include "init.h"
 #include "pipeline.h"
-#include "memory.h"
-#include <vulkan/vulkan_core.h>
 
-typedef struct VulkanCommand VulkanCommand;
 
 typedef struct {
     sm_vec2f pos;
@@ -18,8 +15,8 @@ typedef struct {
 } Vertex;
 
 typedef struct {
-    Buffer vertexBuffer;
-    Buffer indexBuffer;
+    StaticBuffer vertexBuffer;
+    StaticBuffer indexBuffer;
     uint32_t indexCount;
 } GeometryBuffer;
 

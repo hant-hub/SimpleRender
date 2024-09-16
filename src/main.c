@@ -1,32 +1,45 @@
 #include "command.h"
+#include "common.h"
 #include "config.h"
 #include "error.h"
 #include "init.h"
 #include "log.h"
 #include "mat4.h"
+#include "memory.h"
 #include "pipeline.h"
-#include "sprite.h"
+#include "renderers/spriteRenderer/sprite.h"
 #include "texture.h"
 #include "util.h"
+#include "vec2.h"
 #include "vec3.h"
 #include "vertex.h"
-#include "frame.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 
-static uint32_t WIDTH = 800;
-static uint32_t HEIGHT = 600;
 
 
-static const Vertex verticies[] = {
-//     Position          UV             Color
-    {{-0.5f, -0.5f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{ 0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f,  0.5f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
+static const sm_vec2f positions[] = {
+    {-0.5f, -0.5f},
+    { 0.5f, -0.5f},
+    { 0.5f,  0.5f},
+    {-0.5f,  0.5f},
+};
+
+static const sm_vec2f uvs[] = {
+    {0.0f, 0.0f},
+    {1.0f, 0.0f},
+    {1.0f, 1.0f},
+    {0.0f, 1.0f},
+};
+
+static const sm_vec3f colors[] = {
+    {1.0f, 0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f},
+    {1.0f, 1.0f, 1.0f}
 };
 
 static const uint16_t indicies[] = {
@@ -57,12 +70,6 @@ static void ExitProg(GLFWwindow* window, VulkanContext* context, VulkanDevice* d
     glfwDestroyWindow(window);
     glfwTerminate();
     exit(1);
-}
-
-static void ResizeCallback(GLFWwindow* window, int width, int height) {
-    WIDTH = width;
-    HEIGHT = height;
-    frameBufferResized = TRUE;
 }
 
 
@@ -112,8 +119,22 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
+    AttrConfig vconfig[] = {
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
+    };
+    VkVertexInputBindingDescription binds[2];
+    VkVertexInputAttributeDescription attrs[2];
+    result = MultiCreateVertAttr(attrs, binds, vconfig, 2);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = CreatePipelineConfig(&device, &context, &shader, &config);
+    VulkanMultiVertexInput vin = {
+        .attrs = attrs,
+        .bindings = binds,
+        .size = 2
+    };
+    result = CreatePipelineConfig(&device, &context, &shader, VulkanMultiVertToConfig(vin), &config);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -133,7 +154,19 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    result = CreateStaticGeometry(&buffer, verticies, indicies, sizeof(verticies), sizeof(indicies), &device, &cmd);
+    StaticBuffer posBuf = {};
+    StaticBuffer uvBuf = {};
+    StaticBuffer indexBuf = {};
+    
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, positions, sizeof(positions), &posBuf);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,uvs, sizeof(uvs), &uvBuf);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+    
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &indexBuf);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -160,24 +193,40 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    SpriteHandle s1 = CreateSprite((sm_vec3f){0.0f, 0.0f, 1.0f}, (sm_vec3f){1, 1, 0});
-    sm_mat4f* model = GetModel(s1); 
-    model->c.z = 1.0f;
+    SpriteHandle s1 = CreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
+    SpriteHandle s2 = CreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
 
+
+    sm_mat4f* model = GetModel(s2);
+    *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
+    *model = sm_mat4_f32_ry(model, SM_PI);
+    *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
+
+    RenderState state = {&device, &context, &cmd, &posBuf, &uvBuf, &indexBuf, &shader, &config, &pipeline, &pass, &swapchain,  &uniforms};
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         frameCounter = frameCounter + 1;
-        DrawFrame(&device, &cmd, &buffer, &context, &shader, &config, &pass, &swapchain, &pipeline, &uniforms, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        DrawFrame(state, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         
-//        sm_mat4f* model = GetModel(s1);
-//        sm_mat4_f32_translate(model, (sm_vec3f){0.01f, 0.0f, 0.0f});
+        sm_mat4f* model = GetModel(s1);
+        *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
+        *model = sm_mat4_f32_ry(model, 0.01);
+        *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
+
+        model = GetModel(s2);
+        *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
+        *model = sm_mat4_f32_ry(model, 0.01);
+        *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
     }
 
     vkDeviceWaitIdle(device.l);
     DestroyImage(device.l, &test);
     DestroyImage(device.l, &test2);
+    DestroyStaticBuffer(device.l, &posBuf);
+    DestroyStaticBuffer(device.l, &uvBuf);
+    DestroyStaticBuffer(device.l, &indexBuf);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
 }

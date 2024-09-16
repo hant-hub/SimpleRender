@@ -123,35 +123,35 @@ ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineCo
     return SR_NO_ERROR;
 }
 
-//ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size) {
-//
-//    for (u32 i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-//        
-//        VkDescriptorImageInfo imgInfo[size];
-//        for (u32 j = 0; j < size; j++) {
-//            imgInfo[j] = (VkDescriptorImageInfo){
-//                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//                        .imageView = v[j],
-//                        .sampler = s[j] 
-//                    };
-//        }
-//
-//        VkWriteDescriptorSet write = {
-//            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-//            .dstSet = config->descrip.descriptorSet[i],
-//            .dstBinding = index,
-//            .dstArrayElement = 0,
-//            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-//            .descriptorCount = size,
-//            .pBufferInfo = NULL,
-//            .pImageInfo = imgInfo,
-//            .pTexelBufferView = NULL
-//        };
-//
-//        vkUpdateDescriptorSets(d->l, 1, &write, 0, NULL);
-//    }
-//    return SR_NO_ERROR;
-//}
+ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size) {
+
+    for (u32 i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        
+        VkDescriptorImageInfo imgInfo[size];
+        for (u32 j = 0; j < size; j++) {
+            imgInfo[j] = (VkDescriptorImageInfo){
+                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        .imageView = v[j],
+                        .sampler = s[j] 
+                    };
+        }
+
+        VkWriteDescriptorSet write = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = config->descrip.descriptorSet[i],
+            .dstBinding = index,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = size,
+            .pBufferInfo = NULL,
+            .pImageInfo = imgInfo,
+            .pTexelBufferView = NULL
+        };
+
+        vkUpdateDescriptorSets(d->l, 1, &write, 0, NULL);
+    }
+    return SR_NO_ERROR;
+}
 
 
 

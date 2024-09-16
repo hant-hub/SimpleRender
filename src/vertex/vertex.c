@@ -3,6 +3,7 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
+#include "memory.h"
 #include "pipeline.h"
 #include "util.h"
 #include <stddef.h>
@@ -52,6 +53,10 @@ ErrorCode CreateStaticGeometry(GeometryBuffer* buffer, const void* verticies, co
     return SR_NO_ERROR;
 }
 
+void DestroyBuffer(VkDevice d, StaticBuffer *b) {
+    vkDestroyBuffer(d, b->buf, NULL);
+    vkFreeMemory(d, b->mem, NULL);
+}
 
 void DestroyGeometryBuffer(VkDevice d, GeometryBuffer* buffer) {
     DestroyBuffer(d, &buffer->vertexBuffer);
