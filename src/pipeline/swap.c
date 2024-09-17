@@ -1,4 +1,5 @@
 #include "config.h"
+#include "log.h"
 #include "pipeline.h"
 #include <vulkan/vulkan_core.h>
 
@@ -56,7 +57,13 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, Swap
 
     //Pick Mode
     s->mode = VK_PRESENT_MODE_FIFO_KHR;
-
+    for (int i = 0; i < swapDetails.modeCount; i++) {
+        if (swapDetails.modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) { 
+            s->format = swapDetails.formats[i];
+            break;
+        }
+    }
+    SR_LOG_DEB("Preffered mode? %d", s->mode == VK_PRESENT_MODE_MAILBOX_KHR);
 
     //pick Extent
     VkSurfaceCapabilitiesKHR capabilities = swapDetails.capabilities;
