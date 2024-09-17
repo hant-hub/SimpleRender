@@ -20,6 +20,12 @@
 #include <vulkan/vulkan_core.h>
 
 
+static const Vertex verts[] = {
+    {{-0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {0.0f, 1.0f}}
+};
 
 static const sm_vec2f positions[] = {
     {-0.5f, -0.5f},
@@ -123,18 +129,18 @@ int main() {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
     };
-    VkVertexInputBindingDescription binds[2];
+    VkVertexInputBindingDescription bind;
     VkVertexInputAttributeDescription attrs[2];
-    result = MultiCreateVertAttr(attrs, binds, vconfig, 2);
+    result = CreateVertAttr(attrs, &bind, vconfig, 2);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    VulkanMultiVertexInput vin = {
+    VulkanVertexInput vin = {
         .attrs = attrs,
-        .bindings = binds,
+        .binding = bind,
         .size = 2
     };
-    result = CreatePipelineConfig(&device, &context, &shader, VulkanMultiVertToConfig(vin), &config);
+    result = CreatePipelineConfig(&device, &context, &shader, VulkanVertToConfig(vin), &config);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -154,15 +160,10 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    StaticBuffer posBuf = {};
-    StaticBuffer uvBuf = {};
+    StaticBuffer vertsBuf = {};
     StaticBuffer indexBuf = {};
     
-    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, positions, sizeof(positions), &posBuf);
-    if (result != SR_NO_ERROR)
-        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
-
-    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,uvs, sizeof(uvs), &uvBuf);
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &vertsBuf);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     
@@ -202,7 +203,19 @@ int main() {
     *model = sm_mat4_f32_ry(model, SM_PI);
     *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
 
-    RenderState state = {&device, &context, &cmd, &posBuf, &uvBuf, &indexBuf, &shader, &config, &pipeline, &pass, &swapchain,  &uniforms};
+    RenderState state = {
+        .d = &device,
+        .context = &context,
+        .cmd = &cmd,
+        .verts = &vertsBuf,
+        .index = &indexBuf,
+        .shader = &shader,
+        .config = &config,
+        .pipeline = &pipeline,
+        .pass = &pass,
+        .swap = &swapchain,
+        .uniforms = &uniforms
+    };
 
     unsigned int frameCounter = 0;
     while (!glfwWindowShouldClose(window)) {
@@ -224,8 +237,7 @@ int main() {
     vkDeviceWaitIdle(device.l);
     DestroyImage(device.l, &test);
     DestroyImage(device.l, &test2);
-    DestroyStaticBuffer(device.l, &posBuf);
-    DestroyStaticBuffer(device.l, &uvBuf);
+    DestroyStaticBuffer(device.l, &vertsBuf);
     DestroyStaticBuffer(device.l, &indexBuf);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     return 0;

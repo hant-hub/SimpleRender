@@ -165,9 +165,9 @@ void DrawFrame(RenderState r, unsigned int frame) {
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
 
-    VkBuffer bufs[] = {r.pos->buf, r.uvs->buf};
-    VkDeviceSize offsets[] = {0, 0};
-    vkCmdBindVertexBuffers(cmdBuf, 0, 2, bufs, offsets);
+    VkBuffer bufs[] = {r.verts->buf};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(cmdBuf, 0, 1, bufs, offsets);
     vkCmdBindIndexBuffer(cmdBuf, r.index->buf, 0, VK_INDEX_TYPE_UINT16); 
 
     

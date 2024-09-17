@@ -84,7 +84,7 @@ typedef struct {
 } VulkanVertexInput;
 
 #define VulkanVertToConfig(v) \
-    (VulkanConfigInput){v.attrs, v.bindings, v.size, 1}
+    (VulkanConfigInput){v.attrs, &v.binding, v.size, 1}
 
 #define VulkanMultiVertToConfig(v) \
     (VulkanConfigInput){v.attrs, v.bindings, v.size, v.size}
@@ -98,7 +98,7 @@ typedef struct {
 } VulkanConfigInput;
 
 ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
-
+ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
 ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c);

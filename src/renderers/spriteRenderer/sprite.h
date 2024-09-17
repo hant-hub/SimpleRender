@@ -39,8 +39,7 @@ typedef struct {
     VulkanDevice* d;
     VulkanContext* context; 
     VulkanCommand* cmd;
-    StaticBuffer* pos;
-    StaticBuffer* uvs;
+    StaticBuffer* verts;
     StaticBuffer* index;
     VulkanShader* shader;
     VulkanPipelineConfig* config;

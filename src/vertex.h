@@ -11,7 +11,6 @@
 typedef struct {
     sm_vec2f pos;
     sm_vec2f uv;
-    sm_vec3f color;
 } Vertex;
 
 typedef struct {
@@ -43,14 +42,7 @@ static const VkVertexInputAttributeDescription attrDescription[3] = {
         0,                          //binding
         VK_FORMAT_R32G32_SFLOAT, //format
         offsetof(Vertex, uv)     //offset
-    },
-    //Color
-    {
-        2,                          //location
-        0,                          //binding
-        VK_FORMAT_R32G32B32_SFLOAT, //format
-        offsetof(Vertex, color)     //offset
-    },
+    }
 };
 
 

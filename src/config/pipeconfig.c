@@ -29,9 +29,9 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
 
     VkPipelineVertexInputStateCreateInfo vertInputInfo = {0};
     vertInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertInputInfo.vertexBindingDescriptionCount = v.asize;
+    vertInputInfo.vertexBindingDescriptionCount = v.bsize;
     vertInputInfo.pVertexBindingDescriptions = v.bindings;
-    vertInputInfo.vertexAttributeDescriptionCount = v.bsize;
+    vertInputInfo.vertexAttributeDescriptionCount = v.asize;
     vertInputInfo.pVertexAttributeDescriptions = v.attrs;
     p->vertInput = vertInputInfo;
 
