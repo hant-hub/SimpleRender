@@ -7,7 +7,7 @@
 #include "mat4.h"
 #include "memory.h"
 #include "pipeline.h"
-#include "renderers/spriteRenderer/sprite.h"
+#include "renderers/multispriteRenderer/multisprite.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -129,18 +129,18 @@ int main() {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
     };
-    VkVertexInputBindingDescription bind;
+    VkVertexInputBindingDescription binds[2];
     VkVertexInputAttributeDescription attrs[2];
-    result = CreateVertAttr(attrs, &bind, vconfig, 2);
+    result = MultiCreateVertAttr(attrs, binds, vconfig, 2);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    VulkanVertexInput vin = {
+    VulkanMultiVertexInput vin = {
         .attrs = attrs,
-        .binding = bind,
+        .bindings = binds,
         .size = 2
     };
-    result = CreatePipelineConfig(&device, &context, &shader, VulkanVertToConfig(vin), &config);
+    result = CreatePipelineConfig(&device, &context, &shader, VulkanMultiVertToConfig(vin), &config);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
@@ -160,13 +160,18 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    StaticBuffer vertsBuf = {};
+    StaticBuffer posBuf = {};
+    StaticBuffer uvBuf = {};
     StaticBuffer indexBuf = {};
     
-    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &vertsBuf);
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, positions, sizeof(positions), &posBuf);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     
+    result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, uvs, sizeof(uvs), &uvBuf);
+    if (result != SR_NO_ERROR)
+        ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+
     result = CreateStaticBuffer(&device, &cmd, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &indexBuf);
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
@@ -194,11 +199,11 @@ int main() {
     if (result != SR_NO_ERROR)
         ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
 
-    SpriteHandle s1 = CreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
-    SpriteHandle s2 = CreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
+    SpriteHandle s1 = MultiCreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
+    SpriteHandle s2 = MultiCreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
 
 
-    sm_mat4f* model = GetModel(s2);
+    sm_mat4f* model = MultiGetModel(s2);
     *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
     *model = sm_mat4_f32_ry(model, SM_PI);
     *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
@@ -207,7 +212,8 @@ int main() {
         .d = &device,
         .context = &context,
         .cmd = &cmd,
-        .verts = &vertsBuf,
+        .pos = &posBuf,
+        .uvs = &uvBuf,
         .index = &indexBuf,
         .shader = &shader,
         .config = &config,
@@ -221,14 +227,14 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         frameCounter = frameCounter + 1;
-        DrawFrame(state, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        DrawFrameMultiSprite(state, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
         
-        sm_mat4f* model = GetModel(s1);
+        sm_mat4f* model = MultiGetModel(s1);
         *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
         *model = sm_mat4_f32_ry(model, 0.01);
         *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
 
-        model = GetModel(s2);
+        model = MultiGetModel(s2);
         *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
         *model = sm_mat4_f32_ry(model, 0.01);
         *model = sm_mat4_f32_translate(model, (sm_vec3f){50.0f, 50.0f, 0.0f});
@@ -237,7 +243,8 @@ int main() {
     vkDeviceWaitIdle(device.l);
     DestroyImage(device.l, &test);
     DestroyImage(device.l, &test2);
-    DestroyStaticBuffer(device.l, &vertsBuf);
+    DestroyStaticBuffer(device.l, &posBuf);
+    DestroyStaticBuffer(device.l, &uvBuf);
     DestroyStaticBuffer(device.l, &indexBuf);
     ExitProg(window, &context, &device, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
     return 0;
