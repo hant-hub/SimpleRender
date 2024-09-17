@@ -9,14 +9,12 @@
 #include "frame.h"
 #include "init.h"
 #include "command.h"
+#include "log.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "vertex.h"
 
 
-static uint32_t WIDTH = 800;
-static uint32_t HEIGHT = 600;
-static bool frameBufferResized = FALSE;
 
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
     WIDTH = width;

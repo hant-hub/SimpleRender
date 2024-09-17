@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+uint32_t WIDTH = 800;
+uint32_t HEIGHT = 600;
+bool frameBufferResized = FALSE;
 
 static bool CheckValidationLayerSupport() {
     uint32_t layerCount;

@@ -18,6 +18,9 @@ ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c) {
         }
     }
 
+    free(swapDetails.formats);
+    free(swapDetails.modes);
+
     //Make RenderPass
     VkAttachmentDescription colorAttachment = {0};
     colorAttachment.format = format.format;

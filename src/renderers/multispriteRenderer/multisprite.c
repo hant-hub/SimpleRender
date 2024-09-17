@@ -128,7 +128,7 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
 
-    proj = sm_mat4_f32_perspective(1.0f, 1000.0f, SM_PI/4, SM_PI/4);
+    proj = sm_mat4_f32_perspective(1.0f, 1000.0f, SM_PI/4, ((float)WIDTH)/((float)HEIGHT));
     view = sm_mat4_f32_translate(&view, (sm_vec3f){-50, -50, 50});
     //proj = sm_mat4_f32_ortho(1.0f, 100.0f, 0.0f, 100.0f, 0.0f, 100.0f);
 

@@ -57,6 +57,7 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, Swap
     //Pick Mode
     s->mode = VK_PRESENT_MODE_FIFO_KHR;
 
+
     //pick Extent
     VkSurfaceCapabilitiesKHR capabilities = swapDetails.capabilities;
     if (capabilities.currentExtent.width != UINT32_MAX) {

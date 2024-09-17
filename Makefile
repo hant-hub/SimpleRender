@@ -76,6 +76,9 @@ test: $(BUILD_DIR)/$(TARGET_EXEC)
 	cd $(BUILD_DIR); \
 	./$(notdir $<); \
 	cd ..;
+
+static:
+	clang-tidy $(SRCS)
 	
 
 .PHONY: clean test resources

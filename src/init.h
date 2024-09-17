@@ -12,6 +12,10 @@
 #define SR_MAX_FRAMES_IN_FLIGHT 2
 #define SR_MAX_INSTANCES 10
 
+extern uint32_t WIDTH;
+extern uint32_t HEIGHT;
+extern bool frameBufferResized;
+
 typedef struct {
     GLFWwindow* w;
     VkInstance instance;
