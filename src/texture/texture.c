@@ -12,7 +12,7 @@
 
 
 void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    VkCommandBuffer cmd = beginSingleTimeCommand(d->l, c->pool);
+    VkCommandBuffer cmd = beginSingleTimeCommand(c->pool);
     
     VkImageMemoryBarrier barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -60,11 +60,11 @@ void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFor
             );
 
 
-    endSingleTimeCommand(cmd, c->pool, d);
+    endSingleTimeCommand(cmd, c->pool);
 }
 
 
-ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char* path) {
+ErrorCode CreateImage(VulkanCommand* c, Texture* t, const char* path) {
 
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(path,
@@ -77,14 +77,14 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
 
-    CreateBuffer(d, imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    CreateBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                              &stagingBuffer, &stagingMemory); 
 
     void* data;
-    vkMapMemory(d->l, stagingMemory, 0, imgSize, 0, &data);
+    vkMapMemory(sr_device.l, stagingMemory, 0, imgSize, 0, &data);
     memcpy(data, pixels, imgSize);
-    vkUnmapMemory(d->l, stagingMemory);
+    vkUnmapMemory(sr_device.l, stagingMemory);
 
     stbi_image_free(pixels);
 
@@ -106,34 +106,34 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
     imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imgInfo.flags = 0;
 
-    if (vkCreateImage(d->l, &imgInfo, NULL, &t->image) != VK_SUCCESS) {
+    if (vkCreateImage(sr_device.l, &imgInfo, NULL, &t->image) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Texture Image");
         return SR_CREATE_FAIL;
     }
 
     VkMemoryRequirements memReq;
-    vkGetImageMemoryRequirements(d->l, t->image, &memReq);
+    vkGetImageMemoryRequirements(sr_device.l, t->image, &memReq);
 
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReq.size;
 
-    if (findMemoryType(memReq.memoryTypeBits, d->p, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocInfo.memoryTypeIndex) != SR_NO_ERROR) {
+    if (findMemoryType(memReq.memoryTypeBits, sr_device.p, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocInfo.memoryTypeIndex) != SR_NO_ERROR) {
         SR_LOG_ERR("Failed to Find correct Memory");
         return SR_CREATE_FAIL;
     }
 
-    if (vkAllocateMemory(d->l, &allocInfo, NULL, &t->mem) != VK_SUCCESS) {
+    if (vkAllocateMemory(sr_device.l, &allocInfo, NULL, &t->mem) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Allocate Memory");
         return SR_CREATE_FAIL;
     }
 
 
-    vkBindImageMemory(d->l, t->image, t->mem, 0);
+    vkBindImageMemory(sr_device.l, t->image, t->mem, 0);
 
     //transfer image
-    TransitionImageLayout(d, c, t->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    VkCommandBuffer cmd = beginSingleTimeCommand(d->l, c->pool);
+    TransitionImageLayout(&sr_device, c, t->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkCommandBuffer cmd = beginSingleTimeCommand(c->pool);
 
     VkBufferImageCopy region = {0};
     region.bufferOffset = 0;
@@ -154,13 +154,13 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
 
     vkCmdCopyBufferToImage(cmd, stagingBuffer, t->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    endSingleTimeCommand(cmd, c->pool, d);
+    endSingleTimeCommand(cmd, c->pool);
 
 
-    TransitionImageLayout(d, c, t->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(&sr_device, c, t->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     
-    vkDestroyBuffer(d->l, stagingBuffer, NULL); 
-    vkFreeMemory(d->l, stagingMemory, NULL);
+    vkDestroyBuffer(sr_device.l, stagingBuffer, NULL); 
+    vkFreeMemory(sr_device.l, stagingMemory, NULL);
 
 
     //image view
@@ -175,7 +175,7 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(d->l, &viewInfo, NULL, &t->view) != VK_SUCCESS) {
+    if (vkCreateImageView(sr_device.l, &viewInfo, NULL, &t->view) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to create Image View");
         return SR_CREATE_FAIL;
     }
@@ -184,7 +184,7 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
     //create sampler
     
     VkPhysicalDeviceProperties devProps = {0};
-    vkGetPhysicalDeviceProperties(d->p, &devProps);
+    vkGetPhysicalDeviceProperties(sr_device.p, &devProps);
 
 
     VkSamplerCreateInfo samplerInfo = {0};
@@ -210,7 +210,7 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(d->l, &samplerInfo, NULL, &t->sampler) != VK_SUCCESS) {
+    if (vkCreateSampler(sr_device.l, &samplerInfo, NULL, &t->sampler) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to create Texture Sampler");
         return SR_CREATE_FAIL;
     }
@@ -220,7 +220,8 @@ ErrorCode CreateImage(VulkanDevice* d, VulkanCommand* c, Texture* t, const char*
 
 
 
-void DestroyImage(VkDevice d, Texture* t) {
+void DestroyImage(Texture* t) {
+    VkDevice d = sr_device.l;
     vkDestroySampler(d, t->sampler, NULL);
     vkDestroyImageView(d, t->view, NULL);
     vkDestroyImage(d, t->image, NULL);

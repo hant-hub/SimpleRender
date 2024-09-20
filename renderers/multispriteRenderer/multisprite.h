@@ -1,5 +1,5 @@
-#ifndef SR_SPRITE_H
-#define SR_SPRITE_H
+#ifndef SR_MULTI_SPRITE_H
+#define SR_MULTI_SPRITE_H
 
 
 #include "common.h"
@@ -15,6 +15,7 @@
 #include "vertex.h"
 
 
+
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
     WIDTH = width;
     HEIGHT = height;
@@ -25,28 +26,27 @@ static void ResizeCallback(GLFWwindow* window, int width, int height) {
 typedef i32 SpriteHandle;
 
 
-SpriteHandle CreateSprite(sm_vec3f pos, sm_vec3f size);
-ErrorCode DestroySprite(SpriteHandle s);
+SpriteHandle MultiCreateSprite(sm_vec3f pos, sm_vec3f size);
+ErrorCode MultiDestroySprite(SpriteHandle s);
 
-ErrorCode PushBuffer(void* buf);
-sm_mat4f* GetModel(SpriteHandle s);
-u32 GetNum();
+ErrorCode MultiPushBuffer(void* buf);
+sm_mat4f* MultiGetModel(SpriteHandle s);
+u32 MultiGetNum();
 
 typedef struct {
-    VulkanDevice* d;
-    VulkanContext* context; 
     VulkanCommand* cmd;
-    StaticBuffer* verts;
+    StaticBuffer* pos;
+    StaticBuffer* uvs;
     StaticBuffer* index;
     VulkanShader* shader;
     VulkanPipelineConfig* config;
     VulkanPipeline* pipeline;
     RenderPass* pass;
     SwapChain* swap;
-    UniformHandles* uniforms;
+    BufferHandle* uniforms;
 } RenderState;
 
-void DrawFrame(RenderState r, unsigned int frame);
+void DrawFrameMultiSprite(RenderState r, unsigned int frame);
 
 
 

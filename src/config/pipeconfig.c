@@ -1,9 +1,10 @@
 #include "config.h"
+#include "init.h"
 #include "vertex.h"
 #include <vulkan/vulkan_core.h>
 
 
-ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p) {
+ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p) {
 
     //Shader stage creation
     p->stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -166,7 +167,7 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
     layoutInfo.pushConstantRangeCount = 0;
     layoutInfo.pPushConstantRanges = NULL;
 
-    if (vkCreatePipelineLayout(d->l, &layoutInfo, NULL, &p->layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(sr_device.l, &layoutInfo, NULL, &p->layout) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Pipeline Layout");
         return SR_CREATE_FAIL;
     }
@@ -181,7 +182,8 @@ ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* 
 
 
 
-void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p) {
+void DestroyPipelineConfig(VulkanPipelineConfig* p) {
+    VkDevice d = sr_device.l;
     vkDestroyDescriptorPool(d, p->descrip.descriptorPool, NULL);
     vkDestroyDescriptorSetLayout(d, p->descrip.descriptorLayout, NULL);
     vkDestroyPipelineLayout(d, p->layout, NULL);

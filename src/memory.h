@@ -21,13 +21,13 @@ typedef struct {
 } DynamicBuffer;
 
 ErrorCode findMemoryType(uint32_t typefilter, VkPhysicalDevice p, VkMemoryPropertyFlags properties, uint32_t* out);
-ErrorCode CreateBuffer(VulkanDevice* d, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, VkBuffer* buffer, VkDeviceMemory* mem);
-void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VulkanDevice* d, VulkanCommand* c);
+ErrorCode CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, VkBuffer* buffer, VkDeviceMemory* mem);
+void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VulkanCommand* c);
 
-void DestroyStaticBuffer(VkDevice d, StaticBuffer* b);
-void DestroyDynamicBuffer(VkDevice d, DynamicBuffer* b);
+void DestroyStaticBuffer(StaticBuffer* b);
+void DestroyDynamicBuffer(DynamicBuffer* b);
 
 
-ErrorCode CreateStaticBuffer(VulkanDevice* d, VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf);
+ErrorCode CreateStaticBuffer(VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf);
 
 #endif

@@ -8,7 +8,9 @@
 
 
 
-ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
+ErrorCode CreateCommand(VulkanCommand* cmd){
+    VulkanDevice* d = &sr_device;
+    VulkanContext*c = &sr_context;
     
     VkCommandPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -56,22 +58,23 @@ ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d){
 }
 
 
-void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d){
+void DestroyCommand(VulkanCommand* cmd){
+    VkDevice d = sr_device.l;
     for (unsigned int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(d->l, cmd->inFlight[i], NULL);
-        vkDestroySemaphore(d->l, cmd->renderFinished[i], NULL);
-        vkDestroySemaphore(d->l, cmd->imageAvalible[i], NULL);
+        vkDestroyFence(d, cmd->inFlight[i], NULL);
+        vkDestroySemaphore(d, cmd->renderFinished[i], NULL);
+        vkDestroySemaphore(d, cmd->imageAvalible[i], NULL);
     }
     SR_LOG_DEB("Destroyed Sync Objects");
 
 
-    vkDestroyCommandPool(d->l, cmd->pool, NULL);
+    vkDestroyCommandPool(d, cmd->pool, NULL);
     SR_LOG_DEB("Destroyed Command Pool");
 }
 
 
 
-VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool) {
+VkCommandBuffer beginSingleTimeCommand(VkCommandPool pool) {
     VkCommandBufferAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -79,7 +82,7 @@ VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool) {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(d, &allocInfo, &cmd);
+    vkAllocateCommandBuffers(sr_device.l, &allocInfo, &cmd);
 
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -90,7 +93,7 @@ VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool) {
     return cmd;
 }
 
-void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice* d) {
+void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool) {
     vkEndCommandBuffer(cmd);
 
     VkSubmitInfo submitInfo = {0};
@@ -98,8 +101,8 @@ void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice*
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd;
 
-    vkQueueSubmit(d->graph, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(d->graph);
+    vkQueueSubmit(sr_device.graph, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(sr_device.graph);
 
-    vkFreeCommandBuffers(d->l, pool, 1, &cmd);
+    vkFreeCommandBuffers(sr_device.l, pool, 1, &cmd);
 }

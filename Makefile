@@ -2,8 +2,8 @@
 TARGET_EXEC := test
 
 BUILD_DIR := ./build
-SRC_DIRS := ./src
-INC_SEARCH = ./src ./lib
+SRC_DIRS := ./src ./renderers
+INC_SEARCH = ./src ./lib ./renderers
 SHADER_DIR := ./shaders
 RESOURCE_DIR := ./resources
 

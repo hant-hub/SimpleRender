@@ -7,7 +7,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, VulkanShader* s) {
+ErrorCode CreateShaderProg(const char* vertex, const char* frag, VulkanShader* s) {
     //Read from file
     FILE* vertFile = fopen(vertex, "rb");
     if (vertFile == NULL) {
@@ -52,7 +52,7 @@ ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, Vul
     vertInfo.codeSize = vertSize;
     vertInfo.pCode = vertRaw;
 
-    if (vkCreateShaderModule(d, &vertInfo, NULL, &s->vertex) != VK_SUCCESS) {
+    if (vkCreateShaderModule(sr_device.l, &vertInfo, NULL, &s->vertex) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create vertex shader Module");
         return SR_CREATE_FAIL;
     }
@@ -62,7 +62,7 @@ ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, Vul
     fragInfo.codeSize = fragSize;
     fragInfo.pCode = fragRaw;
 
-    if (vkCreateShaderModule(d, &fragInfo, NULL, &s->fragment) != VK_SUCCESS) {
+    if (vkCreateShaderModule(sr_device.l, &fragInfo, NULL, &s->fragment) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create fragment shader Module");
         return SR_CREATE_FAIL;
     }

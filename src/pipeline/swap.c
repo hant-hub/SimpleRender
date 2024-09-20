@@ -1,4 +1,5 @@
 #include "config.h"
+#include "init.h"
 #include "log.h"
 #include "pipeline.h"
 #include <vulkan/vulkan_core.h>
@@ -40,7 +41,9 @@ ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
+    VulkanDevice* d = &sr_device;
+    VulkanContext* c = &sr_context;
 
     SwapChainDetails swapDetails;
     querySwapDetails(&swapDetails, d->p, c->surface);
@@ -169,7 +172,8 @@ ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, Swap
 
 
 
-void DestroySwapChain(VkDevice l, SwapChain* s) {
+void DestroySwapChain(SwapChain* s) {
+    VkDevice l = sr_device.l;
     for (int i = 0; i < s->imgCount; i++) {
         vkDestroyImageView(l, s->views[i], NULL);
     }

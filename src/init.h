@@ -12,9 +12,6 @@
 #define SR_MAX_FRAMES_IN_FLIGHT 2
 #define SR_MAX_INSTANCES 10
 
-extern uint32_t WIDTH;
-extern uint32_t HEIGHT;
-extern bool frameBufferResized;
 
 typedef struct {
     GLFWwindow* w;
@@ -57,15 +54,22 @@ static const char* deviceExtensions[] = {
 
 
 QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface);
-ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window); 
+ErrorCode CreateSurface(GLFWwindow* window);
 
-void DestroyContext(VulkanContext* context); 
-ErrorCode CreateInstance(VulkanContext* context);
+void DestroyContext();
+ErrorCode CreateContext();
 
-void DestroyDevice(VulkanDevice* d);
-ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context);
+void DestroyDevice();
+ErrorCode CreateDevices();
 
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s);
+
+extern uint32_t WIDTH;
+extern uint32_t HEIGHT;
+extern bool frameBufferResized;
+extern VulkanDevice sr_device;
+extern VulkanContext sr_context;
+
 
 #endif

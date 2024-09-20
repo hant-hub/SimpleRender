@@ -15,7 +15,7 @@
 
 
 
-ErrorCode CreatePipeline(VulkanDevice* d, VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r) {
+ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r) {
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -40,7 +40,7 @@ ErrorCode CreatePipeline(VulkanDevice* d, VulkanShader* s, VulkanPipelineConfig*
 
     p->pass = r;
 
-    if (vkCreateGraphicsPipelines(d->l, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &p->pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(sr_device.l, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &p->pipeline) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Graphics Pipeline");
         return SR_CREATE_FAIL;
     }
@@ -53,14 +53,14 @@ ErrorCode CreatePipeline(VulkanDevice* d, VulkanShader* s, VulkanPipelineConfig*
 
 
 
-void DestroyShaderProg(VkDevice d, VulkanShader* s) {
-    vkDestroyShaderModule(d, s->vertex, NULL);
-    vkDestroyShaderModule(d, s->fragment, NULL);
+void DestroyShaderProg(VulkanShader* s) {
+    vkDestroyShaderModule(sr_device.l, s->vertex, NULL);
+    vkDestroyShaderModule(sr_device.l, s->fragment, NULL);
 }
 
 
-void DestroyPipeline(VkDevice d, VulkanPipeline* p) {
-    vkDestroyPipeline(d, p->pipeline, NULL);
+void DestroyPipeline(VulkanPipeline* p) {
+    vkDestroyPipeline(sr_device.l, p->pipeline, NULL);
     SR_LOG_DEB("Graphics Pipeline Destroyed");
 }
 

@@ -32,14 +32,14 @@ typedef struct {
 } SwapChain;
 
 
-ErrorCode CreateSwapChain(VulkanDevice* d, VulkanContext* c, RenderPass* r, SwapChain* s, VkSwapchainKHR old);
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old);
 //ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r);
-ErrorCode CreateShaderProg(VkDevice d, const char* vertex, const char* frag, VulkanShader* s);
-ErrorCode CreatePipeline(VulkanDevice* d, VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r);
+ErrorCode CreateShaderProg(const char* vertex, const char* frag, VulkanShader* s);
+ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r);
 
-void DestroySwapChain(VkDevice l, SwapChain* s);
-void DestroyShaderProg(VkDevice d, VulkanShader* s);
-void DestroyPipeline(VkDevice d, VulkanPipeline* p);
+void DestroySwapChain(SwapChain* s);
+void DestroyShaderProg(VulkanShader* s);
+void DestroyPipeline(VulkanPipeline* p);
 
 
 

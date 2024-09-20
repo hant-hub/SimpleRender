@@ -95,15 +95,15 @@ u32 MultiGetNum() {
 
 
 void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
-    VulkanDevice* device = r.d;
-    VulkanContext* context = r.context; 
+    VulkanDevice* device = &sr_device;
+    VulkanContext* context = &sr_context; 
     VulkanCommand* cmd = r.cmd;
     VulkanShader* shader = r.shader;
     VulkanPipelineConfig* config = r.config;
     VulkanPipeline* pipe = r.pipeline;
     RenderPass* pass = r.pass;
     SwapChain* swapchain = r.swap;
-    UniformHandles* uniforms = r.uniforms;
+    BufferHandle* uniforms = r.uniforms;
     
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
@@ -114,9 +114,9 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(device->l, swapchain);
+        DestroySwapChain(swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, swapchain->swapChain); 
+        ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
         if (code != SR_NO_ERROR) return;
 
 
@@ -237,9 +237,9 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
 
         frameBufferResized = FALSE;
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(device->l, swapchain);
+        DestroySwapChain(swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, NULL);
+        ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
         if (code != SR_NO_ERROR) return;
 
     } else if (result != VK_SUCCESS) {

@@ -11,22 +11,20 @@
 
 
 
-typedef struct {
-    sm_mat4f model;
-//    i32 texture;
-} SpriteEntry;
 
 
-static SpriteEntry denseSetVals[SR_MAX_INSTANCES] = {0};
-static u32 denseSetIdx[SR_MAX_INSTANCES] = {0};
-static i32 sparseSet[SR_MAX_INSTANCES] = {0};
-static u32 denseSize = 0;
 
 
-SpriteHandle CreateSprite(sm_vec3f pos, sm_vec3f size) {
+
+SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is
     //a tombstone value
+    
+    SpriteEntry* denseSetVals = r->denseSetVals;
+    u32* denseSetIdx = r->denseSetIdx;
+    i32* sparseSet = r->sparseSet;
+    u32* denseSize = &r->denseSize;
     
     
     u32 newIndex = 0;
@@ -35,8 +33,8 @@ SpriteHandle CreateSprite(sm_vec3f pos, sm_vec3f size) {
         SR_LOG_ERR("Failed to Create Sprite! Not Enough Instances");
         return -1;
     }
-    u32 denseIndex = denseSize;
-    sparseSet[--newIndex] = ++denseSize; 
+    u32 denseIndex = *denseSize;
+    sparseSet[--newIndex] = ++*denseSize; 
 
     sm_vec4f s = (sm_vec4f){size.x, size.y, size.z, 1.0f};
 
@@ -49,7 +47,12 @@ SpriteHandle CreateSprite(sm_vec3f pos, sm_vec3f size) {
     return newIndex;
 }
 
-ErrorCode DestroySprite(SpriteHandle s) {
+ErrorCode DestroySprite(RenderState* r, SpriteHandle s) {
+
+    SpriteEntry* denseSetVals = r->denseSetVals;
+    u32* denseSetIdx = r->denseSetIdx;
+    i32* sparseSet = r->sparseSet;
+    u32 denseSize = r->denseSize;
 
     u32 denseIndex = sparseSet[s] - 1;
     {
@@ -64,7 +67,7 @@ ErrorCode DestroySprite(SpriteHandle s) {
         denseSetIdx[denseIndex] = temp;
     }
 
-    denseSize -= 1;
+    r->denseSize -= 1;
     sparseSet[s] = 0;
 
     return SR_NO_ERROR;
@@ -72,20 +75,19 @@ ErrorCode DestroySprite(SpriteHandle s) {
 
 
 
-ErrorCode PushBuffer(void* buf) {
-
-    memcpy(buf, denseSetVals, sizeof(SpriteEntry) * denseSize);
+ErrorCode PushBuffer(RenderState* r, void* buf) {
+    memcpy(buf, r->denseSetVals, sizeof(SpriteEntry) * r->denseSize);
     return SR_NO_ERROR;
 }
-sm_mat4f* GetModel(SpriteHandle s) {
-    if (!sparseSet[s]) return NULL;
-    return &denseSetVals[(sparseSet[s] - 1)].model;
+sm_mat4f* GetModel(RenderState* r, SpriteHandle s) {
+    if (!r->sparseSet[s]) return NULL;
+    return &r->denseSetVals[(r->sparseSet[s] - 1)].model;
 }
 
 
 
-u32 GetNum() {
-    return denseSize;
+u32 GetNum(RenderState* r) {
+    return r->denseSize;
 }
 
 
@@ -94,16 +96,16 @@ u32 GetNum() {
 
 
 
-void DrawFrame(RenderState r, unsigned int frame) {
-    VulkanDevice* device = r.d;
-    VulkanContext* context = r.context; 
-    VulkanCommand* cmd = r.cmd;
-    VulkanShader* shader = r.shader;
-    VulkanPipelineConfig* config = r.config;
-    VulkanPipeline* pipe = r.pipeline;
-    RenderPass* pass = r.pass;
-    SwapChain* swapchain = r.swap;
-    UniformHandles* uniforms = r.uniforms;
+void DrawFrame(RenderState* r, unsigned int frame) {
+    VulkanDevice* device = &sr_device;
+    VulkanContext* context = &sr_context; 
+    VulkanCommand* cmd = &r->cmd;
+    VulkanShader* shader = &r->shader;
+    VulkanPipelineConfig* config = &r->config;
+    VulkanPipeline* pipe = &r->pipeline;
+    RenderPass* pass = &r->pass;
+    SwapChain* swapchain = &r->swap;
+    BufferHandle* uniforms = &r->uniforms;
     
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
@@ -114,9 +116,9 @@ void DrawFrame(RenderState r, unsigned int frame) {
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(device->l, swapchain);
+        DestroySwapChain(swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, swapchain->swapChain); 
+        ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
         if (code != SR_NO_ERROR) return;
 
 
@@ -135,7 +137,7 @@ void DrawFrame(RenderState r, unsigned int frame) {
 
     memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
     memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
-    PushBuffer(uniforms->objs[frame] + sizeof(sm_mat4f) * 2);
+    memcpy(uniforms->objs[frame] + sizeof(sm_mat4f) * 2, r->denseSetVals, sizeof(SpriteEntry) * r->denseSize);
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
@@ -165,10 +167,10 @@ void DrawFrame(RenderState r, unsigned int frame) {
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
 
-    VkBuffer bufs[] = {r.verts->buf};
+    VkBuffer bufs[] = {r->verts.buf};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmdBuf, 0, 1, bufs, offsets);
-    vkCmdBindIndexBuffer(cmdBuf, r.index->buf, 0, VK_INDEX_TYPE_UINT16); 
+    vkCmdBindIndexBuffer(cmdBuf, r->index.buf, 0, VK_INDEX_TYPE_UINT16); 
 
     
     pipe->view.x = 0.0f;
@@ -185,7 +187,7 @@ void DrawFrame(RenderState r, unsigned int frame) {
 
     vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
 
-    vkCmdDrawIndexed(cmdBuf, r.index->size/sizeof(uint16_t), GetNum(), 0, 0, 0);
+    vkCmdDrawIndexed(cmdBuf, r->index.size/sizeof(uint16_t), r->denseSize, 0, 0, 0);
     vkCmdEndRenderPass(cmdBuf);
 
 
@@ -237,9 +239,9 @@ void DrawFrame(RenderState r, unsigned int frame) {
 
         frameBufferResized = FALSE;
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(device->l, swapchain);
+        DestroySwapChain(swapchain);
 
-        ErrorCode code = CreateSwapChain(device, context, pass, swapchain, NULL);
+        ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
         if (code != SR_NO_ERROR) return;
 
     } else if (result != VK_SUCCESS) {

@@ -23,7 +23,7 @@ ErrorCode findMemoryType(uint32_t typefilter, VkPhysicalDevice p, VkMemoryProper
 
 
 
-ErrorCode CreateBuffer(VulkanDevice* d, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, 
+ErrorCode CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, 
                               VkBuffer* buffer, VkDeviceMemory* mem) {
 
     VkBufferCreateInfo bufferInfo = {0};
@@ -32,16 +32,18 @@ ErrorCode CreateBuffer(VulkanDevice* d, VkDeviceSize size, VkBufferUsageFlags us
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(d->l, &bufferInfo, NULL, buffer) != VK_SUCCESS) {
+    VkDevice d = sr_device.l;
+
+    if (vkCreateBuffer(d, &bufferInfo, NULL, buffer) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to create Vertex Buffer");
         return SR_CREATE_FAIL;
     }
 
     VkMemoryRequirements memReq = {0};
-    vkGetBufferMemoryRequirements(d->l, *buffer, &memReq);
+    vkGetBufferMemoryRequirements(d, *buffer, &memReq);
 
     VkPhysicalDeviceMemoryProperties devMemProps = {0};
-    vkGetPhysicalDeviceMemoryProperties(d->p, &devMemProps);
+    vkGetPhysicalDeviceMemoryProperties(sr_device.p, &devMemProps);
 
     uint32_t typefilter = memReq.memoryTypeBits;
     VkMemoryPropertyFlags properties = memFlags;
@@ -69,12 +71,12 @@ ErrorCode CreateBuffer(VulkanDevice* d, VkDeviceSize size, VkBufferUsageFlags us
     allocInfo.memoryTypeIndex = selected;
 
 
-    if (vkAllocateMemory(d->l, &allocInfo, NULL, mem) != VK_SUCCESS) {
+    if (vkAllocateMemory(d, &allocInfo, NULL, mem) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Allocate Memory");
         return SR_CREATE_FAIL;
     }
 
-    vkBindBufferMemory(d->l, *buffer, *mem, 0);
+    vkBindBufferMemory(d, *buffer, *mem, 0);
 
 
     return SR_NO_ERROR;
@@ -83,8 +85,9 @@ ErrorCode CreateBuffer(VulkanDevice* d, VkDeviceSize size, VkBufferUsageFlags us
 
 
 
-void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VulkanDevice* d, VulkanCommand* c) {
-    VkCommandBuffer cmd = beginSingleTimeCommand(d->l, c->pool);
+void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VulkanCommand* c) {
+    VkDevice d = sr_device.l;
+    VkCommandBuffer cmd = beginSingleTimeCommand(c->pool);
 
     VkBufferCopy copyRegion = {0};
     copyRegion.srcOffset = 0;
@@ -92,46 +95,47 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, Vulka
     copyRegion.size = size;
     vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion); 
 
-    endSingleTimeCommand(cmd, c->pool, d);
+    endSingleTimeCommand(cmd, c->pool);
 }
 
 
-void DestroyStaticBuffer(VkDevice d, StaticBuffer* b) {
-    vkDestroyBuffer(d, b->buf, NULL);
-    vkFreeMemory(d, b->mem, NULL);
+void DestroyStaticBuffer(StaticBuffer* b) {
+    vkDestroyBuffer(sr_device.l, b->buf, NULL);
+    vkFreeMemory(sr_device.l, b->mem, NULL);
 }
 
-void DestroyDynamicBuffer(VkDevice d, DynamicBuffer* b) {
-    vkDestroyBuffer(d, b->buf, NULL);
-    vkFreeMemory(d, b->mem, NULL);
+void DestroyDynamicBuffer(DynamicBuffer* b) {
+    vkDestroyBuffer(sr_device.l, b->buf, NULL);
+    vkFreeMemory(sr_device.l, b->mem, NULL);
 }
 
 
 
-ErrorCode CreateStaticBuffer(VulkanDevice* d, VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf) {
+ErrorCode CreateStaticBuffer(VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf) {
+    VkDevice d = sr_device.l;
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
-    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  &stagingBuffer, &stagingMemory);
 
     void* dest;
-    vkMapMemory(d->l, stagingMemory, 0, size, 0, &dest);
+    vkMapMemory(d, stagingMemory, 0, size, 0, &dest);
     memcpy(dest, data, size);
-    vkUnmapMemory(d->l, stagingMemory);
+    vkUnmapMemory(d, stagingMemory);
 
     buf->size = size;
-    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                  &buf->buf, &buf->mem);
 
-    CopyBuffer(stagingBuffer, buf->buf, size, d, cmd);
-    vkDestroyBuffer(d->l, stagingBuffer, NULL);
-    vkFreeMemory(d->l, stagingMemory, NULL);
+    CopyBuffer(stagingBuffer, buf->buf, size, cmd);
+    vkDestroyBuffer(d, stagingBuffer, NULL);
+    vkFreeMemory(d, stagingMemory, NULL);
     return SR_NO_ERROR;
 }
 
 ErrorCode CreateDynamicBuffer(VulkanDevice* d, VulkanCommand* cmd, u32 size, DynamicBuffer* buf, VkBufferUsageFlags usage) {
-    CreateBuffer(d, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  &buf->buf, &buf->mem);
     vkMapMemory(d->l, buf->mem, 0, size, 0, &buf->buffer);

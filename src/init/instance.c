@@ -11,6 +11,8 @@ uint32_t WIDTH = 800;
 uint32_t HEIGHT = 600;
 bool frameBufferResized = FALSE;
 
+VulkanContext sr_context = {0};
+
 static bool CheckValidationLayerSupport() {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, NULL);
@@ -85,15 +87,15 @@ void DestroyDebugMessenger(VulkanContext* context) {
 #endif
 
 
-void DestroyContext(VulkanContext* context) {
-    vkDestroySurfaceKHR(context->instance, context->surface, NULL);
+void DestroyContext() {
+    vkDestroySurfaceKHR(sr_context.instance, sr_context.surface, NULL);
     SR_LOG_DEB("Surface Destroyed");
 
 #ifdef DEBUG
-    DestroyDebugMessenger(context);
+    DestroyDebugMessenger(&sr_context);
     SR_LOG_DEB("Debug Messenger Destroyed");
 #endif
-    vkDestroyInstance(context->instance, NULL);
+    vkDestroyInstance(sr_context.instance, NULL);
     SR_LOG_DEB("Instance Destroyed");
 
 
@@ -101,7 +103,9 @@ void DestroyContext(VulkanContext* context) {
 
 
 
-ErrorCode CreateInstance(VulkanContext* context) {
+ErrorCode CreateContext() {
+
+    VulkanContext* context = &sr_context;
 
 #ifdef DEBUG
     if (!CheckValidationLayerSupport()) {
@@ -192,8 +196,8 @@ ErrorCode CreateInstance(VulkanContext* context) {
 }
 
 
-ErrorCode CreateSurface(VulkanContext* context, GLFWwindow* window) {
-    if (glfwCreateWindowSurface(context->instance, window, NULL, &context->surface) != VK_SUCCESS) {
+ErrorCode CreateSurface(GLFWwindow* window) {
+    if (glfwCreateWindowSurface(sr_context.instance, window, NULL, &sr_context.surface) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to create window Surface");
         return SR_CREATE_FAIL;
     }

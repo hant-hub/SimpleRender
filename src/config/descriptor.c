@@ -6,9 +6,9 @@
 #include <vulkan/vulkan_core.h>
 
 
-#define NUM_SUPPORTED_TYPES 2
+#define NUM_SUPPORTED_TYPES 3
 
-ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size) {
+ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size) {
 
     VkDescriptorSetLayoutBinding bindings[size]; 
     VkDescriptorPoolSize poolSizes[NUM_SUPPORTED_TYPES];
@@ -16,7 +16,7 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
 
     for (u32 i = 0; i < size; i++) {
         switch (layout[i]) {
-            case SR_DESC_BUF: {
+            case SR_DESC_UNIFORM: {
                bindings[i] = (VkDescriptorSetLayoutBinding){
                     .binding = i,
                     .stageFlags = access[i].stage,
@@ -29,6 +29,18 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
 
                break;
             }
+            case SR_DESC_STORAGE: {
+               bindings[i] = (VkDescriptorSetLayoutBinding){
+                    .binding = i,
+                    .stageFlags = access[i].stage,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    .pImmutableSamplers = NULL,
+                    .descriptorCount = 1,
+               };
+               typeNums[1]++;
+               SR_LOG_DEB("\tBinding %d bound to Buffer", i);
+                break;
+            }
             case SR_DESC_SAMPLER: {
                bindings[i] = (VkDescriptorSetLayoutBinding){
                     .binding = i,
@@ -37,7 +49,7 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
                     .pImmutableSamplers = NULL,
                     .descriptorCount = access[i].misc,
                };
-               typeNums[1]++;
+               typeNums[2] += access[i].misc;
                SR_LOG_DEB("\tBinding %d bound to Image", i);
                break;
             }
@@ -48,13 +60,15 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
         }
     }
 
+    VkDevice d = sr_device.l;
+
     VkDescriptorSetLayoutCreateInfo createInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pBindings = bindings,
         .bindingCount = size
     };
 
-    if (vkCreateDescriptorSetLayout(d->l, &createInfo, NULL, &config->descrip.descriptorLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(d, &createInfo, NULL, &config->descrip.descriptorLayout) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Descriptor Layout");
         return SR_CREATE_FAIL;
     }
@@ -62,18 +76,23 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
     u32 maxsize = 0;
     for (u32 i = 0; i < NUM_SUPPORTED_TYPES; i++) maxsize = maxsize < typeNums[i] ? typeNums[i] : maxsize;
     
-    poolSizes[0] = (VkDescriptorPoolSize) { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         typeNums[0] * (u32)SR_MAX_FRAMES_IN_FLIGHT};
-    poolSizes[1] = (VkDescriptorPoolSize) { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * typeNums[1] * (u32)SR_MAX_FRAMES_IN_FLIGHT};
+    int poolSizeTop = 0;
+    if (typeNums[0])
+        poolSizes[poolSizeTop++] = (VkDescriptorPoolSize) { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         typeNums[0] * (u32)SR_MAX_FRAMES_IN_FLIGHT};
+    if (typeNums[1])
+        poolSizes[poolSizeTop++] = (VkDescriptorPoolSize) { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         typeNums[1] * (u32)SR_MAX_FRAMES_IN_FLIGHT};
+    if (typeNums[2])
+        poolSizes[poolSizeTop++] = (VkDescriptorPoolSize) { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, typeNums[2] * (u32)SR_MAX_FRAMES_IN_FLIGHT};
     
     VkDescriptorPoolCreateInfo poolInfo = (VkDescriptorPoolCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .maxSets = (u32)SR_MAX_FRAMES_IN_FLIGHT,
         .pPoolSizes = poolSizes,
-        .poolSizeCount = NUM_SUPPORTED_TYPES
-    };
+        .poolSizeCount = poolSizeTop
+   };
 
 
-    if (vkCreateDescriptorPool(d->l, &poolInfo, NULL, &config->descrip.descriptorPool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(d, &poolInfo, NULL, &config->descrip.descriptorPool) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Descriptor Pool");
         return SR_CREATE_FAIL;
     }
@@ -89,7 +108,7 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
         .pSetLayouts = layouts
     };
 
-    if (vkAllocateDescriptorSets(d->l, &allocInfo, config->descrip.descriptorSet) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(d, &allocInfo, config->descrip.descriptorSet) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Descriptor Set");
         return SR_CREATE_FAIL;
     }
@@ -97,7 +116,7 @@ ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* confi
     return SR_NO_ERROR;
 }
 
-ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex) {
+ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex) {
 
     for (u32 i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorImageInfo imgInfo = {
@@ -118,12 +137,12 @@ ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineCo
             .pTexelBufferView = NULL
         };
 
-        vkUpdateDescriptorSets(d->l, 1, &write, 0, NULL);
+        vkUpdateDescriptorSets(sr_device.l, 1, &write, 0, NULL);
     }
     return SR_NO_ERROR;
 }
 
-ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size) {
+ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size) {
 
     for (u32 i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         
@@ -148,23 +167,24 @@ ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelin
             .pTexelBufferView = NULL
         };
 
-        vkUpdateDescriptorSets(d->l, 1, &write, 0, NULL);
+        vkUpdateDescriptorSets(sr_device.l, 1, &write, 0, NULL);
     }
     return SR_NO_ERROR;
 }
 
 
 
-ErrorCode SetBuffer(VulkanDevice* d, VulkanPipelineConfig* config, UniformHandles* handles, u32 index) {
+ErrorCode SetBuffer(VulkanPipelineConfig* config, BufferHandle* handles, u32 index) {
 
     VkDeviceSize bufSize = sizeof(UniformObj) * SR_MAX_INSTANCES;
+    VkDevice d = sr_device.l;
 
     for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateBuffer(d, bufSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        CreateBuffer(bufSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      &handles->bufs[i], &handles->mem[i]);
 
-        vkMapMemory(d->l, handles->mem[i], 0, bufSize, 0, &handles->objs[i]);
+        vkMapMemory(d, handles->mem[i], 0, bufSize, 0, &handles->objs[i]);
     }
 
     for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
@@ -185,7 +205,7 @@ ErrorCode SetBuffer(VulkanDevice* d, VulkanPipelineConfig* config, UniformHandle
         write.pImageInfo = NULL;
         write.pTexelBufferView = NULL;
 
-        vkUpdateDescriptorSets(d->l, 1, &write, 0, NULL);
+        vkUpdateDescriptorSets(d, 1, &write, 0, NULL);
     }
 
 

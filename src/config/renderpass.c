@@ -4,7 +4,11 @@
 
 
 
-ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c) {
+ErrorCode CreatePass(RenderPass* r) {
+
+    VulkanDevice* d = &sr_device;
+    VulkanContext* c = &sr_context;
+
     SwapChainDetails swapDetails;
     querySwapDetails(&swapDetails, d->p, c->surface);
 
@@ -69,7 +73,7 @@ ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c) {
 
 
 
-void DestroyPass(VkDevice d, RenderPass* r) {
-    vkDestroyRenderPass(d, r->pass, NULL);
+void DestroyPass(RenderPass* r) {
+    vkDestroyRenderPass(sr_device.l, r->pass, NULL);
     SR_LOG_DEB("Destroyed RenderPass");  
 }

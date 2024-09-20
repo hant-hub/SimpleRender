@@ -17,7 +17,7 @@ typedef struct {
     VkBuffer bufs[SR_MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory mem[SR_MAX_FRAMES_IN_FLIGHT];
     void* objs[SR_MAX_FRAMES_IN_FLIGHT];
-} UniformHandles;
+} BufferHandle;
 
 
 typedef struct {
@@ -37,7 +37,8 @@ typedef struct {
 } VulkanDescriptorInfo;
 
 typedef enum {
-    SR_DESC_BUF,
+    SR_DESC_UNIFORM,
+    SR_DESC_STORAGE,
     SR_DESC_SAMPLER
 } DescriptorType;
 
@@ -101,18 +102,18 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
-ErrorCode CreatePass(RenderPass* r, VulkanDevice* d, VulkanContext* c);
-void DestroyPass(VkDevice d, RenderPass* r);
+ErrorCode CreatePass(RenderPass* r);
+void DestroyPass(RenderPass* r);
 
 //pipeline Config
-ErrorCode CreatePipelineConfig(VulkanDevice* d, VulkanContext* c, VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p);
-void DestroyPipelineConfig(VkDevice d, VulkanPipelineConfig* p);
+ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p);
+void DestroyPipelineConfig(VulkanPipelineConfig* p);
 
 //bindings
-ErrorCode CreateDescriptorSetConfig(VulkanDevice* d, VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size);
-ErrorCode SetImage(VulkanDevice* d, VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
-ErrorCode SetImages(VulkanDevice* d, VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
-ErrorCode SetBuffer(VulkanDevice* d, VulkanPipelineConfig* config, UniformHandles* handles, u32 index);
+ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size);
+ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
+ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
+ErrorCode SetBuffer(VulkanPipelineConfig* config, BufferHandle* handles, u32 index);
 
 
 

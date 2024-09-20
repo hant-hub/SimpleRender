@@ -18,11 +18,11 @@ typedef struct VulkanCommand {
 
 
 
-VkCommandBuffer beginSingleTimeCommand(VkDevice d, VkCommandPool pool);
-void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool, VulkanDevice* d);
+VkCommandBuffer beginSingleTimeCommand(VkCommandPool pool);
+void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool);
 
-ErrorCode CreateCommand(VulkanCommand* cmd, VulkanContext* c, VulkanDevice* d);
-void DestroyCommand(VulkanCommand* cmd, VulkanDevice* d);
+ErrorCode CreateCommand(VulkanCommand* cmd);
+void DestroyCommand(VulkanCommand* cmd);
 
 
 

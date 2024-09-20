@@ -6,6 +6,7 @@
 #include <vulkan/vulkan_core.h>
 
 
+VulkanDevice sr_device = {0};
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s) {
     static SwapChainDetails cached = {0};
@@ -102,14 +103,16 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
 
 
 
-void DestroyDevice(VulkanDevice* d) {
-
-    vkDestroyDevice(d->l, NULL);
+void DestroyDevice() {
+    vkDestroyDevice(sr_device.l, NULL);
     SR_LOG_DEB("Logical Device Destroyed");
 }
 
 
-ErrorCode CreateDevices(VulkanDevice* d, VulkanContext* context) {
+ErrorCode CreateDevices() {
+
+    VulkanContext* context = &sr_context;
+    VulkanDevice* d = &sr_device;
 
     //Find Physical Device
     uint32_t deviceCount = 0;
