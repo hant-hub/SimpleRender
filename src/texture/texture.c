@@ -3,13 +3,13 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
-#include "stb_image.h"
 #include "memory.h"
 #include "fcntl.h"
 #include <stdio.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void TransitionImageLayout(VulkanDevice* d, VulkanCommand* c, VkImage img, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer cmd = beginSingleTimeCommand(c->pool);

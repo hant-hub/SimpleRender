@@ -12,7 +12,6 @@
 #include "util.h"
 #include "vec2.h"
 #include "vec3.h"
-#include "vertex.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -20,12 +19,6 @@
 #include <vulkan/vulkan_core.h>
 
 
-static const Vertex verts[] = {
-    {{-0.5f, -0.5f}, {0.0f, 0.0f}},
-    {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
-    {{-0.5f,  0.5f}, {0.0f, 1.0f}}
-};
 
 static const sm_vec2f positions[] = {
     {-0.5f, -0.5f},
@@ -60,8 +53,8 @@ void DestroyUniformBuffer(BufferHandle* handles) {
     }
 }
 
-static void ExitProg(GLFWwindow* window, SwapChain* swap,
-                     VulkanShader* shader, VulkanPipelineConfig* config, RenderPass* r, VulkanPipeline* pipeline, VulkanCommand* cmd, GeometryBuffer* buffer,
+static void ExitProg(SwapChain* swap,
+                     VulkanShader* shader, VulkanPipelineConfig* config, RenderPass* r, VulkanPipeline* pipeline, VulkanCommand* cmd,
                         BufferHandle* uniforms) {
     
     DestroyCommand(cmd);
@@ -71,23 +64,13 @@ static void ExitProg(GLFWwindow* window, SwapChain* swap,
     DestroyPass(r);
     DestroyUniformBuffer(uniforms);
     DestroySwapChain(swap);
-    DestroyDevice();
-    DestroyContext();
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    DestroyVulkan();
     exit(1);
 }
 
 
 int main() {
 
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "SimpleRender", NULL, NULL);
-    glfwSetFramebufferSizeCallback(window, ResizeCallback);
 
     VulkanPipelineConfig config = {0};
     RenderPass pass = {0};
@@ -95,33 +78,23 @@ int main() {
     VulkanShader shader = {0};
     VulkanPipeline pipeline = {0};
     VulkanCommand cmd = {0};
-    GeometryBuffer buffer = {0};
     BufferHandle uniforms = {0};
     Texture test = {0};
     Texture test2 = {0};
 
-    ErrorCode result = CreateContext();
+    ErrorCode result = CreateVulkan();
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
-    sr_context.w = window;
-
-    result = CreateSurface(window);
-    if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
-
-    result = CreateDevices();
-    if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreateShaderProg("shaders/standard.vert.spv", "shaders/standard.frag.spv", &shader);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     DescriptorType uniformconfig[2] = {SR_DESC_UNIFORM, SR_DESC_SAMPLER};
     DescriptorDetail flags[2] = {{VK_SHADER_STAGE_VERTEX_BIT, 0}, {VK_SHADER_STAGE_FRAGMENT_BIT, 2}};
     result = CreateDescriptorSetConfig(&config, uniformconfig, flags, 2);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     AttrConfig vconfig[] = {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
@@ -131,7 +104,7 @@ int main() {
     VkVertexInputAttributeDescription attrs[2];
     result = MultiCreateVertAttr(attrs, binds, vconfig, 2);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     VulkanMultiVertexInput vin = {
         .attrs = attrs,
@@ -140,23 +113,23 @@ int main() {
     };
     result = CreatePipelineConfig(&shader, VulkanMultiVertToConfig(vin), &config);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreatePass(&pass);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreateSwapChain(&pass, &swapchain, VK_NULL_HANDLE);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
     
     result = CreatePipeline(&shader, &config, &pipeline, &pass); 
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreateCommand(&cmd);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     StaticBuffer posBuf = {};
     StaticBuffer uvBuf = {};
@@ -164,38 +137,38 @@ int main() {
     
     result = CreateStaticBuffer(&cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, positions, sizeof(positions), &posBuf);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
     
     result = CreateStaticBuffer(&cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, uvs, sizeof(uvs), &uvBuf);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreateStaticBuffer(&cmd, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &indexBuf);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = CreateImage(&cmd, &test, "resources/textures/texture.jpg");
     if (result != SR_NO_ERROR) {
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
     }
 
     result = CreateImage(&cmd, &test2, "resources/textures/duck.jpg");
     if (result != SR_NO_ERROR) {
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
     }
 
 //    result = CreateUniformBuffer(&uniforms, &test2, &config, &device);
     result = SetImage(test.view, test.sampler, &config, 1, 0);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = SetImage(test2.view, test2.sampler, &config, 1, 1);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     result = SetBuffer(&config, &uniforms, 0);
     if (result != SR_NO_ERROR)
-        ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+        ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
 
     SpriteHandle s1 = MultiCreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
     SpriteHandle s2 = MultiCreateSprite((sm_vec3f){50.0f, 50.0f, 0.0f}, (sm_vec3f){50, 50, 0});
@@ -220,10 +193,10 @@ int main() {
     };
 
     unsigned int frameCounter = 0;
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(sr_context.w)) {
         glfwPollEvents();
-        frameCounter = frameCounter + 1;
-        DrawFrameMultiSprite(state, frameCounter % SR_MAX_FRAMES_IN_FLIGHT);
+        frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
+        DrawFrameMultiSprite(state, frameCounter);
         
         sm_mat4f* model = MultiGetModel(s1);
         *model = sm_mat4_f32_translate(model, (sm_vec3f){-50.0f, -50.0f, 0.0f});
@@ -242,6 +215,6 @@ int main() {
     DestroyStaticBuffer(&posBuf);
     DestroyStaticBuffer(&uvBuf);
     DestroyStaticBuffer(&indexBuf);
-    ExitProg(window, &swapchain, &shader, &config, &pass, &pipeline, &cmd, &buffer, &uniforms);
+    ExitProg(&swapchain, &shader, &config, &pass, &pipeline, &cmd, &uniforms);
     return 0;
 }

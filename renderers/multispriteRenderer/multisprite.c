@@ -114,10 +114,10 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(swapchain);
-
-        ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
-        if (code != SR_NO_ERROR) return;
+        SwapChain oldSwap = *swapchain;
+        ErrorCode code = CreateSwapChain(pass, swapchain, oldSwap.swapChain);
+        DestroySwapChain(&oldSwap);
+        return;
 
 
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -224,6 +224,7 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
 
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.pResults = NULL;
 
     VkSwapchainKHR swapChains[] = {swapchain->swapChain};
     presentInfo.swapchainCount = 1;
@@ -237,10 +238,11 @@ void DrawFrameMultiSprite(RenderState r, unsigned int frame) {
 
         frameBufferResized = FALSE;
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(swapchain);
 
-        ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
-        if (code != SR_NO_ERROR) return;
+        SwapChain oldSwap = *swapchain;
+        ErrorCode code = CreateSwapChain(pass, swapchain, oldSwap.swapChain);
+        DestroySwapChain(&oldSwap);
+        return;
 
     } else if (result != VK_SUCCESS) {
         SR_LOG_ERR("Bad things are happening");

@@ -1,6 +1,5 @@
 #include "config.h"
 #include "init.h"
-#include "vertex.h"
 #include <vulkan/vulkan_core.h>
 
 

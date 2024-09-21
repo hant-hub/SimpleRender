@@ -6,21 +6,12 @@
 #include <mat4.h>
 #include "config.h"
 #include "error.h"
-#include "frame.h"
 #include "init.h"
 #include "command.h"
 #include "log.h"
 #include "memory.h"
 #include "pipeline.h"
-#include "vertex.h"
 
-
-
-static void ResizeCallback(GLFWwindow* window, int width, int height) {
-    WIDTH = width;
-    HEIGHT = height;
-    frameBufferResized = TRUE;
-}
 
 //sprite ID
 typedef i32 SpriteHandle;

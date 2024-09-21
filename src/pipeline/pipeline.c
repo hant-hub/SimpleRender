@@ -3,16 +3,10 @@
 #include "init.h"
 #include "log.h"
 #include "util.h"
-#include "vertex.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <vulkan/vulkan_core.h>
-
-
-
-
-
 
 
 ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r) {

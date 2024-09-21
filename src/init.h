@@ -9,7 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 
-#define SR_MAX_FRAMES_IN_FLIGHT 2
+#define SR_MAX_FRAMES_IN_FLIGHT 1
 #define SR_MAX_INSTANCES 10
 
 
@@ -54,13 +54,11 @@ static const char* deviceExtensions[] = {
 
 
 QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice p, VkSurfaceKHR surface);
-ErrorCode CreateSurface(GLFWwindow* window);
 
-void DestroyContext();
-ErrorCode CreateContext();
 
-void DestroyDevice();
-ErrorCode CreateDevices();
+
+ErrorCode CreateVulkan();
+void DestroyVulkan();
 
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s);
