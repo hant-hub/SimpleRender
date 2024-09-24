@@ -20,10 +20,12 @@ typedef i32 SpriteHandle;
 
 
 
-typedef struct {
+struct SpriteEntry {
     sm_mat4f model;
-//    i32 texture;
-} SpriteEntry;
+    u32 texture;
+} __attribute__ ((aligned(sizeof(sm_vec4f))));
+
+typedef struct SpriteEntry SpriteEntry;
 
 typedef struct {
     VulkanCommand cmd;

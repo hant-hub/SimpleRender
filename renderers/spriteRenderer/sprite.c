@@ -120,6 +120,8 @@ SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size) {
     denseSetVals[denseIndex].model = sm_mat4_f32_scale(&sm_mat4f_identity, s);
     denseSetVals[denseIndex].model = sm_mat4_f32_translate(&denseSetVals[denseIndex].model, pos); 
 
+    denseSetVals[denseIndex].texture = 0;
+
 
     denseSetIdx[denseIndex] = newIndex;
 
