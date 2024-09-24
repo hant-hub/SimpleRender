@@ -23,6 +23,7 @@ static i32 sparseSet[SR_MAX_INSTANCES] = {0};
 static u32 denseSize = 0;
 
 
+
 SpriteHandle MultiCreateSprite(sm_vec3f pos, sm_vec3f size) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is

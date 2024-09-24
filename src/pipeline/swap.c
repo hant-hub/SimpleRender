@@ -1,4 +1,5 @@
 #include "config.h"
+#include "error.h"
 #include "init.h"
 #include "log.h"
 #include "pipeline.h"
@@ -118,8 +119,10 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     swapInfo.clipped = VK_TRUE;
     swapInfo.oldSwapchain = old;
 
-    if (vkCreateSwapchainKHR(d->l, &swapInfo, NULL, &s->swapChain) != VK_SUCCESS) {
+    VkResult result = vkCreateSwapchainKHR(d->l, &swapInfo, NULL, &s->swapChain);
+    if (result != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create SwapChain");
+        SR_LOG_ERR("Error Code %d", result == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR); 
         return SR_CREATE_FAIL;
     }
     SR_LOG_DEB("SwapChain Created");

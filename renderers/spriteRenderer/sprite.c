@@ -4,14 +4,93 @@
 #include "log.h"
 #include <string.h>
 #include <mat4.h>
+#include <vec2.h>
 #include <vulkan/vulkan_core.h>
 #include "common.h"
 #include "config.h"
+#include "memory.h"
 #include "pipeline.h"
+#include "util.h"
+
+typedef struct {
+    sm_vec2f pos;
+    sm_vec2f uv;
+} Vertex;
+
+static const Vertex verts[] = {
+    {{-0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {0.0f, 1.0f}},
+};
+
+static const uint16_t indicies[] = {
+    0, 1, 2, 2, 3, 0
+};
 
 
+ErrorCode SpriteInit(RenderState* r) {
 
 
+    PASS_CALL(CreateShaderProg("shaders/standard.vert.spv", "shaders/standard.frag.spv", &r->shader));
+
+    DescriptorType uniformconfig[2] = {SR_DESC_UNIFORM, SR_DESC_SAMPLER};
+    DescriptorDetail flags[2] = {{VK_SHADER_STAGE_VERTEX_BIT, 0}, {VK_SHADER_STAGE_FRAGMENT_BIT, 2}};
+    PASS_CALL(CreateDescriptorSetConfig(&r->config, uniformconfig, flags, 2));
+
+
+    AttrConfig vconfig[] = {
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
+    };
+    VkVertexInputBindingDescription binds[1];
+    VkVertexInputAttributeDescription attrs[2];
+    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 2));
+
+
+    VulkanVertexInput vin = {
+        .attrs = attrs,
+        .binding = binds[0],
+        .size = 2
+    };
+    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
+    PASS_CALL(CreatePass(&r->pass));
+    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
+    PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
+    PASS_CALL(CreateCommand(&r->cmd));
+    
+    PASS_CALL(CreateStaticBuffer(&r->cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));
+    PASS_CALL(CreateStaticBuffer(&r->cmd, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &r->index));
+
+
+    PASS_CALL(CreateImage(&r->cmd, &r->test1, "resources/textures/texture.jpg"));
+    PASS_CALL(CreateImage(&r->cmd, &r->test2, "resources/textures/duck.jpg"));
+
+    PASS_CALL(SetImage(r->test1.view, r->test1.sampler, &r->config, 1, 0));
+    PASS_CALL(SetImage(r->test2.view, r->test2.sampler, &r->config, 1, 1));
+    PASS_CALL(SetBuffer(&r->config, &r->uniforms, 0));
+
+    return SR_NO_ERROR;
+}
+
+void SpriteDestroy(RenderState* r) {
+    vkDeviceWaitIdle(sr_device.l);
+    DestroyImage(&r->test1);
+    DestroyImage(&r->test2);
+    DestroyStaticBuffer(&r->verts);
+    DestroyStaticBuffer(&r->index);
+    DestroyCommand(&r->cmd);
+    DestroyPipeline(&r->pipeline);
+    DestroyShaderProg(&r->shader);
+    DestroyPipelineConfig(&r->config);
+    DestroyPass(&r->pass);
+    VkDevice d = sr_device.l;
+    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(d, r->uniforms.bufs[i], NULL);
+        vkFreeMemory(d, r->uniforms.mem[i], NULL);
+    }
+    DestroySwapChain(&r->swap);
+}
 
 
 
@@ -137,7 +216,7 @@ void DrawFrame(RenderState* r, unsigned int frame) {
 
     memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
     memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
-    memcpy(uniforms->objs[frame] + sizeof(sm_mat4f) * 2, r->denseSetVals, sizeof(SpriteEntry) * r->denseSize);
+    PushBuffer(r, uniforms->objs[frame] + sizeof(sm_mat4f) * 2);
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);

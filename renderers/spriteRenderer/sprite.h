@@ -11,6 +11,7 @@
 #include "log.h"
 #include "memory.h"
 #include "pipeline.h"
+#include "texture.h"
 
 
 
@@ -34,12 +35,17 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     BufferHandle uniforms;
+    Texture test1;
+    Texture test2;
     SpriteEntry denseSetVals[SR_MAX_INSTANCES];
     u32 denseSetIdx[SR_MAX_INSTANCES];
     i32 sparseSet[SR_MAX_INSTANCES];
     u32 denseSize;
 } RenderState;
 
+
+ErrorCode SpriteInit(RenderState* r);
+void SpriteDestroy(RenderState* r);
 
 SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size);
 ErrorCode DestroySprite(RenderState* r, SpriteHandle s);
