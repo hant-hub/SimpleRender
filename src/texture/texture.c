@@ -222,6 +222,7 @@ ErrorCode CreateImage(VulkanCommand* c, Texture* t, const char* path) {
 
 void DestroyImage(Texture* t) {
     VkDevice d = sr_device.l;
+    vkDeviceWaitIdle(d);
     vkDestroySampler(d, t->sampler, NULL);
     vkDestroyImageView(d, t->view, NULL);
     vkDestroyImage(d, t->image, NULL);

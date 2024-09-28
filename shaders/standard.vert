@@ -15,16 +15,22 @@ layout(location = 1) out uint index;
 layout(binding = 0) uniform UniformBuffer {
     mat4 view;
     mat4 proj;
-    Uniform Modeldata[100];
 } ub;
+
+layout(std140, set = 0, binding = 1) readonly buffer ModelBuffer {
+    Uniform ModelData[];
+} models;
 
 
 
 
 void main() {
-    gl_Position = ub.proj * ub.view * ub.Modeldata[gl_InstanceIndex].model * vec4(inPosition, 1.0f, 1.0f);
+    gl_Position = ub.proj * 
+                  ub.view * 
+                  models.ModelData[gl_InstanceIndex].model * 
+                  vec4(inPosition, 1.0f, 1.0f);
 
     fragUV = inTexCoords;
-    index = ub.Modeldata[gl_InstanceIndex].texIndex;
+    index = models.ModelData[gl_InstanceIndex].texIndex;
 }
 

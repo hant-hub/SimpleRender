@@ -3,23 +3,24 @@
 #include "init.h"
 #include "log.h"
 #include "memory.h"
+#include "sprite.h"
 #include <vulkan/vulkan_core.h>
 
 
 #define NUM_SUPPORTED_TYPES 3
 
-ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size) {
+ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDetail* layout, u32 size) {
 
     VkDescriptorSetLayoutBinding bindings[size]; 
     VkDescriptorPoolSize poolSizes[NUM_SUPPORTED_TYPES];
     u32 typeNums[NUM_SUPPORTED_TYPES] = {0};
 
     for (u32 i = 0; i < size; i++) {
-        switch (layout[i]) {
+        switch (layout[i].type) {
             case SR_DESC_UNIFORM: {
                bindings[i] = (VkDescriptorSetLayoutBinding){
                     .binding = i,
-                    .stageFlags = access[i].stage,
+                    .stageFlags = layout[i].stage,
                     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                     .pImmutableSamplers = NULL,
                     .descriptorCount = 1,
@@ -32,7 +33,7 @@ ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType
             case SR_DESC_STORAGE: {
                bindings[i] = (VkDescriptorSetLayoutBinding){
                     .binding = i,
-                    .stageFlags = access[i].stage,
+                    .stageFlags = layout[i].stage,
                     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                     .pImmutableSamplers = NULL,
                     .descriptorCount = 1,
@@ -44,12 +45,12 @@ ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType
             case SR_DESC_SAMPLER: {
                bindings[i] = (VkDescriptorSetLayoutBinding){
                     .binding = i,
-                    .stageFlags = access[i].stage,
+                    .stageFlags = layout[i].stage,
                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .pImmutableSamplers = NULL,
-                    .descriptorCount = access[i].misc,
+                    .descriptorCount = layout[i].misc,
                };
-               typeNums[2] += access[i].misc;
+               typeNums[2] += layout[i].misc;
                SR_LOG_DEB("\tBinding %d bound to Image", i);
                break;
             }
@@ -174,13 +175,34 @@ ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, 
 
 
 
-ErrorCode SetBuffer(VulkanPipelineConfig* config, BufferHandle* handles, u32 index) {
+ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, u32 index) {
 
-    VkDeviceSize bufSize = sizeof(UniformObj) * SR_MAX_INSTANCES;
+    VkDeviceSize bufSize = sizeof(SpritePack) * SR_MAX_INSTANCES;
     VkDevice d = sr_device.l;
+    VkBufferUsageFlags bufusage;
+    VkDescriptorType type;
+
+    switch (usage) {
+        case SR_DESC_STORAGE: {
+            bufSize = sizeof(SpritePack) * SR_MAX_INSTANCES;
+            bufusage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
+        }
+        case SR_DESC_UNIFORM: {
+            bufSize = 2 * sizeof(sm_mat4f);
+            bufusage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            break;
+        }
+        default: {
+            SR_LOG_ERR("Invalid Descriptor Type");
+            return SR_INVALID;
+        }
+    }
 
     for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateBuffer(bufSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        CreateBuffer(bufSize, bufusage,
                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      &handles->bufs[i], &handles->mem[i]);
 
@@ -197,9 +219,9 @@ ErrorCode SetBuffer(VulkanPipelineConfig* config, BufferHandle* handles, u32 ind
         VkWriteDescriptorSet write = {0};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.dstSet = config->descrip.descriptorSet[i];
-        write.dstBinding = 0;
+        write.dstBinding = index;
         write.dstArrayElement = 0;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write.descriptorType = type;
         write.descriptorCount = 1;
         write.pBufferInfo = &bufInfo;
         write.pImageInfo = NULL;

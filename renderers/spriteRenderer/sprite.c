@@ -4,12 +4,14 @@
 #include "log.h"
 #include <string.h>
 #include <mat4.h>
+#include <strings.h>
 #include <vec2.h>
 #include <vulkan/vulkan_core.h>
 #include "common.h"
 #include "config.h"
 #include "memory.h"
 #include "pipeline.h"
+#include "texture.h"
 #include "util.h"
 
 typedef struct {
@@ -29,14 +31,17 @@ static const uint16_t indicies[] = {
 };
 
 
-ErrorCode SpriteInit(RenderState* r) {
+ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots) {
 
 
     PASS_CALL(CreateShaderProg("shaders/standard.vert.spv", "shaders/standard.frag.spv", &r->shader));
 
-    DescriptorType uniformconfig[2] = {SR_DESC_UNIFORM, SR_DESC_SAMPLER};
-    DescriptorDetail flags[2] = {{VK_SHADER_STAGE_VERTEX_BIT, 0}, {VK_SHADER_STAGE_FRAGMENT_BIT, 2}};
-    PASS_CALL(CreateDescriptorSetConfig(&r->config, uniformconfig, flags, 2));
+    DescriptorDetail descriptorConfigs[] = {
+        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT,   0}, 
+        {SR_DESC_STORAGE, VK_SHADER_STAGE_VERTEX_BIT, 0},
+        {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, textureSlots}
+    };
+    PASS_CALL(CreateDescriptorSetConfig(&r->config, descriptorConfigs, ARRAY_SIZE(descriptorConfigs)));
 
 
     AttrConfig vconfig[] = {
@@ -62,21 +67,36 @@ ErrorCode SpriteInit(RenderState* r) {
     PASS_CALL(CreateStaticBuffer(&r->cmd, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));
     PASS_CALL(CreateStaticBuffer(&r->cmd, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &r->index));
 
+    PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, &r->uniforms, 0));
+    PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, &r->modelBuf, 1));
 
-    PASS_CALL(CreateImage(&r->cmd, &r->test1, "resources/textures/texture.jpg"));
-    PASS_CALL(CreateImage(&r->cmd, &r->test2, "resources/textures/duck.jpg"));
-
-    PASS_CALL(SetImage(r->test1.view, r->test1.sampler, &r->config, 1, 0));
-    PASS_CALL(SetImage(r->test2.view, r->test2.sampler, &r->config, 1, 1));
-    PASS_CALL(SetBuffer(&r->config, &r->uniforms, 0));
-
+    r->cam = c;
     return SR_NO_ERROR;
 }
 
+
+//set texture to slot
+ErrorCode SetTextureSlot(RenderState* r, Texture* t, u32 index) {
+    PASS_CALL(SetImage(t->view, t->sampler, &r->config, 2, index));
+    return SR_NO_ERROR;
+}
+
+//Sets all textures starting from texture id 0
+ErrorCode SetTextureSlots(RenderState* r, Texture* t, u32 number) {
+    VkImageView views[number];
+    VkSampler samplers[number];
+    for (int i = 0; i < number; i++) {
+        views[i] = t[i].view;
+        samplers[i] = t[i].sampler;
+    }
+
+    PASS_CALL(SetImages(views, samplers, &r->config, 2, number));
+    return SR_NO_ERROR;
+}
+
+
 void SpriteDestroy(RenderState* r) {
     vkDeviceWaitIdle(sr_device.l);
-    DestroyImage(&r->test1);
-    DestroyImage(&r->test2);
     DestroyStaticBuffer(&r->verts);
     DestroyStaticBuffer(&r->index);
     DestroyCommand(&r->cmd);
@@ -89,13 +109,17 @@ void SpriteDestroy(RenderState* r) {
         vkDestroyBuffer(d, r->uniforms.bufs[i], NULL);
         vkFreeMemory(d, r->uniforms.mem[i], NULL);
     }
+    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(d, r->modelBuf.bufs[i], NULL);
+        vkFreeMemory(d, r->modelBuf.mem[i], NULL);
+    }
     DestroySwapChain(&r->swap);
 }
 
 
 
 
-SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size) {
+SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is
     //a tombstone value
@@ -115,12 +139,14 @@ SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size) {
     u32 denseIndex = *denseSize;
     sparseSet[--newIndex] = ++*denseSize; 
 
-    sm_vec4f s = (sm_vec4f){size.x, size.y, size.z, 1.0f};
+    sm_vec4f s = (sm_vec4f){size.x, size.y, 1.0f, 1.0f};
 
-    denseSetVals[denseIndex].model = sm_mat4_f32_scale(&sm_mat4f_identity, s);
-    denseSetVals[denseIndex].model = sm_mat4_f32_translate(&denseSetVals[denseIndex].model, pos); 
-
-    denseSetVals[denseIndex].texture = 0;
+    denseSetVals[denseIndex] = (SpriteEntry) {
+        .pos = pos,
+        .size = size,
+        .rotation = 0,
+        .texture = tex
+    };
 
 
     denseSetIdx[denseIndex] = newIndex;
@@ -157,23 +183,34 @@ ErrorCode DestroySprite(RenderState* r, SpriteHandle s) {
 
 
 ErrorCode PushBuffer(RenderState* r, void* buf) {
-    memcpy(buf, r->denseSetVals, sizeof(SpriteEntry) * r->denseSize);
+    SpritePack* packBuf = buf;
+    for (int i = 0; i < r->denseSize; i++) {
+        SpriteEntry sprite = r->denseSetVals[i];
+        sm_mat4f model = SM_MAT4_IDENTITY;        
+        model = sm_mat4_f32_scale(&model, (sm_vec4f){sprite.size.x, sprite.size.y, 1.0f, 1.0f});
+        model = sm_mat4_f32_rz(&model, sprite.rotation);
+        model = sm_mat4_f32_translate(&model, (sm_vec3f){sprite.pos.x, sprite.pos.y, 0.0f}); 
+
+        packBuf[i] = (SpritePack) {
+            .model = model,
+            .texture = sprite.texture
+        };
+    }
     return SR_NO_ERROR;
 }
-sm_mat4f* GetModel(RenderState* r, SpriteHandle s) {
+SpriteEntry* GetSprite(RenderState* r, SpriteHandle s) {
     if (!r->sparseSet[s]) return NULL;
-    return &r->denseSetVals[(r->sparseSet[s] - 1)].model;
+    return &r->denseSetVals[(r->sparseSet[s] - 1)];
 }
 
+Camera* GetCam(RenderState* r) {
+    return &r->cam;
+}
 
 
 u32 GetNum(RenderState* r) {
     return r->denseSize;
 }
-
-
-
-
 
 
 
@@ -196,12 +233,14 @@ void DrawFrame(RenderState* r, unsigned int frame) {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 
+
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(swapchain);
+        SwapChain old = *swapchain;
 
         ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
-        if (code != SR_NO_ERROR) return;
-
+        DestroySwapChain(&old);
+        if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
+        return;
 
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         SR_LOG_ERR("Bad things are happening");
@@ -210,15 +249,18 @@ void DrawFrame(RenderState* r, unsigned int frame) {
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
+    float aspect = ((float)WIDTH)/((float)HEIGHT);
+    proj = sm_mat4_f32_ortho(1.0f, 3.0f, -aspect, aspect, -1.0f, 1.0f);
 
-    proj = sm_mat4_f32_perspective(1.0f, 1000.0f, SM_PI/4, ((float)WIDTH)/((float)HEIGHT));
-    view = sm_mat4_f32_translate(&view, (sm_vec3f){-50, -50, 50});
-    //proj = sm_mat4_f32_ortho(1.0f, 100.0f, 0.0f, 100.0f, 0.0f, 100.0f);
+    Camera cam = r->cam;
+    view = sm_mat4_f32_scale(&view, (sm_vec4f){1/cam.size.x, 1/cam.size.y, 1.0f, 1.0f});
+    view = sm_mat4_f32_rz(&view, -cam.rotation);
+    view = sm_mat4_f32_translate(&view, (sm_vec3f){-cam.pos.x, -cam.pos.y, 0.0f});
 
 
     memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
     memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
-    PushBuffer(r, uniforms->objs[frame] + sizeof(sm_mat4f) * 2);
+    PushBuffer(r, r->modelBuf.objs[frame]);
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
@@ -323,7 +365,8 @@ void DrawFrame(RenderState* r, unsigned int frame) {
         DestroySwapChain(swapchain);
 
         ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
-        if (code != SR_NO_ERROR) return;
+        if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
+        return;
 
     } else if (result != VK_SUCCESS) {
         SR_LOG_ERR("Bad things are happening");

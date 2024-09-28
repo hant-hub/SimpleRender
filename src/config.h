@@ -43,6 +43,7 @@ typedef enum {
 } DescriptorType;
 
 typedef struct {
+    DescriptorType type;
     VkShaderStageFlagBits stage;
     u32 misc;
 } DescriptorDetail;
@@ -110,10 +111,10 @@ ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipel
 void DestroyPipelineConfig(VulkanPipelineConfig* p);
 
 //bindings
-ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorType* layout, DescriptorDetail* access, u32 size);
+ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDetail* layout, u32 size);
 ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
 ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
-ErrorCode SetBuffer(VulkanPipelineConfig* config, BufferHandle* handles, u32 index);
+ErrorCode SetBuffer(VulkanPipelineConfig* config, VkBufferUsageFlags usage, BufferHandle* handles, u32 index);
 
 
 

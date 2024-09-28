@@ -2,8 +2,10 @@
 #define SR_SPRITE_H
 
 
+#include "angles.h"
 #include "common.h"
 #include <mat4.h>
+#include <vec2.h>
 #include "config.h"
 #include "error.h"
 #include "init.h"
@@ -19,13 +21,23 @@
 typedef i32 SpriteHandle;
 
 
+typedef struct {
+    sm_vec2f pos;
+    sm_vec2f size;
+    Radian rotation;
+    u32 texture;
+} SpriteEntry;
 
-struct SpriteEntry {
+typedef struct {
+    sm_vec2f pos;
+    sm_vec2f size;
+    Radian rotation;
+} Camera;
+
+typedef struct {
     sm_mat4f model;
     u32 texture;
-} __attribute__ ((aligned(sizeof(sm_vec4f))));
-
-typedef struct SpriteEntry SpriteEntry;
+} __attribute__ ((aligned(sizeof(sm_vec4f)))) SpritePack;
 
 typedef struct {
     VulkanCommand cmd;
@@ -37,8 +49,8 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     BufferHandle uniforms;
-    Texture test1;
-    Texture test2;
+    BufferHandle modelBuf;
+    Camera cam;
     SpriteEntry denseSetVals[SR_MAX_INSTANCES];
     u32 denseSetIdx[SR_MAX_INSTANCES];
     i32 sparseSet[SR_MAX_INSTANCES];
@@ -46,15 +58,19 @@ typedef struct {
 } RenderState;
 
 
-ErrorCode SpriteInit(RenderState* r);
+ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots);
 void SpriteDestroy(RenderState* r);
 
-SpriteHandle CreateSprite(RenderState* r, sm_vec3f pos, sm_vec3f size);
+SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex);
 ErrorCode DestroySprite(RenderState* r, SpriteHandle s);
 
 ErrorCode PushBuffer(RenderState* r, void* buf);
-sm_mat4f* GetModel(RenderState* r, SpriteHandle s);
+SpriteEntry* GetSprite(RenderState* r, SpriteHandle s);
 u32 GetNum(RenderState* r);
+Camera* GetCam(RenderState* r);
+
+ErrorCode SetTextureSlot(RenderState* r, Texture* t, u32 index);
+ErrorCode SetTextureSlots(RenderState* r, Texture* t, u32 number);
 
 void DrawFrame(RenderState* r, unsigned int frame);
 
