@@ -1,5 +1,0 @@
-/home/elijah/Desktop/Dev/Git/repos/SimpleRender/CMakeFiles/rebuild_cache.dir
-/home/elijah/Desktop/Dev/Git/repos/SimpleRender/CMakeFiles/edit_cache.dir
-/home/elijah/Desktop/Dev/Git/repos/SimpleRender/CMakeFiles/SimpleRender.dir
-/home/elijah/Desktop/Dev/Git/repos/SimpleRender/src/CMakeFiles/rebuild_cache.dir
-/home/elijah/Desktop/Dev/Git/repos/SimpleRender/src/CMakeFiles/edit_cache.dir

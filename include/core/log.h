@@ -11,9 +11,9 @@
 
 #else
 
-#define SR_LOG_ERR(x)
-#define SR_LOG_WAR(x)
-#define SR_LOG_DEB(x)
+#define SR_LOG_ERR(x, ...)
+#define SR_LOG_WAR(x, ...)
+#define SR_LOG_DEB(x, ...)
 
 #endif
 
