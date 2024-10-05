@@ -1,4 +1,4 @@
-#include "../pipeline.h"
+#include "pipeline.h"
 #include "error.h"
 #include "init.h"
 #include "log.h"

@@ -1,0 +1,24 @@
+# ninja log v5
+0	33	1728103766368110416	build.ninja	5af0ff3c4d91c149
+0	19	1728103889411868086	build.ninja	5af0ff3c4d91c149
+1	103	1728103889515873777	CMakeFiles/SimpleRender.dir/src/init/init.c.o	31f8d212785fb4a8
+0	22	1728103909520943528	build.ninja	5af0ff3c4d91c149
+0	11	1728104006197469067	build.ninja	5af0ff3c4d91c149
+1	76	1728104006273472234	CMakeFiles/SimpleRender.dir/src/init/init.c.o	dd5de49127398bf
+0	20	1728104094956800510	build.ninja	5af0ff3c4d91c149
+1	117	1728104095072804406	CMakeFiles/SimpleRender.dir/src/init/init.c.o	6704a58b1e822147
+1	30	1728104109097267427	build.ninja	5af0ff3c4d91c149
+1	117	1728104109217271316	CMakeFiles/SimpleRender.dir/src/init/init.c.o	f61d011357b41162
+0	20	1728104118673574376	build.ninja	5af0ff3c4d91c149
+3	118	1728104118789578051	CMakeFiles/SimpleRender.dir/src/init/init.c.o	f677620ccf06a063
+0	32	1728104156750723885	build.ninja	5af0ff3c4d91c149
+0	115	1728104156866727222	CMakeFiles/SimpleRender.dir/src/init/init.c.o	7bae9a7e51c8401a
+0	16	1728104198855870405	build.ninja	5af0ff3c4d91c149
+1	127	1728104198983873704	CMakeFiles/SimpleRender.dir/src/config/renderpass.c.o	45b783d354de3fd5
+1	128	1728104198983873704	CMakeFiles/SimpleRender.dir/src/config/pipeconfig.c.o	98d1b46c8d948209
+1	131	1728104198987873808	CMakeFiles/SimpleRender.dir/src/config/shader.c.o	3c1e89fb6ec0008a
+0	135	1728104198991873911	CMakeFiles/SimpleRender.dir/src/command/command.c.o	74119f65c1ea3623
+8	135	1728104198991873911	CMakeFiles/SimpleRender.dir/src/init/init.c.o	4f79650b42c6f093
+10	136	1728104198991873911	CMakeFiles/SimpleRender.dir/src/pipeline/pipeline.c.o	ce4630e3dc7b9508
+9	143	1728104198999874117	CMakeFiles/SimpleRender.dir/src/memory/memory.c.o	84e10e27ff726bf3
+12	396	1728104199251880597	CMakeFiles/SimpleRender.dir/src/texture/texture.c.o	1c72a4b223d57989

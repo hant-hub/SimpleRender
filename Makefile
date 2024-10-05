@@ -1,9 +1,9 @@
 # Thanks to Job Vranish (https://spin.atomicobject.com/2016/08/26/makefile-c-projects/)
-TARGET_EXEC := test
+TARGET_EXEC := sr.a
 
 BUILD_DIR := ./build
 SRC_DIRS := ./src ./renderers
-INC_SEARCH = ./src ./lib ./renderers
+INC_SEARCH = ./lib ./include
 SHADER_DIR := ./shaders
 RESOURCE_DIR := ./resources
 
@@ -42,12 +42,12 @@ ifeq ($(BUILD), RELEASE)
 endif
 
 CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD)
-LDFLAGS = -Werror -Wall -Wextra -pedantic -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm
 
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS) $(COMPSHADERS) resources
-	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
+	ar rcs $@ $(OBJS)
 	
 # Shaders
 $(BUILD_DIR)/shaders/%.spv: $(SHADER_DIR)/% 
@@ -63,8 +63,7 @@ resources :
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
-
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
 
 clean:
@@ -73,9 +72,9 @@ clean:
 test: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
+	$(CC) ./test/main.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
-	./$(notdir $<); \
-	cd ..;
+	./test;
 
 static:
 	clang-tidy $(SRCS)
