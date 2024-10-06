@@ -18,7 +18,6 @@ typedef struct {
     VkViewport view;
     VkRect2D scissor;
     VkPipeline pipeline;
-    RenderPass* pass;
 } VulkanPipeline;
 
 typedef struct {

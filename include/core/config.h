@@ -22,6 +22,7 @@ typedef struct {
 
 typedef struct {
     VkRenderPass pass;
+    
 } RenderPass;
 
 typedef struct {
@@ -103,6 +104,20 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
+
+typedef enum {
+    COLOR_ONLY = 0,
+    DEPTH = 1 << 0
+} RenderPassAttachmentFlags;
+
+
+typedef struct {
+    u32 attachmentFlags;
+} RenderPassConfig;
+
+
+
+
 ErrorCode CreatePass(RenderPass* r);
 void DestroyPass(RenderPass* r);
 

@@ -32,8 +32,6 @@ ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipel
     pipelineInfo.basePipelineIndex = -1;
 
 
-    p->pass = r;
-
     if (vkCreateGraphicsPipelines(sr_device.l, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &p->pipeline) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Create Graphics Pipeline");
         return SR_CREATE_FAIL;

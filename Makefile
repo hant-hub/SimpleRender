@@ -72,7 +72,7 @@ clean:
 test: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
-	$(CC) ./test/main.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	$(CC) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
 	./test;
 

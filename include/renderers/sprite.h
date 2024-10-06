@@ -16,6 +16,7 @@
 #include "texture.h"
 
 
+#define MAX_LAYERS 100
 
 //sprite ID
 typedef i32 SpriteHandle;
@@ -24,6 +25,7 @@ typedef i32 SpriteHandle;
 typedef struct {
     sm_vec2f pos;
     sm_vec2f size;
+    u32 layer;
     Radian rotation;
     u32 texture;
 } SpriteEntry;
@@ -61,7 +63,7 @@ typedef struct {
 ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots);
 void SpriteDestroy(RenderState* r);
 
-SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex);
+SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
 ErrorCode DestroySprite(RenderState* r, SpriteHandle s);
 
 ErrorCode PushBuffer(RenderState* r, void* buf);

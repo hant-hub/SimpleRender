@@ -119,7 +119,7 @@ void SpriteDestroy(RenderState* r) {
 
 
 
-SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex) {
+SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is
     //a tombstone value
@@ -145,6 +145,7 @@ SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex) 
         .pos = pos,
         .size = size,
         .rotation = 0,
+        .layer = layer,
         .texture = tex
     };
 
@@ -189,7 +190,7 @@ ErrorCode PushBuffer(RenderState* r, void* buf) {
         sm_mat4f model = SM_MAT4_IDENTITY;        
         model = sm_mat4_f32_scale(&model, (sm_vec4f){sprite.size.x, sprite.size.y, 1.0f, 1.0f});
         model = sm_mat4_f32_rz(&model, sprite.rotation);
-        model = sm_mat4_f32_translate(&model, (sm_vec3f){sprite.pos.x, sprite.pos.y, 0.0f}); 
+        model = sm_mat4_f32_translate(&model, (sm_vec3f){sprite.pos.x, sprite.pos.y, sprite.layer}); 
 
         packBuf[i] = (SpritePack) {
             .model = model,
@@ -250,7 +251,7 @@ void DrawFrame(RenderState* r, unsigned int frame) {
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
     float aspect = ((float)WIDTH)/((float)HEIGHT);
-    proj = sm_mat4_f32_ortho(1.0f, 3.0f, -aspect, aspect, -1.0f, 1.0f);
+    proj = sm_mat4_f32_ortho(1.0f, (float)MAX_LAYERS + 1.0f, -aspect, aspect, -1.0f, 1.0f);
 
     Camera cam = r->cam;
     view = sm_mat4_f32_scale(&view, (sm_vec4f){1/cam.size.x, 1/cam.size.y, 1.0f, 1.0f});

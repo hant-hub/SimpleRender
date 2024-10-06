@@ -18,7 +18,7 @@ target_include_directories(SimpleRender PUBLIC ./lib/SimpleMath/src/include/trig
 
 
 project(spritetest)
-add_executable(spritetest ./test/main.c)
+add_executable(spritetest ./test/spritetest.c)
 target_link_libraries(spritetest SimpleRender)
 target_link_libraries(spritetest vulkan)
 target_link_libraries(spritetest glfw)

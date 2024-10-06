@@ -1,23 +1,8 @@
-#include "command.h"
 #include "common.h"
-#include "config.h"
-#include "error.h"
-#include "init.h"
-#include "log.h"
-#include "mat4.h"
-#include "memory.h"
-#include "pipeline.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
-#include "vec3.h"
 #include <GLFW/glfw3.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vulkan/vulkan_core.h>
 #include "sprite.h"
 
 
@@ -41,7 +26,7 @@ int main() {
     for (int i = 0; i < 15000; i++) {
         u32 x = i % 200;
         u32 y = i / 200;
-        sprites[i] = CreateSprite(&r, (sm_vec2f){300 - (3.0f * x), 100 + (-3.0f * y)}, (sm_vec2f){5, 5}, 0);
+        sprites[i] = CreateSprite(&r, (sm_vec2f){300 - (3.0f * x), 100 + (-3.0f * y)}, (sm_vec2f){5, 5}, 0, 1);
         SpriteEntry* e = GetSprite(&r, sprites[i]);
         e->rotation = ((float)rand()/RAND_MAX * SM_2_PI) - SM_PI;
         e->pos.x += ((float)rand()/RAND_MAX * 10.0f) - 5.0f;
