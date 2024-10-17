@@ -132,6 +132,9 @@ ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachment
         SR_LOG_WAR("Failed to Create Render Pass");
         return SR_CREATE_FAIL;
     }
+
+    r->configs = configs;
+    r->numAttachments = numAttachments + 1;
     return SR_NO_ERROR;
 }
 

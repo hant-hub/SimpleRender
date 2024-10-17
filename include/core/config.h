@@ -31,6 +31,8 @@ typedef struct {
 
 typedef struct {
     VkRenderPass pass;
+    AttachmentConfig* configs;
+    u32 numAttachments;
 } RenderPass;
 
 typedef struct {

@@ -9,7 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 
-#define SR_MAX_FRAMES_IN_FLIGHT 2
+#define SR_MAX_FRAMES_IN_FLIGHT 3
 #define SR_MAX_INSTANCES 150000
 
 

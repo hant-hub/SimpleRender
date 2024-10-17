@@ -22,7 +22,7 @@ ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
         VkFramebufferCreateInfo createInfo = {0};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         createInfo.renderPass = r->pass;
-        createInfo.attachmentCount = 1;
+        createInfo.attachmentCount = r->numAttachments;
         createInfo.pAttachments = attachments;
         createInfo.width = s->extent.width;
         createInfo.height = s->extent.height;
