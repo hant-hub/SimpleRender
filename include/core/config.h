@@ -5,6 +5,7 @@
 #include "error.h"
 #include "init.h"
 #include "mat4.h"
+#include "memory.h"
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
@@ -19,10 +20,17 @@ typedef struct {
     void* objs[SR_MAX_FRAMES_IN_FLIGHT];
 } BufferHandle;
 
+typedef enum {
+    SR_ATTATCHMENT_DEPTH
+} AttachmentType;
+
+typedef struct {
+    AttachmentType type;
+    VkFormat format;
+} AttachmentConfig;
 
 typedef struct {
     VkRenderPass pass;
-    
 } RenderPass;
 
 typedef struct {
@@ -104,21 +112,7 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
-
-typedef enum {
-    COLOR_ONLY = 0,
-    DEPTH = 1 << 0
-} RenderPassAttachmentFlags;
-
-
-typedef struct {
-    u32 attachmentFlags;
-} RenderPassConfig;
-
-
-
-
-ErrorCode CreatePass(RenderPass* r);
+ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachments);
 void DestroyPass(RenderPass* r);
 
 //pipeline Config

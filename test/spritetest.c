@@ -14,8 +14,8 @@ int main() {
 
     Texture textures[2] = {0};
 
-    CRASH_CALL(CreateImage(&r.cmd, &textures[0], "resources/textures/texture.jpg"));
-    CRASH_CALL(CreateImage(&r.cmd, &textures[1], "resources/textures/duck.jpg"));
+    CRASH_CALL(LoadTexture(&r.cmd, &textures[0], "resources/textures/texture.jpg"));
+    CRASH_CALL(LoadTexture(&r.cmd, &textures[1], "resources/textures/duck.jpg"));
     
     CRASH_CALL(SetTextureSlots(&r, textures, ARRAY_SIZE(textures)));
 
@@ -54,8 +54,8 @@ int main() {
 
     }
 
-    DestroyImage(&textures[0]);
-    DestroyImage(&textures[1]);
+    DestroyTexture(&textures[0]);
+    DestroyTexture(&textures[1]);
     SpriteDestroy(&r);
     DestroyVulkan();
     return 0;

@@ -11,6 +11,7 @@ static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {
     return t > max ? max : t;
 }
 
+//also makes renderpass attachments
 ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
     s->buffers = (VkFramebuffer*)malloc(s->imgCount*sizeof(VkFramebuffer));
     for (size_t i = 0; i < s->imgCount; i++) {
@@ -163,6 +164,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
         }
     }
     SR_LOG_DEB("\tImage Views Created");
+
 
     CreateFrameBuffers(d, s, r);
     return SR_NO_ERROR;

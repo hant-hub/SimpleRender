@@ -1,11 +1,16 @@
 #ifndef SR_MEMORY_H
 #define SR_MEMORY_H
 
+#include "common.h"
 #include "error.h"
 #include "init.h"
 #include "command.h"
 
-
+typedef struct {
+    VkImage image;
+    VkImageView view;
+    VkDeviceMemory mem;
+} Image;
 
 typedef struct {
     uint32_t size;

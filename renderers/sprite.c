@@ -59,7 +59,7 @@ ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots) {
         .size = 2
     };
     PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
-    PASS_CALL(CreatePass(&r->pass));
+    PASS_CALL(CreatePass(&r->pass, NULL, 0));
     PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     PASS_CALL(CreateCommand(&r->cmd));
@@ -77,7 +77,7 @@ ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots) {
 
 //set texture to slot
 ErrorCode SetTextureSlot(RenderState* r, Texture* t, u32 index) {
-    PASS_CALL(SetImage(t->view, t->sampler, &r->config, 2, index));
+    PASS_CALL(SetImage(t->image.view, t->sampler, &r->config, 2, index));
     return SR_NO_ERROR;
 }
 
@@ -86,7 +86,7 @@ ErrorCode SetTextureSlots(RenderState* r, Texture* t, u32 number) {
     VkImageView views[number];
     VkSampler samplers[number];
     for (int i = 0; i < number; i++) {
-        views[i] = t[i].view;
+        views[i] = t[i].image.view;
         samplers[i] = t[i].sampler;
     }
 

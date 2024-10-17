@@ -2,19 +2,19 @@
 #define SR_TEXTURE_H
 #include "vulkan/vulkan.h"
 #include "command.h"
+#include "memory.h"
 #include <vulkan/vulkan_core.h>
 
 
-typedef struct {
-    VkImage image;
-    VkImageView view;
-    VkSampler sampler;
 
-    VkDeviceMemory mem;
+typedef struct {
+    Image image;
+    VkSampler sampler;
 } Texture;
 
-
-ErrorCode CreateImage(VulkanCommand* c, Texture* t, const char* path);
-void DestroyImage(Texture* t);
+ErrorCode LoadTexture(VulkanCommand* c, Texture* t, const char* path);
+ErrorCode CreateImage(VulkanCommand* c, Image* t, size_t width, size_t height);
+void DestroyTexture(Texture* t);
+void DestroyImage(Image* t);
 
 #endif

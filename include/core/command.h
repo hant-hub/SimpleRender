@@ -4,8 +4,6 @@
 #include <vulkan/vulkan_core.h>
 #include "error.h"
 #include "init.h"
-#include "pipeline.h"
-#include "config.h"
 
 
 typedef struct VulkanCommand {
