@@ -1,13 +1,11 @@
 #ifndef SR_INIT_H
 #define SR_INIT_H
-#include "log.h"
 #include "error.h"
 #include "util.h"
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <stdlib.h>
 
 #define SR_MAX_FRAMES_IN_FLIGHT 3
 #define SR_MAX_INSTANCES 150000

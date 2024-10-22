@@ -7,3 +7,6 @@
 [submodule "SimpleMath"]
 	path = SimpleMath
 	url = git@github.com:hant-hub/SimpleMath.git
+[submodule "lib/SimpleAlloc"]
+	path = lib/SimpleAlloc
+	url = git@github.com:hant-hub/SimpleAlloc.git

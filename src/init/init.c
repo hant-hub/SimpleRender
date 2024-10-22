@@ -1,6 +1,7 @@
 #include "init.h"
 #include "error.h"
 #include <string.h>
+#include "stdlib.h"
 
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
     WIDTH = width;
