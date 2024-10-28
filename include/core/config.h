@@ -7,6 +7,7 @@
 #include "mat4.h"
 #include "memory.h"
 #include <vulkan/vulkan_core.h>
+#include "texture.h"
 
 typedef struct {
     sm_mat4f model;
@@ -27,11 +28,12 @@ typedef enum {
 typedef struct {
     AttachmentType type;
     VkFormat format;
-} AttachmentConfig;
+    Image image;
+} Attachment;
 
 typedef struct {
     VkRenderPass pass;
-    AttachmentConfig* configs;
+    Attachment* configs;
     u32 numAttachments;
 } RenderPass;
 
@@ -73,6 +75,7 @@ typedef struct {
     VkPipelineColorBlendStateCreateInfo colorState;
     VkPipelineColorBlendAttachmentState colorattachment;
     VkPipelineShaderStageCreateInfo stages[2];
+    VkPipelineDepthStencilStateCreateInfo depth;
 } VulkanPipelineConfig;
 
 
@@ -114,7 +117,7 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
-ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachments);
+ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments);
 void DestroyPass(RenderPass* r);
 
 //pipeline Config

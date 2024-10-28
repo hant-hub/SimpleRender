@@ -57,6 +57,7 @@ typedef struct {
     u32 denseSetIdx[SR_MAX_INSTANCES];
     i32 sparseSet[SR_MAX_INSTANCES];
     u32 denseSize;
+    Attachment depth;
 } RenderState;
 
 

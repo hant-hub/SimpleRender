@@ -1,8 +1,11 @@
+#include "command.h"
 #include "config.h"
 #include "error.h"
 #include "init.h"
 #include "log.h"
 #include "pipeline.h"
+#include "texture.h"
+#include "util.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -11,13 +14,95 @@ static uint32_t clampi(uint32_t in, uint32_t min, uint32_t max) {
     return t > max ? max : t;
 }
 
+static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling tiling, VkFormatFeatureFlags flags, VkFormat* out) {
+
+    for (int i = 0; i < num; i++) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(sr_device.p, candidates[i], &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures && flags) == flags) {
+            *out = candidates[i];
+            return SR_NO_ERROR;
+        }
+        if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures && flags) == flags) {
+            *out = candidates[i];
+            return SR_NO_ERROR;
+        }
+    }
+
+    return SR_LOAD_FAIL;
+}
+
 //also makes renderpass attachments
-ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
+ErrorCode CreateFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s, RenderPass* r) {
+
+    //Retrieve Swapchain Images
+    VkImage images[s->imgCount];
+    vkGetSwapchainImagesKHR(d->l, s->swapChain, &s->imgCount, images);
+
+    //Create Image Views for swapchain
+    s->views = (VkImageView*)malloc(sizeof(VkImageView) * s->imgCount);
+    for (int i = 0; i < s->imgCount; i++) {
+        VkImageViewCreateInfo viewInfo = {0};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = images[i];
+
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = s->format.format;
+
+        viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; 
+        viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(d->l, &viewInfo, NULL, &s->views[i]) != VK_SUCCESS) {
+            for (int j = 0; j <= i; j--){
+                vkDestroyImageView(d->l, s->views[i], NULL);
+            }
+            free(s->views);
+
+
+            SR_LOG_ERR("Failed to make swap Image View");
+            return SR_CREATE_FAIL;
+        }
+    }
+    SR_LOG_DEB("\tImage Views Created");
+
+    //Create Attachments
+    Attachment* attach = r->configs;
+    for (int i = 0; i < r->numAttachments - 1; i++) {
+        switch (attach[i].type) {
+            case SR_ATTATCHMENT_DEPTH:
+                {
+                    CreateImage(c, &attach[i].image,
+                            (ImageConfig){
+                            s->extent.width,
+                            s->extent.height,
+                            VK_IMAGE_TILING_OPTIMAL,
+                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                            VK_IMAGE_ASPECT_DEPTH_BIT,
+                            attach[i].format 
+                            });
+                }
+                break;
+        }
+
+    }
+
+    //create frame buffers
     s->buffers = (VkFramebuffer*)malloc(s->imgCount*sizeof(VkFramebuffer));
     for (size_t i = 0; i < s->imgCount; i++) {
-        VkImageView attachments[] = {
-            s->views[i]
-        };
+        VkImageView attachments[r->numAttachments];
+        attachments[0] = s->views[i];
+        for (int j = 1; j <= r->numAttachments - 1; j++) {
+            attachments[j] = attach[j - 1].image.view;
+        }
 
         VkFramebufferCreateInfo createInfo = {0};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -43,7 +128,7 @@ ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r) {
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VulkanCommand* cmd, VkSwapchainKHR old) {
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;
 
@@ -125,48 +210,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     }
     SR_LOG_DEB("SwapChain Created");
 
-
-    //Retrieve Swapchain Images
-    VkImage images[s->imgCount];
-    vkGetSwapchainImagesKHR(d->l, s->swapChain, &s->imgCount, images);
-
-
-    //Create Image Views
-    s->views = (VkImageView*)malloc(sizeof(VkImageView) * s->imgCount);
-    for (int i = 0; i < s->imgCount; i++) {
-        VkImageViewCreateInfo viewInfo = {0};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = images[i];
-
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = s->format.format;
-
-        viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; 
-        viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(d->l, &viewInfo, NULL, &s->views[i]) != VK_SUCCESS) {
-            for (int j = 0; j <= i; j--){
-                vkDestroyImageView(d->l, s->views[i], NULL);
-            }
-            free(s->views);
-
-
-            SR_LOG_ERR("Failed to make swap Image View");
-            return SR_CREATE_FAIL;
-        }
-    }
-    SR_LOG_DEB("\tImage Views Created");
-
-
-    CreateFrameBuffers(d, s, r);
+    CreateFrameBuffers(cmd, d, s, r);
     return SR_NO_ERROR;
 }
 
@@ -174,7 +218,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
 
 
 
-void DestroySwapChain(SwapChain* s) {
+void DestroySwapChain(SwapChain* s, RenderPass* r) {
     VkDevice l = sr_device.l;
     for (int i = 0; i < s->imgCount; i++) {
         vkDestroyImageView(l, s->views[i], NULL);
@@ -188,6 +232,11 @@ void DestroySwapChain(SwapChain* s) {
         free(s->buffers);
         SR_LOG_DEB("\tFrameBuffers Destroyed");
     }
+
+    for (int i = 0; i < r->numAttachments - 1; i++) {
+        DestroyImage(&r->configs[i].image);
+    }
+
     free(s->views);
     SR_LOG_DEB("\tImage Views Destroyed");
 

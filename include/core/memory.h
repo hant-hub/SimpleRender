@@ -6,11 +6,6 @@
 #include "init.h"
 #include "command.h"
 
-typedef struct {
-    VkImage image;
-    VkImageView view;
-    VkDeviceMemory mem;
-} Image;
 
 typedef struct {
     uint32_t size;

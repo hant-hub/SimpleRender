@@ -59,8 +59,11 @@ ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots) {
         .size = 2
     };
     PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
-    PASS_CALL(CreatePass(&r->pass, NULL, 0));
-    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
+
+
+    r->depth = (Attachment){.type = SR_ATTATCHMENT_DEPTH};
+    PASS_CALL(CreatePass(&r->pass, &r->depth, 1));
+    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, &r->cmd, VK_NULL_HANDLE));
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     PASS_CALL(CreateCommand(&r->cmd));
     
@@ -113,7 +116,7 @@ void SpriteDestroy(RenderState* r) {
         vkDestroyBuffer(d, r->modelBuf.bufs[i], NULL);
         vkFreeMemory(d, r->modelBuf.mem[i], NULL);
     }
-    DestroySwapChain(&r->swap);
+    DestroySwapChain(&r->swap, &r->pass);
 }
 
 
@@ -238,8 +241,8 @@ void DrawFrame(RenderState* r, unsigned int frame) {
         vkDeviceWaitIdle(device->l);
         SwapChain old = *swapchain;
 
-        ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
-        DestroySwapChain(&old);
+        ErrorCode code = CreateSwapChain(pass, swapchain, cmd, swapchain->swapChain); 
+        DestroySwapChain(&old, &r->pass);
         if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
         return;
 
@@ -283,9 +286,11 @@ void DrawFrame(RenderState* r, unsigned int frame) {
     renderInfo.renderArea.offset = (VkOffset2D){0, 0};
     renderInfo.renderArea.extent = swapchain->extent;
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderInfo.clearValueCount = 1;
-    renderInfo.pClearValues = &clearColor;
+    VkClearValue clearcolors[2] = {0}; 
+    clearcolors[0].color = (VkClearColorValue){0.0f, 0.0f, 0.0f, 1.0f};
+    clearcolors[1].depthStencil = (VkClearDepthStencilValue){1.0f, 0}; 
+    renderInfo.clearValueCount = 2;
+    renderInfo.pClearValues = clearcolors;
 
     vkCmdBeginRenderPass(cmdBuf, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -363,9 +368,9 @@ void DrawFrame(RenderState* r, unsigned int frame) {
 
         frameBufferResized = FALSE;
         vkDeviceWaitIdle(device->l);
-        DestroySwapChain(swapchain);
+        DestroySwapChain(swapchain, &r->pass);
 
-        ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
+        ErrorCode code = CreateSwapChain(pass, swapchain, cmd, NULL);
         if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
         return;
 

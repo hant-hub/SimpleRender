@@ -1,28 +1,33 @@
 #include "config.h"
 #include "error.h"
 #include "init.h"
+#include "log.h"
 #include "texture.h"
 #include "util.h"
 #include <vulkan/vulkan_core.h>
 
 
-i32 findSupportedFormat(const VkFormat* candidates, u32 numCandidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-    
-    for (int i = 0; i < numCandidates; i++) {
+static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling tiling, VkFormatFeatureFlags flags, VkFormat* out) {
+
+    for (int i = 0; i < num; i++) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(sr_device.p, candidates[i], &props);
 
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures && features) == features) {
-            return i;
-        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures && features) == features) {
-            return i;
+        if (tiling == VK_IMAGE_TILING_LINEAR && ((props.linearTilingFeatures & flags) == flags)) {
+            *out = candidates[i];
+            return SR_NO_ERROR;
+        }
+        if ((tiling == VK_IMAGE_TILING_OPTIMAL) && ((props.optimalTilingFeatures & flags) == flags)) {
+            *out = candidates[i];
+            return SR_NO_ERROR;
         }
     }
-    return -1;
+
+    return SR_LOAD_FAIL;
 }
 
 
-ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachments) {
+ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments) {
 
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;
@@ -47,7 +52,11 @@ ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachment
     
     VkAttachmentDescription attachDescriptions[numAttachments + 1];
     VkAttachmentReference attachReferences[numAttachments + 1];
-    VkSubpassDependency dependency;
+    VkSubpassDependency dependency = {0};
+
+    VkSubpassDescription subDescription = {0};
+    subDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subDescription.colorAttachmentCount = 1;
 
     {
         VkAttachmentDescription* colorAttachment = &attachDescriptions[0];
@@ -74,20 +83,24 @@ ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachment
         dependency.srcAccessMask = 0;
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+
+        subDescription.pColorAttachments = &attachReferences[0];
     }
     for (int i = 1; i <= numAttachments; i++) { 
-        switch (configs[i].type) {
+        switch (configs[i-1].type) {
             case SR_ATTATCHMENT_DEPTH: {
-                const VkFormat depthFormats[] = {
+                static const VkFormat depthFormats[] = {
                     VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT
                 };
 
                 VkFormat format;
                 {
-                    int index = findSupportedFormat(depthFormats, ARRAY_SIZE(depthFormats), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-                    if (index == -1) return SR_CREATE_FAIL;
-                    format = depthFormats[index];
+                    ErrorCode e = findFormat(depthFormats, 3, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, &format);
+                    if (e != SR_NO_ERROR) return SR_CREATE_FAIL;
                 }
+
+                configs[i - 1].format = format; 
 
                 VkAttachmentDescription* depthAttachment = &attachDescriptions[i];
                 depthAttachment->flags = 0;
@@ -108,15 +121,13 @@ ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachment
                 dependency.srcStageMask  |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
                 dependency.dstStageMask  |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
                 dependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+                subDescription.pDepthStencilAttachment = &attachReferences[1];
                 break;
             }
         }
     }
 
-    VkSubpassDescription subDescription = {0};
-    subDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subDescription.colorAttachmentCount = numAttachments + 1;
-    subDescription.pColorAttachments = attachReferences;
 
     
     VkRenderPassCreateInfo renderInfo = {0};
@@ -125,9 +136,10 @@ ErrorCode CreatePass(RenderPass* r, AttachmentConfig* configs, u32 numAttachment
     renderInfo.pAttachments = attachDescriptions;
     renderInfo.subpassCount = 1;
     renderInfo.pSubpasses = &subDescription;
-    renderInfo.dependencyCount = numAttachments + 1;
+    renderInfo.dependencyCount = 1;
     renderInfo.pDependencies = &dependency;
 
+    SR_LOG_DEB("test");
     if (vkCreateRenderPass(d->l, &renderInfo, NULL, &r->pass) != VK_SUCCESS) {
         SR_LOG_WAR("Failed to Create Render Pass");
         return SR_CREATE_FAIL;

@@ -26,6 +26,19 @@ ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipel
     dynamicInfo.pDynamicStates = p->states;
     p->dynamic = dynamicInfo;
 
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.minDepthBounds = 0.0f;
+    depthStencil.maxDepthBounds = 1.0f;
+
+    depthStencil.stencilTestEnable = VK_TRUE;
+    depthStencil.front = (VkStencilOpState){};
+    depthStencil.back = (VkStencilOpState){};
+    p->depth = depthStencil;
 
     VkPipelineVertexInputStateCreateInfo vertInputInfo = {0};
     vertInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

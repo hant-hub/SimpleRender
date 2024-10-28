@@ -78,7 +78,15 @@ ErrorCode LoadTexture(VulkanCommand* c, Texture* t, const char* path) {
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                              &stagingBuffer, &stagingMemory); 
 
-    CreateImage(c, &t->image, texWidth, texHeight);
+
+    CreateImage(c, &t->image, (ImageConfig){
+            texWidth,
+            texHeight,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            VK_FORMAT_R8G8B8A8_SRGB
+            });
 
     void* data;
     vkMapMemory(sr_device.l, stagingMemory, 0, imgSize, 0, &data);
@@ -155,24 +163,20 @@ ErrorCode LoadTexture(VulkanCommand* c, Texture* t, const char* path) {
 }
 
 
-ErrorCode CreateImage(VulkanCommand* c, Image* t, size_t width, size_t height){
-
-    VkDeviceSize imgSize = width * height * 4;
-
-
+ErrorCode CreateImage(VulkanCommand* c, Image* t, ImageConfig config){
 
     VkImageCreateInfo imgInfo = {0};
     imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imgInfo.imageType = VK_IMAGE_TYPE_2D;
-    imgInfo.extent = (VkExtent3D) {(uint32_t)width, (uint32_t)height, 1};
+    imgInfo.extent = (VkExtent3D) {(uint32_t)config.width, (uint32_t)config.height, 1};
     imgInfo.mipLevels = 1;
     imgInfo.arrayLayers = 1;
 
-    imgInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-    imgInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imgInfo.format = config.format;
+    imgInfo.tiling = config.tiling;
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    imgInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imgInfo.usage = config.usage;
     imgInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -210,8 +214,8 @@ ErrorCode CreateImage(VulkanCommand* c, Image* t, size_t width, size_t height){
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = t->image;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.format = config.format;
+    viewInfo.subresourceRange.aspectMask = config.mask;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;

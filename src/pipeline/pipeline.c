@@ -20,7 +20,7 @@ ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipel
     pipelineInfo.pViewportState = &con->view;
     pipelineInfo.pRasterizationState = &con->raster;
     pipelineInfo.pMultisampleState = &con->multisample;
-    pipelineInfo.pDepthStencilState = NULL;
+    pipelineInfo.pDepthStencilState = &con->depth;
     pipelineInfo.pColorBlendState = &con->colorState;
     pipelineInfo.pDynamicState = &con->dynamic;
 
