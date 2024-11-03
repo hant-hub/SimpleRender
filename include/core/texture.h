@@ -1,7 +1,6 @@
 #ifndef SR_TEXTURE_H
 #define SR_TEXTURE_H
 #include "vulkan/vulkan.h"
-#include "command.h"
 #include "memory.h"
 #include <vulkan/vulkan_core.h>
 
@@ -27,8 +26,18 @@ typedef struct {
     VkFormat format;
 } ImageConfig;
 
-ErrorCode LoadTexture(VulkanCommand* c, Texture* t, const char* path);
-ErrorCode CreateImage(VulkanCommand* c, Image* t, ImageConfig config);
+typedef struct {
+    size_t width;
+    size_t height;
+    size_t channels;
+    VkFormat format;
+    VkSamplerAddressMode accessmode;
+}TextureConfig;
+
+ErrorCode LoadTexture(Texture* t, const char* path);
+ErrorCode CreateTexture(Texture* t, TextureConfig config, void* buf);
+
+ErrorCode CreateImage(Image* t, ImageConfig config);
 void DestroyTexture(Texture* t);
 void DestroyImage(Image* t);
 

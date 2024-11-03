@@ -4,7 +4,6 @@
 #include "common.h"
 #include "error.h"
 #include "init.h"
-#include "command.h"
 
 
 typedef struct {
@@ -28,6 +27,6 @@ void DestroyStaticBuffer(StaticBuffer* b);
 void DestroyDynamicBuffer(DynamicBuffer* b);
 
 
-ErrorCode CreateStaticBuffer(VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf);
+ErrorCode CreateStaticBuffer(VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf);
 
 #endif

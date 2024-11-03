@@ -9,11 +9,6 @@
 #include <vulkan/vulkan_core.h>
 #include "texture.h"
 
-typedef struct {
-    sm_mat4f model;
-    sm_mat4f view;
-    sm_mat4f proj;
-} UniformObj;
 
 typedef struct {
     VkBuffer bufs[SR_MAX_FRAMES_IN_FLIGHT];
@@ -128,7 +123,7 @@ void DestroyPipelineConfig(VulkanPipelineConfig* p);
 ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDetail* layout, u32 size);
 ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
 ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
-ErrorCode SetBuffer(VulkanPipelineConfig* config, VkBufferUsageFlags usage, BufferHandle* handles, u32 index);
+ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, size_t size, u32 index);
 
 
 

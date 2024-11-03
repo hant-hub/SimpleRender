@@ -1,4 +1,3 @@
-#include "command.h"
 #include "error.h"
 #include "init.h"
 #include "log.h"

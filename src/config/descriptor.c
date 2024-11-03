@@ -175,7 +175,7 @@ ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, 
 
 
 
-ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, u32 index) {
+ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, size_t size, u32 index) {
 
     VkDeviceSize bufSize = sizeof(SpritePack) * SR_MAX_INSTANCES;
     VkDevice d = sr_device.l;

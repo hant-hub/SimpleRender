@@ -11,8 +11,8 @@ RESOURCE_DIR := ./resources
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. The shell will incorrectly expand these otherwise, but we want to send the * directly to the find command.
 SRCS := $(shell find $(SRC_DIRS) -name '*.c')
-SHADERS := $(shell find $(SHADER_DIR) -name '*.vert' -o -name '*.frag')
-SHADER_NAMES := $(notdir $(SHADERS))
+SHADERS := $(shell cd $(SHADER_DIR) && find . -name '*.vert' -o -name '*.frag')
+SHADER_NAMES := $(SHADERS)
 
 # Prepends BUILD_DIR and appends .o to every src file
 # As an example, ./your_dir/hello.cpp turns into ./build/./your_dir/hello.cpp.o
@@ -42,7 +42,7 @@ ifeq ($(BUILD), RELEASE)
 endif
 
 CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD)
-LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm
+LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm -lfreetype
 
 
 # The final build step.
@@ -69,10 +69,17 @@ $(BUILD_DIR)/%.c.o: %.c
 clean:
 	rm -rf $(BUILD_DIR)
 
-test: $(BUILD_DIR)/$(TARGET_EXEC)
+spritetest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
 	$(CC) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+texttest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) ./test/texttest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
 	./test;
 

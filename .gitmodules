@@ -10,3 +10,9 @@
 [submodule "lib/SimpleAlloc"]
 	path = lib/SimpleAlloc
 	url = git@github.com:hant-hub/SimpleAlloc.git
+[submodule "lib/lib/freetype"]
+	path = lib/lib/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
+[submodule "lib/freetype"]
+	path = lib/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git

@@ -8,14 +8,14 @@
 
 int main() {
 
-    RenderState r = {0};
+    SpriteRenderer r = {0};
     CRASH_CALL(CreateVulkan());
     CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
 
     Texture textures[2] = {0};
 
-    CRASH_CALL(LoadTexture(&r.cmd, &textures[0], "resources/textures/texture.jpg"));
-    CRASH_CALL(LoadTexture(&r.cmd, &textures[1], "resources/textures/duck.jpg"));
+    CRASH_CALL(LoadTexture(&textures[0], "resources/textures/texture.jpg"));
+    CRASH_CALL(LoadTexture(&textures[1], "resources/textures/duck.jpg"));
     
     CRASH_CALL(SetTextureSlots(&r, textures, ARRAY_SIZE(textures)));
 
@@ -39,7 +39,7 @@ int main() {
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-        DrawFrame(&r, frameCounter);
+        SpriteDrawFrame(&r, frameCounter);
 
     }
 

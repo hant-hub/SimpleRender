@@ -1,4 +1,3 @@
-#include "command.h"
 #include "config.h"
 #include "error.h"
 #include "init.h"
@@ -80,7 +79,7 @@ ErrorCode CreateFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s, Ren
         switch (attach[i].type) {
             case SR_ATTATCHMENT_DEPTH:
                 {
-                    CreateImage(c, &attach[i].image,
+                    CreateImage(&attach[i].image,
                             (ImageConfig){
                             s->extent.width,
                             s->extent.height,
@@ -128,7 +127,7 @@ ErrorCode CreateFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s, Ren
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VulkanCommand* cmd, VkSwapchainKHR old) {
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;
 
@@ -210,7 +209,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VulkanCommand* cmd, VkSwa
     }
     SR_LOG_DEB("SwapChain Created");
 
-    CreateFrameBuffers(cmd, d, s, r);
+    CreateFrameBuffers(&sr_context.cmd, d, s, r);
     return SR_NO_ERROR;
 }
 

@@ -9,7 +9,6 @@
 #include "config.h"
 #include "error.h"
 #include "init.h"
-#include "command.h"
 #include "log.h"
 #include "memory.h"
 #include "pipeline.h"
@@ -42,7 +41,6 @@ typedef struct {
 } __attribute__ ((aligned(sizeof(sm_vec4f)))) SpritePack;
 
 typedef struct {
-    VulkanCommand cmd;
     StaticBuffer verts;
     StaticBuffer index;
     VulkanShader shader;
@@ -58,24 +56,24 @@ typedef struct {
     i32 sparseSet[SR_MAX_INSTANCES];
     u32 denseSize;
     Attachment depth;
-} RenderState;
+} SpriteRenderer;
 
 
-ErrorCode SpriteInit(RenderState* r, Camera c, uint textureSlots);
-void SpriteDestroy(RenderState* r);
+ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots);
+void SpriteDestroy(SpriteRenderer* r);
 
-SpriteHandle CreateSprite(RenderState* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
-ErrorCode DestroySprite(RenderState* r, SpriteHandle s);
+SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
+ErrorCode DestroySprite(SpriteRenderer* r, SpriteHandle s);
 
-ErrorCode PushBuffer(RenderState* r, void* buf);
-SpriteEntry* GetSprite(RenderState* r, SpriteHandle s);
-u32 GetNum(RenderState* r);
-Camera* GetCam(RenderState* r);
+ErrorCode PushBuffer(SpriteRenderer* r, void* buf);
+SpriteEntry* GetSprite(SpriteRenderer* r, SpriteHandle s);
+u32 GetNum(SpriteRenderer* r);
+Camera* GetCam(SpriteRenderer* r);
 
-ErrorCode SetTextureSlot(RenderState* r, Texture* t, u32 index);
-ErrorCode SetTextureSlots(RenderState* r, Texture* t, u32 number);
+ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index);
+ErrorCode SetTextureSlots(SpriteRenderer* r, Texture* t, u32 number);
 
-void DrawFrame(RenderState* r, unsigned int frame);
+void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame);
 
 
 

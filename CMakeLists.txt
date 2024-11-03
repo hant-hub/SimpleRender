@@ -6,16 +6,19 @@ set(C_LD_FLAGS "-lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm
 set(CMAKE_CXX_FLAGS "${C_LD_FLAGS} -MMD -MP -lm")
 
 file(GLOB_RECURSE SRCS ./src/*.c ./renderers/*.c)
-add_subdirectory(src)
 add_library(SimpleRender STATIC ${SRCS} ${INC})
 target_include_directories(SimpleRender PUBLIC ./include/renderers)
 target_include_directories(SimpleRender PUBLIC ./include/core)
 target_include_directories(SimpleRender PUBLIC ./lib)
+target_include_directories(SimpleRender PUBLIC ./lib/freetype/include/freetype)
 target_include_directories(SimpleRender PUBLIC ./lib/SimpleMath/src/include)
 target_include_directories(SimpleRender PUBLIC ./lib/SimpleMath/src/include/mat)
 target_include_directories(SimpleRender PUBLIC ./lib/SimpleMath/src/include/vec)
 target_include_directories(SimpleRender PUBLIC ./lib/SimpleMath/src/include/trig)
 
+find_package(Freetype)
+target_include_directories(SimpleRender PUBLIC "${FREETYPE_INCLUDE_DIRS}")
+target_link_libraries(SimpleRender ${FREETYPE_LIBRARY})
 
 project(spritetest)
 add_executable(spritetest ./test/spritetest.c)

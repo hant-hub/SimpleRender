@@ -31,7 +31,7 @@ typedef struct {
 } SwapChain;
 
 
-ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VulkanCommand* cmd, VkSwapchainKHR old);
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old);
 //ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r);
 ErrorCode CreateShaderProg(const char* vertex, const char* frag, VulkanShader* s);
 ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r);

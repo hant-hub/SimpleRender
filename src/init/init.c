@@ -182,6 +182,7 @@ static bool isDeviceSuitable(VkPhysicalDevice p, VkSurfaceKHR surface) {
 }
 
 void DestroyVulkan() {
+    DestroyCommand(&sr_context.cmd);
     vkDestroyDevice(sr_device.l, NULL);
     SR_LOG_DEB("Logical Device Destroyed");
 
@@ -388,6 +389,8 @@ ErrorCode CreateVulkan() {
     vkGetDeviceQueue(d->l, indicies.graphicsFamily.val, 0, &d->graph);
     vkGetDeviceQueue(d->l, indicies.presentFamily.val, 0, &d->present);
     d->indicies = indicies;
+
+    CreateCommand(&sr_context.cmd);
 
     return SR_NO_ERROR;
 }

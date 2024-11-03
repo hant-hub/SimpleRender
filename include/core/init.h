@@ -10,11 +10,19 @@
 #define SR_MAX_FRAMES_IN_FLIGHT 3
 #define SR_MAX_INSTANCES 150000
 
+typedef struct VulkanCommand {
+    VkCommandPool pool;
+    VkCommandBuffer buffer[SR_MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore imageAvalible[SR_MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore renderFinished[SR_MAX_FRAMES_IN_FLIGHT];
+    VkFence inFlight[SR_MAX_FRAMES_IN_FLIGHT];
+} VulkanCommand;
 
 typedef struct {
     GLFWwindow* w;
     VkInstance instance;
     VkSurfaceKHR surface;
+    VulkanCommand cmd;
 #ifdef DEBUG
     VkDebugUtilsMessengerEXT debug;
 #endif
@@ -60,6 +68,12 @@ void DestroyVulkan();
 
 
 ErrorCode querySwapDetails(SwapChainDetails* swapDetails, VkPhysicalDevice p, VkSurfaceKHR s);
+
+VkCommandBuffer beginSingleTimeCommand(VkCommandPool pool);
+void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool);
+
+ErrorCode CreateCommand(VulkanCommand* cmd);
+void DestroyCommand(VulkanCommand* cmd);
 
 extern uint32_t WIDTH;
 extern uint32_t HEIGHT;

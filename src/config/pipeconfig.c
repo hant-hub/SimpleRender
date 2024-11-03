@@ -90,8 +90,8 @@ ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipel
     VkPipelineColorBlendAttachmentState blendInfo = {0};
     blendInfo.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendInfo.blendEnable = VK_FALSE;
-    blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     blendInfo.colorBlendOp = VK_BLEND_OP_ADD;
     blendInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     blendInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;

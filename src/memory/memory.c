@@ -1,5 +1,4 @@
 #include "memory.h"
-#include "command.h"
 #include "error.h"
 #include "init.h"
 #include <string.h>
@@ -111,7 +110,7 @@ void DestroyDynamicBuffer(DynamicBuffer* b) {
 
 
 
-ErrorCode CreateStaticBuffer(VulkanCommand* cmd, VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf) {
+ErrorCode CreateStaticBuffer(VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf) {
     VkDevice d = sr_device.l;
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
@@ -128,7 +127,7 @@ ErrorCode CreateStaticBuffer(VulkanCommand* cmd, VkBufferUsageFlags usage, const
     CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                  &buf->buf, &buf->mem);
 
-    CopyBuffer(stagingBuffer, buf->buf, size, cmd);
+    CopyBuffer(stagingBuffer, buf->buf, size, &sr_context.cmd);
     vkDestroyBuffer(d, stagingBuffer, NULL);
     vkFreeMemory(d, stagingMemory, NULL);
     return SR_NO_ERROR;
