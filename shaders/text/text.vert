@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec2 inPosition;
 layout(location = 1) in vec2 inTexCoords;
-layout(location = 2) in int character;
+layout(location = 2) in uint character;
 
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out uint index;

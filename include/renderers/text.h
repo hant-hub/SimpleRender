@@ -26,6 +26,7 @@ typedef struct {
 
 
 typedef struct {
+    FontData fdata;
     VulkanShader shader;
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
