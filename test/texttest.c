@@ -1,8 +1,10 @@
 #include "common.h"
+#include "init.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
 #include "sprite.h"
 #include "text.h"
 

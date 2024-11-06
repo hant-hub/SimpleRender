@@ -107,6 +107,7 @@ void SpriteDestroy(SpriteRenderer* r) {
     vkDeviceWaitIdle(sr_device.l);
     DestroyStaticBuffer(&r->verts);
     DestroyStaticBuffer(&r->index);
+//    DestroyCommand(&sr_context.cmd);
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);

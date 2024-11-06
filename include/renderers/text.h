@@ -31,7 +31,7 @@ typedef struct {
     VulkanPipeline pipeline;
     RenderPass pass;
     SwapChain swap;
-    BufferHandle uniforms;
+    StaticBuffer font;
     BufferHandle indicies;
     BufferHandle verts;
 } TextRenderer;
