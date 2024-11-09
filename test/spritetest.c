@@ -14,8 +14,8 @@ int main() {
 
     Texture textures[2] = {0};
 
-    CRASH_CALL(LoadTexture(&textures[0], "resources/textures/texture.jpg"));
     CRASH_CALL(LoadTexture(&textures[1], "resources/textures/duck.jpg"));
+    CRASH_CALL(LoadTexture(&textures[0], "resources/textures/texture.jpg"));
     
     CRASH_CALL(SetTextureSlots(&r, textures, ARRAY_SIZE(textures)));
 
