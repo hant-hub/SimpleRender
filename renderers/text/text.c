@@ -7,6 +7,7 @@
 #include "util.h"
 #include "vec2.h"
 #include "vec4.h"
+#include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
@@ -58,8 +59,12 @@ ErrorCode TextInit(TextRenderer* r) {
     LoadFont(&r->fdata);
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &r->fdata, sizeof(FontData), &r->font));
 
+    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
+
     //todo, fix SetBuffer to be non sprite specific
-    //PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, &r->font, sizeof(FontData), 0));
+    PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, (Buffer*)&r->font, 0, 0));
+
     return SR_NO_ERROR;
 }
 
@@ -69,6 +74,8 @@ void TextDestroy(TextRenderer* r) {
     DestroyTexture(&r->fdata.atlas);
 
     DestroyStaticBuffer(&r->font);
+    DestroyDynamicBuffer(&r->indicies);
+    DestroyDynamicBuffer(&r->verts);
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);

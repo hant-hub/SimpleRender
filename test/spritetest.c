@@ -1,4 +1,3 @@
-#include "common.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -30,6 +29,8 @@ int main() {
     while (!glfwWindowShouldClose(sr_context.w)) {
         glfwPollEvents();
 
+        SpriteEntry* e = GetSprite(&r, s1);
+        e->rotation += 0.001f;
         if (glfwGetTime() > last + 3.0) { 
             SpriteEntry *s = GetSprite(&r, s2);
             s->layer += flip ? -2 : 2;

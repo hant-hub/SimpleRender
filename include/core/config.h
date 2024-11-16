@@ -4,17 +4,11 @@
 #include "common.h"
 #include "error.h"
 #include "init.h"
-#include "mat4.h"
 #include "memory.h"
 #include <vulkan/vulkan_core.h>
 #include "texture.h"
 
 
-typedef struct {
-    VkBuffer bufs[SR_MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory mem[SR_MAX_FRAMES_IN_FLIGHT];
-    void* objs[SR_MAX_FRAMES_IN_FLIGHT];
-} BufferHandle;
 
 typedef enum {
     SR_ATTATCHMENT_DEPTH
@@ -123,8 +117,7 @@ void DestroyPipelineConfig(VulkanPipelineConfig* p);
 ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDetail* layout, u32 size);
 ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
 ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
-ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, size_t size, u32 index);
-
-
+ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handles, u32 index, u32 set);
+ErrorCode SetBuffers(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handles, size_t num, u32 index);
 
 #endif

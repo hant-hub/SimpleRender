@@ -32,8 +32,28 @@ static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling t
     return SR_LOAD_FAIL;
 }
 
+
+ErrorCode CreateFrameBuffer(VkFramebuffer* f, Texture* t, u32 width, u32 height, RenderPass* p) {
+    VkFramebufferCreateInfo FrameInfo = (VkFramebufferCreateInfo){
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .width = width,
+        .height = height,
+        .layers = 1,
+        .renderPass = p->pass,
+        .attachmentCount = 0,
+        .pAttachments = NULL,
+    };
+
+    if (vkCreateFramebuffer(sr_device.l, &FrameInfo, NULL, f) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Create Framebuffer");
+        return SR_CREATE_FAIL;
+    }
+
+    return SR_NO_ERROR;
+}
+
 //also makes renderpass attachments
-ErrorCode CreateFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s, RenderPass* r) {
+ErrorCode CreateSwapFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s, RenderPass* r) {
 
     //Retrieve Swapchain Images
     VkImage images[s->imgCount];
@@ -209,7 +229,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     }
     SR_LOG_DEB("SwapChain Created");
 
-    CreateFrameBuffers(&sr_context.cmd, d, s, r);
+    CreateSwapFrameBuffers(&sr_context.cmd, d, s, r);
     return SR_NO_ERROR;
 }
 

@@ -5,17 +5,22 @@
 #include "error.h"
 #include "init.h"
 
+typedef struct {
+    uint32_t size;
+    VkDeviceMemory mem; 
+    VkBuffer vhandle;
+} Buffer;
 
 typedef struct {
     uint32_t size;
     VkDeviceMemory mem; 
-    VkBuffer buf;
+    VkBuffer vhandle;
 } StaticBuffer;
 
 typedef struct {
-    VkDeviceMemory mem; 
-    VkBuffer buf;
     uint32_t size;
+    VkDeviceMemory mem; 
+    VkBuffer vhandle;
     void* buffer;
 } DynamicBuffer;
 
@@ -28,5 +33,6 @@ void DestroyDynamicBuffer(DynamicBuffer* b);
 
 
 ErrorCode CreateStaticBuffer(VkBufferUsageFlags usage, const void* data, u32 size, StaticBuffer* buf);
+ErrorCode CreateDynamicBuffer(u32 size, DynamicBuffer* buf, VkBufferUsageFlags usage);
 
 #endif

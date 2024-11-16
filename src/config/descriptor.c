@@ -3,7 +3,6 @@
 #include "init.h"
 #include "log.h"
 #include "memory.h"
-#include "sprite.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -175,23 +174,16 @@ ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, 
 
 
 
-ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHandle* handles, size_t size, u32 index) {
-
-    VkDeviceSize bufSize = sizeof(SpritePack) * SR_MAX_INSTANCES;
+ErrorCode SetBuffers(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handles, size_t num, u32 index) {
     VkDevice d = sr_device.l;
-    VkBufferUsageFlags bufusage;
     VkDescriptorType type;
 
     switch (usage) {
         case SR_DESC_STORAGE: {
-            bufSize = sizeof(SpritePack) * SR_MAX_INSTANCES;
-            bufusage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             break;
         }
         case SR_DESC_UNIFORM: {
-            bufSize = 2 * sizeof(sm_mat4f);
-            bufusage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             break;
         }
@@ -201,20 +193,12 @@ ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHa
         }
     }
 
-    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateBuffer(bufSize, bufusage,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     &handles->bufs[i], &handles->mem[i]);
-
-        vkMapMemory(d, handles->mem[i], 0, bufSize, 0, &handles->objs[i]);
-    }
-
-    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+    
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufInfo = {0};
-        bufInfo.buffer = handles->bufs[i];
+        bufInfo.buffer = handles[i].vhandle;
         bufInfo.offset = 0;
-        bufInfo.range = bufSize;
-
+        bufInfo.range = handles[i].size;
 
         VkWriteDescriptorSet write = {0};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -230,6 +214,51 @@ ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, BufferHa
         vkUpdateDescriptorSets(d, 1, &write, 0, NULL);
     }
 
+
+    return SR_NO_ERROR;
+}
+
+ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handle, u32 index, u32 set) {
+    VkDeviceSize bufSize = handle->size;
+    VkDevice d = sr_device.l;
+    VkBufferUsageFlags bufusage;
+    VkDescriptorType type;
+
+    switch (usage) {
+        case SR_DESC_STORAGE: {
+            bufusage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
+        }
+        case SR_DESC_UNIFORM: {
+            bufusage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            break;
+        }
+        default: {
+            SR_LOG_ERR("Invalid Descriptor Type");
+            return SR_INVALID;
+        }
+    }
+
+    VkDescriptorBufferInfo bufInfo = {0};
+    bufInfo.buffer = handle->vhandle;
+    bufInfo.offset = 0;
+    bufInfo.range = bufSize;
+    
+
+    VkWriteDescriptorSet write = {0};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = config->descrip.descriptorSet[set];
+    write.dstBinding = index;
+    write.dstArrayElement = 0;
+    write.descriptorType = type;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &bufInfo;
+    write.pImageInfo = NULL;
+    write.pTexelBufferView = NULL;
+
+    vkUpdateDescriptorSets(d, 1, &write, 0, NULL);
 
 
     return SR_NO_ERROR;

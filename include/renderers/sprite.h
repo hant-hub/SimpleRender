@@ -48,8 +48,8 @@ typedef struct {
     VulkanPipeline pipeline;
     RenderPass pass;
     SwapChain swap;
-    BufferHandle uniforms;
-    BufferHandle modelBuf;
+    DynamicBuffer uniforms[SR_MAX_FRAMES_IN_FLIGHT];
+    DynamicBuffer modelBuf[SR_MAX_FRAMES_IN_FLIGHT];
     Camera cam;
     SpriteEntry denseSetVals[SR_MAX_INSTANCES];
     u32 denseSetIdx[SR_MAX_INSTANCES];

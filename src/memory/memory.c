@@ -99,12 +99,12 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, Vulka
 
 
 void DestroyStaticBuffer(StaticBuffer* b) {
-    vkDestroyBuffer(sr_device.l, b->buf, NULL);
+    vkDestroyBuffer(sr_device.l, b->vhandle, NULL);
     vkFreeMemory(sr_device.l, b->mem, NULL);
 }
 
 void DestroyDynamicBuffer(DynamicBuffer* b) {
-    vkDestroyBuffer(sr_device.l, b->buf, NULL);
+    vkDestroyBuffer(sr_device.l, b->vhandle, NULL);
     vkFreeMemory(sr_device.l, b->mem, NULL);
 }
 
@@ -125,18 +125,19 @@ ErrorCode CreateStaticBuffer(VkBufferUsageFlags usage, const void* data, u32 siz
 
     buf->size = size;
     CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                 &buf->buf, &buf->mem);
+                 &buf->vhandle, &buf->mem);
 
-    CopyBuffer(stagingBuffer, buf->buf, size, &sr_context.cmd);
+    CopyBuffer(stagingBuffer, buf->vhandle, size, &sr_context.cmd);
     vkDestroyBuffer(d, stagingBuffer, NULL);
     vkFreeMemory(d, stagingMemory, NULL);
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateDynamicBuffer(VulkanDevice* d, VulkanCommand* cmd, u32 size, DynamicBuffer* buf, VkBufferUsageFlags usage) {
-    CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+ErrorCode CreateDynamicBuffer(u32 size, DynamicBuffer* buf, VkBufferUsageFlags usage) {
+    CreateBuffer(size, usage,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 &buf->buf, &buf->mem);
-    vkMapMemory(d->l, buf->mem, 0, size, 0, &buf->buffer);
+                 &buf->vhandle, &buf->mem);
+    vkMapMemory(sr_device.l, buf->mem, 0, size, 0, &buf->buffer);
+    buf->size = size;
     return SR_NO_ERROR;
 }

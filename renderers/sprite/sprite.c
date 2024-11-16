@@ -75,8 +75,15 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &r->index));
 
-    PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, &r->uniforms, sizeof(UniformObj), 0));
-    PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, &r->modelBuf, sizeof(SpritePack) * SR_MAX_INSTANCES, 1));
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        PASS_CALL(CreateDynamicBuffer(2 * sizeof(sm_mat4f), &r->uniforms[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+        PASS_CALL(CreateDynamicBuffer(SR_MAX_INSTANCES * sizeof(SpritePack), &r->modelBuf[i], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+    }
+
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->uniforms[i], 0, i));
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, (Buffer*)&r->modelBuf[i], 1, i));
+    }
 
     r->cam = c;
     return SR_NO_ERROR;
@@ -113,13 +120,11 @@ void SpriteDestroy(SpriteRenderer* r) {
     DestroyPipelineConfig(&r->config);
     DestroyPass(&r->pass);
     VkDevice d = sr_device.l;
-    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(d, r->uniforms.bufs[i], NULL);
-        vkFreeMemory(d, r->uniforms.mem[i], NULL);
-    }
-    for (size_t i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(d, r->modelBuf.bufs[i], NULL);
-        vkFreeMemory(d, r->modelBuf.mem[i], NULL);
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(d, r->uniforms[i].vhandle, NULL);
+        vkFreeMemory(d, r->uniforms[i].mem, NULL);
+        vkDestroyBuffer(d, r->modelBuf[i].vhandle, NULL);
+        vkFreeMemory(d, r->modelBuf[i].mem, NULL);
     }
     DestroySwapChain(&r->swap, &r->pass);
 }
@@ -230,7 +235,7 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     VulkanPipeline* pipe = &r->pipeline;
     RenderPass* pass = &r->pass;
     SwapChain* swapchain = &r->swap;
-    BufferHandle* uniforms = &r->uniforms;
+    DynamicBuffer* uniforms = &r->uniforms[frame];
     
 
     vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
@@ -265,9 +270,9 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     view = sm_mat4_f32_translate(&view, (sm_vec3f){-cam.pos.x, -cam.pos.y, 0.0f});
 
 
-    memcpy(uniforms->objs[frame], &view, sizeof(sm_mat4f));
-    memcpy(uniforms->objs[frame] + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
-    PushBuffer(r, r->modelBuf.objs[frame]);
+    memcpy(uniforms->buffer, &view, sizeof(sm_mat4f));
+    memcpy(uniforms->buffer + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
+    PushBuffer(r, r->modelBuf[frame].buffer);
 
     vkResetFences(device->l, 1, &cmd->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
@@ -299,10 +304,10 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
 
-    VkBuffer bufs[] = {r->verts.buf};
+    VkBuffer bufs[] = {r->verts.vhandle};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmdBuf, 0, 1, bufs, offsets);
-    vkCmdBindIndexBuffer(cmdBuf, r->index.buf, 0, VK_INDEX_TYPE_UINT16); 
+    vkCmdBindIndexBuffer(cmdBuf, r->index.vhandle, 0, VK_INDEX_TYPE_UINT16); 
 
     
     pipe->view.x = 0.0f;

@@ -3,14 +3,13 @@
 
 #include "config.h"
 #include "error.h"
-#include "init.h"
-#include "log.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "texture.h"
 #include "vec2.h"
 
 #define NUM_GLYPHS 128
+#define MAX_CHARS 10000
 
 typedef struct {
     Texture atlas;
@@ -33,8 +32,8 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     StaticBuffer font;
-    BufferHandle indicies;
-    BufferHandle verts;
+    DynamicBuffer indicies;
+    DynamicBuffer verts;
 } TextRenderer;
 
 ErrorCode LoadFont(FontData* font);

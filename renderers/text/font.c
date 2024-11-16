@@ -15,7 +15,7 @@ ErrorCode LoadFont(FontData* font) {
     }
 
     FT_Face face;
-    if (FT_New_Face(library, "/usr/share/fonts/truetype/freefont/FreeSerif.ttf", 0, &face)) {
+    if (FT_New_Face(library, "/usr/share/fonts/TTF/NotoSansMNerdFont-Black.ttf", 0, &face)) {
         SR_LOG_ERR("Failed to load font face");
         return SR_LOAD_FAIL;
     }

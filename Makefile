@@ -28,6 +28,7 @@ INC_DIRS := $(shell find $(INC_SEARCH)/ -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
+
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
 
@@ -72,7 +73,7 @@ clean:
 spritetest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
-	$(CC) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	$(CC) ./test/spritetest.c -Wl,--start-group ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS) -Wl,--end-group; \
 	cd $(BUILD_DIR); \
 	./test;
 
