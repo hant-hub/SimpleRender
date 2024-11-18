@@ -2,17 +2,19 @@
 
 #include "config.h"
 #include "error.h"
+#include "frame.h"
+#include "mat4.h"
 #include "memory.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
 #include "vec4.h"
 #include <stdint.h>
+#include <string.h>
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
     sm_vec2f pos;
-    sm_vec2f size;
     u32 c;
 } Vertex;
 
@@ -30,6 +32,7 @@ ErrorCode TextInit(TextRenderer* r) {
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
+        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0},
         {SR_DESC_STORAGE, VK_SHADER_STAGE_VERTEX_BIT, 0},
         //{SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1}
     };
@@ -37,18 +40,17 @@ ErrorCode TextInit(TextRenderer* r) {
     
     AttrConfig vconfig[] = {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
-        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32_UINT,      .size = sizeof(u32)}
     };
     VkVertexInputBindingDescription binds[1];
-    VkVertexInputAttributeDescription attrs[3];
-    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 3));
+    VkVertexInputAttributeDescription attrs[2];
+    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 2));
 
 
     VulkanVertexInput vin = {
         .attrs = attrs,
         .binding = binds[0],
-        .size = 3
+        .size = 2
     };
     PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
 
@@ -61,9 +63,13 @@ ErrorCode TextInit(TextRenderer* r) {
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->uniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     //todo, fix SetBuffer to be non sprite specific
-    PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, (Buffer*)&r->font, 0, 0));
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->uniforms, 0, i));
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, (Buffer*)&r->font, 1, i));
+    }
 
     return SR_NO_ERROR;
 }
@@ -76,6 +82,7 @@ void TextDestroy(TextRenderer* r) {
     DestroyStaticBuffer(&r->font);
     DestroyDynamicBuffer(&r->indicies);
     DestroyDynamicBuffer(&r->verts);
+    DestroyDynamicBuffer(&r->uniforms);
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);
@@ -85,8 +92,151 @@ void TextDestroy(TextRenderer* r) {
 }
 
 ErrorCode UpdateText(TextRenderer* r) {
+    static const char text[] = "Lorem Ipsum";
+    static const Vertex verts[] = {
+        {{ 1, 1}, 0},
+        {{ 2, 1}, 1},
+        {{ 2, 2}, 1},
+        {{ 1, 2}, 0},
+    };
+
+    static const uint16_t indicies[] = {
+        0, 1, 2, 2, 3, 0
+    };
+
+    float cadvance = 0;
+    int cdrop = 0;
+    Vertex* v = r->verts.buffer;
+    uint16_t* in = r->indicies.buffer;
+    float scale = 0.1;
+    for (int i = 0; i < ARRAY_SIZE(text); i++) {
+        sm_vec2i size = r->fdata.size[text[i]];
+        //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
+        sm_vec2i offset = r->fdata.offset[text[i]];
+        int advance = r->fdata.advance[text[i]]; 
+
+        float x = cadvance - ((float)offset.x * scale);
+        float y = 10 - ((float)offset.y) * scale;
+
+        v[i * 4 + 0] = (Vertex) {
+            .pos = {x, y},
+            .c = i
+        };
+        v[i * 4 + 1] = (Vertex) {
+            .pos = {x + ((float)(size.x) * scale), y},
+            .c = i
+        };
+        v[i * 4 + 2] = (Vertex) {
+            .pos = {x + (float)size.x * scale, y + (float)size.y * scale},
+            .c = i
+        };
+        v[i * 4 + 3] = (Vertex) {
+            .pos = {x, y + (float)size.y * scale},
+            .c = i
+        };
+
+        in[i*6 + 0] = i * 4 + 0;
+        in[i*6 + 1] = i * 4 + 1;
+        in[i*6 + 2] = i * 4 + 2;
+        in[i*6 + 3] = i * 4 + 2;
+        in[i*6 + 4] = i * 4 + 3;
+        in[i*6 + 5] = i * 4 + 0;
+        cadvance += (float)advance * scale;
+    }
+    r->chars = ARRAY_SIZE(text) * 6;
+
     return SR_NO_ERROR;
 }
 
-void TextDrawFrame(TextRenderer* r) {
+void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
+    VulkanDevice* device = &sr_device;
+    VulkanContext* context = &sr_context; 
+    VulkanCommand* cmd = &sr_context.cmd;
+    VulkanShader* shader = &r->shader;
+    VulkanPipelineConfig* config = &r->config;
+    VulkanPipeline* pipe = &r->pipeline;
+    RenderPass* pass = &r->pass;
+
+    sm_mat4f view = SM_MAT4_IDENTITY;
+    sm_mat4f proj = SM_MAT4_IDENTITY;
+    proj = sm_mat4_f32_ortho(0.0f, 100.0f, 0.0f, 100.0f, 0.0f, 100.0f);
+
+    memcpy(r->uniforms.buffer, &proj, sizeof(sm_mat4f));
+
+    vkResetFences(sr_device.l, 1, &p->inFlight[frame]);
+    vkResetCommandBuffer(cmd->buffer[frame], 0);
+    VkCommandBuffer cmdBuf = cmd->buffer[frame];
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = NULL;
+
+    if (vkBeginCommandBuffer(cmdBuf, &beginInfo) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Begin Command Buffer");
+        return;
+    }
+
+    VkRenderPassBeginInfo renderInfo = {0};
+    renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderInfo.renderPass = pass->pass;
+    renderInfo.framebuffer = p->swapchain.buffers[p->imageIndex];
+    renderInfo.renderArea.offset = (VkOffset2D){0, 0};
+    renderInfo.renderArea.extent = p->swapchain.extent;
+
+    VkClearValue clearcolors[2] = {0}; 
+    clearcolors[0].color = (VkClearColorValue){0.0f, 0.0f, 0.0f, 1.0f};
+    renderInfo.clearValueCount = 1;
+    renderInfo.pClearValues = clearcolors;
+
+    vkCmdBeginRenderPass(cmdBuf, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
+
+    VkBuffer bufs[] = {r->verts.vhandle};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(cmdBuf, 0, 1, bufs, offsets);
+    vkCmdBindIndexBuffer(cmdBuf, r->indicies.vhandle, 0, VK_INDEX_TYPE_UINT16); 
+
+    pipe->view.x = 0.0f;
+    pipe->view.y = 0.0f;
+    pipe->view.width = p->swapchain.extent.width;
+    pipe->view.height = p->swapchain.extent.height;
+    pipe->view.minDepth = 0.0f;
+    pipe->view.maxDepth = 1.0f;
+    vkCmdSetViewport(cmdBuf, 0, 1, &pipe->view);
+
+    pipe->scissor.offset = (VkOffset2D){0, 0};
+    pipe->scissor.extent = p->swapchain.extent;
+    vkCmdSetScissor(cmdBuf, 0, 1, &pipe->scissor);
+
+    vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
+
+    vkCmdDrawIndexed(cmdBuf, r->chars, 1, 0, 0, 0);
+    vkCmdEndRenderPass(cmdBuf);
+
+    if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to End Command Buffer");
+        return;
+    }
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {p->imageAvalible[frame]};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd->buffer[frame];
+
+    VkSemaphore signalSemaphores[] = {p->renderFinished[frame]};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(device->graph, 1, &submitInfo, p->inFlight[frame]) != VK_SUCCESS) {
+        SR_LOG_ERR("Failed to Submit Queue");
+        return;
+    }
 }

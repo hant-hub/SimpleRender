@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "error.h"
+#include "frame.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "texture.h"
@@ -32,6 +33,8 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     StaticBuffer font;
+    u32 chars;
+    DynamicBuffer uniforms;
     DynamicBuffer indicies;
     DynamicBuffer verts;
 } TextRenderer;
@@ -42,7 +45,7 @@ ErrorCode TextInit(TextRenderer* r);
 void TextDestroy(TextRenderer* r);
 
 ErrorCode UpdateText(TextRenderer* r);
-void DrawFrame(TextRenderer* r);
+void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
 
 
 
