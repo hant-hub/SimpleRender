@@ -2,11 +2,8 @@
 #define SR_PIPE_H
 
 #include "error.h"
-#include "init.h"
 #include "config.h"
-#include "log.h"
 #include "error.h"
-#include "util.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
 #include <vulkan/vulkan.h>
@@ -28,10 +25,11 @@ typedef struct {
     VkSwapchainKHR swapChain;
     VkImageView* views;
     VkFramebuffer* buffers;
+    RenderPass* rpass;
 } SwapChain;
 
 
-ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old);
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, SwapChain* old);
 //ErrorCode CreateFrameBuffers(VulkanDevice* d, SwapChain*s, RenderPass* r);
 ErrorCode CreateShaderProg(const char* vertex, const char* frag, VulkanShader* s);
 ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r);

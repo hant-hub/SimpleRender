@@ -1,3 +1,4 @@
+#include "frame.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -10,6 +11,9 @@ int main() {
     SpriteRenderer r = {0};
     CRASH_CALL(CreateVulkan());
     CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
+
+    PresentInfo p = {0};
+    CRASH_CALL(InitPresent(&p, &r.pass));
 
     Texture textures[2] = {0};
 
@@ -40,12 +44,15 @@ int main() {
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-        SpriteDrawFrame(&r, frameCounter);
+        GetFrame(&p, frameCounter);
+        SpriteDrawFrame(&r, &p, frameCounter);
+        PresentFrame(&p, frameCounter); 
 
     }
 
     DestroyTexture(&textures[0]);
     DestroyTexture(&textures[1]);
+    DestroyPresent(&p);
     SpriteDestroy(&r);
     DestroyVulkan();
     return 0;

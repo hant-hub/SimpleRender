@@ -9,6 +9,7 @@ typedef enum {
     SR_DEVICE_NOT_FOUND,
     SR_INVALID,
     SR_LOAD_FAIL,
+    SR_OP_FAIL,
     
 #ifdef DEBUG
     SR_VALIDATION_MISSING,

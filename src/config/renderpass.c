@@ -2,8 +2,6 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
-#include "texture.h"
-#include "util.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -27,7 +25,7 @@ static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling t
 }
 
 
-ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments) {
+ErrorCode CreatePass(RenderPass* r, RenderPass* prev, Attachment* configs, u32 numAttachments) {
 
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;
@@ -139,7 +137,6 @@ ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments) {
     renderInfo.dependencyCount = 1;
     renderInfo.pDependencies = &dependency;
 
-    SR_LOG_DEB("test");
     if (vkCreateRenderPass(d->l, &renderInfo, NULL, &r->pass) != VK_SUCCESS) {
         SR_LOG_WAR("Failed to Create Render Pass");
         return SR_CREATE_FAIL;
@@ -149,7 +146,6 @@ ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments) {
     r->numAttachments = numAttachments + 1;
     return SR_NO_ERROR;
 }
-
 
 
 void DestroyPass(RenderPass* r) {

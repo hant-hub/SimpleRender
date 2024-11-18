@@ -52,7 +52,7 @@ ErrorCode TextInit(TextRenderer* r) {
     };
     PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
 
-    PASS_CALL(CreatePass(&r->pass, NULL, 0));
+    PASS_CALL(CreatePass(&r->pass, NULL, NULL, 0));
 //    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     

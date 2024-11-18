@@ -8,8 +8,8 @@
 #include <vec2.h>
 #include "config.h"
 #include "error.h"
+#include "frame.h"
 #include "init.h"
-#include "log.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "texture.h"
@@ -24,8 +24,8 @@ typedef i32 SpriteHandle;
 typedef struct {
     sm_vec2f pos;
     sm_vec2f size;
-    u32 layer;
     Radian rotation;
+    u32 layer;
     u32 texture;
 } SpriteEntry;
 
@@ -73,7 +73,7 @@ Camera* GetCam(SpriteRenderer* r);
 ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index);
 ErrorCode SetTextureSlots(SpriteRenderer* r, Texture* t, u32 number);
 
-void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame);
+void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame);
 
 
 

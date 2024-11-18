@@ -1,7 +1,6 @@
 #include "error.h"
 #include "init.h"
 #include "log.h"
-#include "pipeline.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -34,39 +33,12 @@ ErrorCode CreateCommand(VulkanCommand* cmd){
         return SR_CREATE_FAIL;
     }
     SR_LOG_DEB("Created Command Buffers");
-
-
-    VkFenceCreateInfo fenceInfo = {0};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    VkSemaphoreCreateInfo semaphoreInfo = {0};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    for (unsigned int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateFence(d->l, &fenceInfo, NULL, &cmd->inFlight[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->imageAvalible[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(d->l, &semaphoreInfo, NULL, &cmd->renderFinished[i]) != VK_SUCCESS) {
-            SR_LOG_ERR("Failed to Create all Sync Objects");
-            return SR_CREATE_FAIL;
-        }
-    }
-    SR_LOG_DEB("Sync Objects Created");
-
     return SR_NO_ERROR;
 }
 
 
 void DestroyCommand(VulkanCommand* cmd){
     VkDevice d = sr_device.l;
-    for (unsigned int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(d, cmd->inFlight[i], NULL);
-        vkDestroySemaphore(d, cmd->renderFinished[i], NULL);
-        vkDestroySemaphore(d, cmd->imageAvalible[i], NULL);
-    }
-    SR_LOG_DEB("Destroyed Sync Objects");
-
-
     vkDestroyCommandPool(d, cmd->pool, NULL);
     SR_LOG_DEB("Destroyed Command Pool");
 }
@@ -105,3 +77,4 @@ void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool) {
 
     vkFreeCommandBuffers(sr_device.l, pool, 1, &cmd);
 }
+

@@ -1,5 +1,6 @@
 #include "sprite.h"
 #include "error.h"
+#include "frame.h"
 #include "init.h"
 #include "log.h"
 #include <string.h>
@@ -39,7 +40,6 @@ static const uint16_t indicies[] = {
 
 ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
 
-
     PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
@@ -68,8 +68,7 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
 
 
     r->depth = (Attachment){.type = SR_ATTATCHMENT_DEPTH};
-    PASS_CALL(CreatePass(&r->pass, &r->depth, 1));
-    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
+    PASS_CALL(CreatePass(&r->pass, NULL, &r->depth, 1));
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));
@@ -126,7 +125,6 @@ void SpriteDestroy(SpriteRenderer* r) {
         vkDestroyBuffer(d, r->modelBuf[i].vhandle, NULL);
         vkFreeMemory(d, r->modelBuf[i].mem, NULL);
     }
-    DestroySwapChain(&r->swap, &r->pass);
 }
 
 
@@ -226,7 +224,7 @@ u32 GetNum(SpriteRenderer* r) {
     return r->denseSize;
 }
 
-void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
+void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
     VulkanDevice* device = &sr_device;
     VulkanContext* context = &sr_context; 
     VulkanCommand* cmd = &sr_context.cmd;
@@ -234,30 +232,8 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     VulkanPipelineConfig* config = &r->config;
     VulkanPipeline* pipe = &r->pipeline;
     RenderPass* pass = &r->pass;
-    SwapChain* swapchain = &r->swap;
     DynamicBuffer* uniforms = &r->uniforms[frame];
     
-
-    vkWaitForFences(device->l, 1, &cmd->inFlight[frame], VK_TRUE, UINT64_MAX);
-
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device->l, swapchain->swapChain, UINT64_MAX, cmd->imageAvalible[frame], NULL, &imageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-
-
-        vkDeviceWaitIdle(device->l);
-        SwapChain old = *swapchain;
-
-        ErrorCode code = CreateSwapChain(pass, swapchain, swapchain->swapChain); 
-        DestroySwapChain(&old, &r->pass);
-        if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
-        return;
-
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        SR_LOG_ERR("Bad things are happening");
-    }
-
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
@@ -274,7 +250,7 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     memcpy(uniforms->buffer + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
     PushBuffer(r, r->modelBuf[frame].buffer);
 
-    vkResetFences(device->l, 1, &cmd->inFlight[frame]);
+    vkResetFences(device->l, 1, &p->inFlight[frame]);
     vkResetCommandBuffer(cmd->buffer[frame], 0);
     VkCommandBuffer cmdBuf = cmd->buffer[frame];
     VkCommandBufferBeginInfo beginInfo = {0};
@@ -290,9 +266,9 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     VkRenderPassBeginInfo renderInfo = {0};
     renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderInfo.renderPass = pass->pass;
-    renderInfo.framebuffer = swapchain->buffers[imageIndex];
+    renderInfo.framebuffer = p->swapchain.buffers[p->imageIndex];
     renderInfo.renderArea.offset = (VkOffset2D){0, 0};
-    renderInfo.renderArea.extent = swapchain->extent;
+    renderInfo.renderArea.extent = p->swapchain.extent;
 
     VkClearValue clearcolors[2] = {0}; 
     clearcolors[0].color = (VkClearColorValue){0.0f, 0.0f, 0.0f, 1.0f};
@@ -312,14 +288,14 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     
     pipe->view.x = 0.0f;
     pipe->view.y = 0.0f;
-    pipe->view.width = swapchain->extent.width;
-    pipe->view.height = swapchain->extent.height;
+    pipe->view.width = p->swapchain.extent.width;
+    pipe->view.height = p->swapchain.extent.height;
     pipe->view.minDepth = 0.0f;
     pipe->view.maxDepth = 1.0f;
     vkCmdSetViewport(cmdBuf, 0, 1, &pipe->view);
 
     pipe->scissor.offset = (VkOffset2D){0, 0};
-    pipe->scissor.extent = swapchain->extent;
+    pipe->scissor.extent = p->swapchain.extent;
     vkCmdSetScissor(cmdBuf, 0, 1, &pipe->scissor);
 
     vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
@@ -334,13 +310,10 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     }
 
     //update uniforms
-
-
-
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {cmd->imageAvalible[frame]};
+    VkSemaphore waitSemaphores[] = {p->imageAvalible[frame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -349,40 +322,12 @@ void SpriteDrawFrame(SpriteRenderer* r, unsigned int frame) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd->buffer[frame];
 
-    VkSemaphore signalSemaphores[] = {cmd->renderFinished[frame]};
+    VkSemaphore signalSemaphores[] = {p->renderFinished[frame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(device->graph, 1, &submitInfo, cmd->inFlight[frame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(device->graph, 1, &submitInfo, p->inFlight[frame]) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to Submit Queue");
         return;
-    }
-
-    VkPresentInfoKHR presentInfo = {0};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-
-    VkSwapchainKHR swapChains[] = {swapchain->swapChain};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &imageIndex;
-
-    result = vkQueuePresentKHR(device->present, &presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR ||
-        result == VK_SUBOPTIMAL_KHR ||
-        frameBufferResized) {
-
-        frameBufferResized = FALSE;
-        vkDeviceWaitIdle(device->l);
-        DestroySwapChain(swapchain, &r->pass);
-
-        ErrorCode code = CreateSwapChain(pass, swapchain, NULL);
-        if (code != SR_NO_ERROR) SR_LOG_ERR("SwapChain failed to Recreate");
-        return;
-
-    } else if (result != VK_SUCCESS) {
-        SR_LOG_ERR("Bad things are happening");
     }
 }

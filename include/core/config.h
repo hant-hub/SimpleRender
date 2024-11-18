@@ -106,7 +106,7 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
-ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments);
+ErrorCode CreatePass(RenderPass* r, RenderPass* old, Attachment* configs, u32 numAttachments);
 void DestroyPass(RenderPass* r);
 
 //pipeline Config

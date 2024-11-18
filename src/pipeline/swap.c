@@ -147,7 +147,7 @@ ErrorCode CreateSwapFrameBuffers(VulkanCommand* c, VulkanDevice* d, SwapChain*s,
     return SR_NO_ERROR;
 }
 
-ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
+ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, SwapChain* old) {
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;
 
@@ -219,7 +219,7 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     swapInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapInfo.presentMode = s->mode;
     swapInfo.clipped = VK_TRUE;
-    swapInfo.oldSwapchain = old;
+    swapInfo.oldSwapchain = old ? old->swapChain : VK_NULL_HANDLE;
 
     VkResult result = vkCreateSwapchainKHR(d->l, &swapInfo, NULL, &s->swapChain);
     if (result != VK_SUCCESS) {
@@ -229,7 +229,11 @@ ErrorCode CreateSwapChain(RenderPass* r, SwapChain* s, VkSwapchainKHR old) {
     }
     SR_LOG_DEB("SwapChain Created");
 
+    if (r == NULL && old != NULL) {
+        r = old->rpass;
+    }
     CreateSwapFrameBuffers(&sr_context.cmd, d, s, r);
+    s->rpass = r;
     return SR_NO_ERROR;
 }
 
