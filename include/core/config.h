@@ -115,7 +115,7 @@ void DestroyPipelineConfig(VulkanPipelineConfig* p);
 
 //bindings
 ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDetail* layout, u32 size);
-ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex);
+ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex, u32 set);
 ErrorCode SetImages(VkImageView *v, VkSampler *s, VulkanPipelineConfig* config, u32 index, u32 size);
 ErrorCode SetBuffer(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handles, u32 index, u32 set);
 ErrorCode SetBuffers(VulkanPipelineConfig* config, DescriptorType usage, Buffer* handles, size_t num, u32 index);

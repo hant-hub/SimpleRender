@@ -12,6 +12,7 @@
 #define NUM_GLYPHS 128
 #define MAX_CHARS 10000
 
+
 typedef struct {
     Texture atlas;
     //position in atlas
@@ -22,6 +23,8 @@ typedef struct {
     sm_vec2i offset[NUM_GLYPHS]; 
     //kerning stuff
     int advance[NUM_GLYPHS];
+    //atlas size
+    sm_vec2i texsize;
 } FontData;
 
 
@@ -44,10 +47,12 @@ ErrorCode LoadFont(FontData* font);
 ErrorCode TextInit(TextRenderer* r);
 void TextDestroy(TextRenderer* r);
 
-ErrorCode UpdateText(TextRenderer* r);
+ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen);
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
 
 
+#define TextUpdate(r, t) \
+    UpdateText(r, t, sizeof(t) - 1)
 
 
 #endif

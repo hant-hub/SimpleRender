@@ -15,7 +15,7 @@ ErrorCode LoadFont(FontData* font) {
     }
 
     FT_Face face;
-    if (FT_New_Face(library, "/usr/share/fonts/TTF/NotoSansMNerdFont-Black.ttf", 0, &face)) {
+    if (FT_New_Face(library, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 0, &face)) {
         SR_LOG_ERR("Failed to load font face");
         return SR_LOAD_FAIL;
     }
@@ -66,6 +66,7 @@ ErrorCode LoadFont(FontData* font) {
                 .accessmode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
             }, buffer);
 
+    font->texsize = (sm_vec2i){tex_width, tex_height};
     free(buffer);
     return SR_NO_ERROR;
 }

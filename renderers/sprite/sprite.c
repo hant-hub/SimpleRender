@@ -91,7 +91,9 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
 
 //set texture to slot
 ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index) {
-    PASS_CALL(SetImage(t->image.view, t->sampler, &r->config, 2, index));
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        PASS_CALL(SetImage(t->image.view, t->sampler, &r->config, 2, index, i));
+    }
     return SR_NO_ERROR;
 }
 

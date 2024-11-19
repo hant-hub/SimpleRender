@@ -3,6 +3,7 @@
 #include "config.h"
 #include "error.h"
 #include "frame.h"
+#include "log.h"
 #include "mat4.h"
 #include "memory.h"
 #include "texture.h"
@@ -15,7 +16,7 @@
 
 typedef struct {
     sm_vec2f pos;
-    u32 c;
+    sm_vec2f uv;
 } Vertex;
 
 typedef struct {
@@ -33,14 +34,13 @@ ErrorCode TextInit(TextRenderer* r) {
 
     DescriptorDetail descriptorConfigs[] = {
         {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0},
-        {SR_DESC_STORAGE, VK_SHADER_STAGE_VERTEX_BIT, 0},
-        //{SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1}
+        {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1}
     };
     PASS_CALL(CreateDescriptorSetConfig(&r->config, descriptorConfigs, ARRAY_SIZE(descriptorConfigs)));
     
     AttrConfig vconfig[] = {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
-        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32_UINT,      .size = sizeof(u32)}
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)}
     };
     VkVertexInputBindingDescription binds[1];
     VkVertexInputAttributeDescription attrs[2];
@@ -59,7 +59,6 @@ ErrorCode TextInit(TextRenderer* r) {
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     
     LoadFont(&r->fdata);
-    PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &r->fdata, sizeof(FontData), &r->font));
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
@@ -68,7 +67,7 @@ ErrorCode TextInit(TextRenderer* r) {
     //todo, fix SetBuffer to be non sprite specific
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->uniforms, 0, i));
-        PASS_CALL(SetBuffer(&r->config, SR_DESC_STORAGE, (Buffer*)&r->font, 1, i));
+        PASS_CALL(SetImage(r->fdata.atlas.image.view, r->fdata.atlas.sampler, &r->config, 1, 0, i));
     }
 
     return SR_NO_ERROR;
@@ -91,8 +90,7 @@ void TextDestroy(TextRenderer* r) {
     DestroySwapChain(&r->swap, &r->pass);
 }
 
-ErrorCode UpdateText(TextRenderer* r) {
-    static const char text[] = "Lorem Ipsum";
+ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen) {
     static const Vertex verts[] = {
         {{ 1, 1}, 0},
         {{ 2, 1}, 1},
@@ -106,33 +104,41 @@ ErrorCode UpdateText(TextRenderer* r) {
 
     float cadvance = 0;
     int cdrop = 0;
-    Vertex* v = r->verts.buffer;
+    Vertex* vertex = r->verts.buffer;
     uint16_t* in = r->indicies.buffer;
     float scale = 0.1;
-    for (int i = 0; i < ARRAY_SIZE(text); i++) {
+    for (int i = 0; i < textlen; i++) {
         sm_vec2i size = r->fdata.size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
         sm_vec2i offset = r->fdata.offset[text[i]];
         int advance = r->fdata.advance[text[i]]; 
 
-        float x = cadvance - ((float)offset.x * scale);
-        float y = 10 - ((float)offset.y) * scale;
+        float x = 10 + cadvance + (offset.x * scale);
+        float y = 10 - (offset.y) * scale;
 
-        v[i * 4 + 0] = (Vertex) {
+        float u = ((float)r->fdata.pos[text[i]].x) / r->fdata.texsize.x;
+        float v = ((float)r->fdata.pos[text[i]].y) / r->fdata.texsize.y;
+
+        sm_vec2f texsize = (sm_vec2f){
+            ((float)size.x) / r->fdata.texsize.x,
+            ((float)size.y) / r->fdata.texsize.y
+        };
+
+        vertex[i * 4 + 0] = (Vertex) {
             .pos = {x, y},
-            .c = i
+            .uv = {u , v}
         };
-        v[i * 4 + 1] = (Vertex) {
+        vertex[i * 4 + 1] = (Vertex) {
             .pos = {x + ((float)(size.x) * scale), y},
-            .c = i
+            .uv = {u + texsize.x, v}
         };
-        v[i * 4 + 2] = (Vertex) {
+        vertex[i * 4 + 2] = (Vertex) {
             .pos = {x + (float)size.x * scale, y + (float)size.y * scale},
-            .c = i
+            .uv = {u + texsize.x, v + texsize.y}
         };
-        v[i * 4 + 3] = (Vertex) {
+        vertex[i * 4 + 3] = (Vertex) {
             .pos = {x, y + (float)size.y * scale},
-            .c = i
+            .uv = {u, v + texsize.y}
         };
 
         in[i*6 + 0] = i * 4 + 0;
@@ -143,7 +149,7 @@ ErrorCode UpdateText(TextRenderer* r) {
         in[i*6 + 5] = i * 4 + 0;
         cadvance += (float)advance * scale;
     }
-    r->chars = ARRAY_SIZE(text) * 6;
+    r->chars = textlen * 6;
 
     return SR_NO_ERROR;
 }
@@ -159,7 +165,8 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
-    proj = sm_mat4_f32_ortho(0.0f, 100.0f, 0.0f, 100.0f, 0.0f, 100.0f);
+    float aspect = ((float)WIDTH)/((float)HEIGHT);
+    proj = sm_mat4_f32_ortho(0.0f,  1.0f, 0.0f, 100.0f * aspect, 0.0f, 100.0f);
 
     memcpy(r->uniforms.buffer, &proj, sizeof(sm_mat4f));
 

@@ -4,6 +4,7 @@
 #include "util.h"
 #include "vec2.h"
 #include <GLFW/glfw3.h>
+#include <stdio.h>
 #include <vulkan/vulkan_core.h>
 #include "sprite.h"
 #include "text.h"
@@ -31,13 +32,23 @@ int main() {
     //SpriteHandle s1 = CreateSprite(&r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 100}, 0, 1);
     //SpriteHandle s2 = CreateSprite(&r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 100}, 1, 0);
 
-    UpdateText(&t);
+    char text[1000];
 
     unsigned int frameCounter = 0;
     double last = 0.0;
     bool flip = FALSE;
+    double prev = 0;
+    double next = 1;
+    double period = 0.0f;
     while (!glfwWindowShouldClose(sr_context.w)) {
         glfwPollEvents();
+        
+        float period = (period + (float)(next - prev))/2;
+        prev = next;
+        next = glfwGetTime();
+
+        int size = snprintf(text, 999, "Frame: %2.f", 1/period);
+        UpdateText(&t, text, size);
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         GetFrame(&p, frameCounter);

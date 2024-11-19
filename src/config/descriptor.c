@@ -116,29 +116,27 @@ ErrorCode CreateDescriptorSetConfig(VulkanPipelineConfig* config, DescriptorDeta
     return SR_NO_ERROR;
 }
 
-ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex) {
+ErrorCode SetImage(VkImageView v, VkSampler s, VulkanPipelineConfig* config, u32 index, u32 arrayIndex, u32 set) {
 
-    for (u32 i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorImageInfo imgInfo = {
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = v,
-            .sampler = s 
-        };
+    VkDescriptorImageInfo imgInfo = {
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .imageView = v,
+        .sampler = s 
+    };
 
-        VkWriteDescriptorSet write = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = config->descrip.descriptorSet[i],
-            .dstBinding = index,
-            .dstArrayElement = arrayIndex,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .pBufferInfo = NULL,
-            .pImageInfo = &imgInfo,
-            .pTexelBufferView = NULL
-        };
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = config->descrip.descriptorSet[set],
+        .dstBinding = index,
+        .dstArrayElement = arrayIndex,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .pBufferInfo = NULL,
+        .pImageInfo = &imgInfo,
+        .pTexelBufferView = NULL
+    };
 
-        vkUpdateDescriptorSets(sr_device.l, 1, &write, 0, NULL);
-    }
+    vkUpdateDescriptorSets(sr_device.l, 1, &write, 0, NULL);
     return SR_NO_ERROR;
 }
 
