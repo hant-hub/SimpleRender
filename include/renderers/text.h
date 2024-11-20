@@ -47,12 +47,15 @@ ErrorCode LoadFont(FontData* font);
 ErrorCode TextInit(TextRenderer* r);
 void TextDestroy(TextRenderer* r);
 
-ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen);
+ErrorCode SetText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
+ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end);
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
+
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
 
 
 #define TextUpdate(r, t) \
-    UpdateText(r, t, sizeof(t) - 1)
+    UpdateText(r, t, sizeof(t) - 1, (sm_vec2f){0,0}, 1)
 
 
 #endif

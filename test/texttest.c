@@ -41,19 +41,19 @@ int main() {
     double next = 1;
     double period = 0.0f;
     while (!glfwWindowShouldClose(sr_context.w)) {
+        prev = glfwGetTime();
         glfwPollEvents();
         
-        float period = (period + (float)(next - prev))/2;
-        prev = next;
-        next = glfwGetTime();
-
-        int size = snprintf(text, 999, "Frame: %2.f", 1/period);
-        UpdateText(&t, text, size);
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         GetFrame(&p, frameCounter);
         TextDrawFrame(&t, &p, frameCounter);
         PresentFrame(&p, frameCounter);
+        next = glfwGetTime();
+        float period = (period + (float)(next - prev))/2;
+
+        int size = snprintf(text, 999, "Fps: %2.f\nFrame Time: %.3fms", 1/period, period * 1000);
+        SetText(&t, text, size, (sm_vec2f){10, 10}, 1);
 
     }
 

@@ -1,6 +1,7 @@
 #ifndef SR_UTIL_H
 #define SR_UTIL_H
 #include <stdint.h>
+#include <stdlib.h>
 #include <error.h>
 #include "log.h"
 
@@ -21,6 +22,13 @@ typedef int bool;
 
 DEF_OPTIONAL(uint32_t);
 
+#define TIME(x) \
+   { \
+       SR_LOG_DEB("test");\
+       x; \
+   }
+    
+
 
 #define PASS_CALL(f) \
     { \
@@ -31,7 +39,7 @@ DEF_OPTIONAL(uint32_t);
 #define CRASH_CALL(f) \
     { \
         ErrorCode result = f; \
-        if (result != SR_NO_ERROR) return EXIT_FAILURE;\
+        if (result != SR_NO_ERROR) exit(EXIT_FAILURE);\
     }
 
 

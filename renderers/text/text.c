@@ -3,6 +3,7 @@
 #include "config.h"
 #include "error.h"
 #include "frame.h"
+#include "init.h"
 #include "log.h"
 #include "mat4.h"
 #include "memory.h"
@@ -90,7 +91,7 @@ void TextDestroy(TextRenderer* r) {
     DestroySwapChain(&r->swap, &r->pass);
 }
 
-ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen) {
+ErrorCode SetText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale) {
     static const Vertex verts[] = {
         {{ 1, 1}, 0},
         {{ 2, 1}, 1},
@@ -103,18 +104,25 @@ ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen) {
     };
 
     float cadvance = 0;
-    int cdrop = 0;
+    float cdrop = 0;
+    int nonrendered = 0;
     Vertex* vertex = r->verts.buffer;
     uint16_t* in = r->indicies.buffer;
-    float scale = 0.1;
+    scale *= 0.0001 * HEIGHT;
     for (int i = 0; i < textlen; i++) {
+
         sm_vec2i size = r->fdata.size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
         sm_vec2i offset = r->fdata.offset[text[i]];
         int advance = r->fdata.advance[text[i]]; 
+        if (text[i] == '\n') {
+            cdrop += (size.y * scale) + 3;
+            cadvance = 0;
+            continue;
+        }
 
-        float x = 10 + cadvance + (offset.x * scale);
-        float y = 10 - (offset.y) * scale;
+        float x = pos.x + cadvance + (offset.x * scale);
+        float y = pos.y + cdrop - (offset.y) * scale;
 
         float u = ((float)r->fdata.pos[text[i]].x) / r->fdata.texsize.x;
         float v = ((float)r->fdata.pos[text[i]].y) / r->fdata.texsize.y;
@@ -149,7 +157,7 @@ ErrorCode UpdateText(TextRenderer* r, const char* text, u32 textlen) {
         in[i*6 + 5] = i * 4 + 0;
         cadvance += (float)advance * scale;
     }
-    r->chars = textlen * 6;
+    r->chars = (textlen - nonrendered) * 6;
 
     return SR_NO_ERROR;
 }
