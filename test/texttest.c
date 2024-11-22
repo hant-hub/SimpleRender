@@ -1,10 +1,12 @@
 #include "frame.h"
 #include "init.h"
+#include "log.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
 #include <GLFW/glfw3.h>
-#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 #include <vulkan/vulkan_core.h>
 #include "sprite.h"
 #include "text.h"
@@ -13,12 +15,12 @@
 int main() {
 
     SpriteRenderer r = {0};
-    TextRenderer t = {0};
+    TextRenderer* t = malloc(sizeof(TextRenderer));
     PresentInfo p = {0};
     CRASH_CALL(CreateVulkan());
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(&t));
-    CRASH_CALL(InitPresent(&p, &t.pass));
+    CRASH_CALL(TextInit(t));
+    CRASH_CALL(InitPresent(&p, &t->pass));
 
     FontData font;
     Texture tex;
@@ -34,26 +36,32 @@ int main() {
 
     char text[1000];
 
+    
+
+
     unsigned int frameCounter = 0;
     double last = 0.0;
     bool flip = FALSE;
-    double prev = 0;
-    double next = 1;
-    double period = 0.0f;
     while (!glfwWindowShouldClose(sr_context.w)) {
-        prev = glfwGetTime();
         glfwPollEvents();
         
+        ClearText(t);
+        for (int i = -10; i < 100; i++) {
+            for (int j = -10; j < 50; j++) {
+                float shift = glfwGetTime();
+                float scale = shift * 2;
+                shift = shift - floor(shift);
+                shift *= 10;
+                AppendText(t, "Blam", 4, (sm_vec2f){15 * i, 5 * j + shift}, 0.3 * sin(scale + (float)j/5) + 0.5);
+            }
+        }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         GetFrame(&p, frameCounter);
-        TextDrawFrame(&t, &p, frameCounter);
+        TextDrawFrame(t, &p, frameCounter);
         PresentFrame(&p, frameCounter);
-        next = glfwGetTime();
-        float period = (period + (float)(next - prev))/2;
 
-        int size = snprintf(text, 999, "Fps: %2.f\nFrame Time: %.3fms", 1/period, period * 1000);
-        SetText(&t, text, size, (sm_vec2f){10, 10}, 1);
+        
 
     }
 
@@ -61,7 +69,8 @@ int main() {
     DestroyTexture(&tex);
     DestroyPresent(&p);
     //SpriteDestroy(&r);
-    TextDestroy(&t);
+    TextDestroy(t);
+    free(t);
     DestroyVulkan();
     return 0;
 }

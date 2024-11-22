@@ -10,7 +10,7 @@
 #include "vec2.h"
 
 #define NUM_GLYPHS 128
-#define MAX_CHARS 10000
+#define MAX_CHARS 100000
 
 
 typedef struct {
@@ -27,7 +27,6 @@ typedef struct {
     sm_vec2i texsize;
 } FontData;
 
-
 typedef struct {
     FontData fdata;
     VulkanShader shader;
@@ -36,26 +35,23 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     StaticBuffer font;
-    u32 chars;
     DynamicBuffer uniforms;
     DynamicBuffer indicies;
     DynamicBuffer verts;
+    u32 chars;
 } TextRenderer;
 
 ErrorCode LoadFont(FontData* font);
 
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale);
+ErrorCode ClearText(TextRenderer* r);
+
 ErrorCode TextInit(TextRenderer* r);
 void TextDestroy(TextRenderer* r);
 
-ErrorCode SetText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
-ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end);
-ErrorCode AppendText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
 
-
-#define TextUpdate(r, t) \
-    UpdateText(r, t, sizeof(t) - 1, (sm_vec2f){0,0}, 1)
 
 
 #endif

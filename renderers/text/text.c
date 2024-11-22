@@ -13,6 +13,7 @@
 #include "vec4.h"
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
@@ -61,7 +62,7 @@ ErrorCode TextInit(TextRenderer* r) {
     
     LoadFont(&r->fdata);
 
-    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->uniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
@@ -91,26 +92,20 @@ void TextDestroy(TextRenderer* r) {
     DestroySwapChain(&r->swap, &r->pass);
 }
 
-ErrorCode SetText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale) {
-    static const Vertex verts[] = {
-        {{ 1, 1}, 0},
-        {{ 2, 1}, 1},
-        {{ 2, 2}, 1},
-        {{ 1, 2}, 0},
-    };
+ErrorCode ClearText(TextRenderer* r) {
+    r->chars = 0;
+    return SR_NO_ERROR;
+}
 
-    static const uint16_t indicies[] = {
-        0, 1, 2, 2, 3, 0
-    };
-
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale) {
     float cadvance = 0;
     float cdrop = 0;
     int nonrendered = 0;
     Vertex* vertex = r->verts.buffer;
     uint16_t* in = r->indicies.buffer;
-    scale *= 0.0001 * HEIGHT;
-    for (int i = 0; i < textlen; i++) {
+    scale *=  0.0001 * HEIGHT;
 
+    for (int i = 0; i < textLen; i++) {
         sm_vec2i size = r->fdata.size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
         sm_vec2i offset = r->fdata.offset[text[i]];
@@ -132,35 +127,38 @@ ErrorCode SetText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, 
             ((float)size.y) / r->fdata.texsize.y
         };
 
-        vertex[i * 4 + 0] = (Vertex) {
+        int idx = i + r->chars;
+        vertex[idx * 4 + 0] = (Vertex) {
             .pos = {x, y},
             .uv = {u , v}
         };
-        vertex[i * 4 + 1] = (Vertex) {
+        vertex[idx * 4 + 1] = (Vertex) {
             .pos = {x + ((float)(size.x) * scale), y},
             .uv = {u + texsize.x, v}
         };
-        vertex[i * 4 + 2] = (Vertex) {
+        vertex[idx * 4 + 2] = (Vertex) {
             .pos = {x + (float)size.x * scale, y + (float)size.y * scale},
             .uv = {u + texsize.x, v + texsize.y}
         };
-        vertex[i * 4 + 3] = (Vertex) {
+        vertex[idx * 4 + 3] = (Vertex) {
             .pos = {x, y + (float)size.y * scale},
             .uv = {u, v + texsize.y}
         };
 
-        in[i*6 + 0] = i * 4 + 0;
-        in[i*6 + 1] = i * 4 + 1;
-        in[i*6 + 2] = i * 4 + 2;
-        in[i*6 + 3] = i * 4 + 2;
-        in[i*6 + 4] = i * 4 + 3;
-        in[i*6 + 5] = i * 4 + 0;
+        in[idx*6 + 0] = idx * 4 + 0;
+        in[idx*6 + 1] = idx * 4 + 1;
+        in[idx*6 + 2] = idx * 4 + 2;
+        in[idx*6 + 3] = idx * 4 + 2;
+        in[idx*6 + 4] = idx * 4 + 3;
+        in[idx*6 + 5] = idx * 4 + 0;
         cadvance += (float)advance * scale;
     }
-    r->chars = (textlen - nonrendered) * 6;
-
+    r->chars += textLen;
     return SR_NO_ERROR;
 }
+
+ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     VulkanDevice* device = &sr_device;
@@ -226,7 +224,7 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 
     vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
 
-    vkCmdDrawIndexed(cmdBuf, r->chars, 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmdBuf, r->chars * 6, 1, 0, 0, 0);
     vkCmdEndRenderPass(cmdBuf);
 
     if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
