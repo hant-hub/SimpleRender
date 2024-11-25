@@ -8,7 +8,6 @@
 #include <GLFW/glfw3.h>
 
 #define SR_MAX_FRAMES_IN_FLIGHT 3
-#define SR_MAX_INSTANCES 150000
 
 typedef struct VulkanCommand {
     VkCommandPool pool;

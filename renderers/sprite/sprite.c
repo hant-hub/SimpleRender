@@ -38,6 +38,7 @@ static const uint16_t indicies[] = {
 };
 
 
+
 ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
 
     PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
@@ -68,7 +69,7 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
 
 
     r->depth = (Attachment){.type = SR_ATTATCHMENT_DEPTH};
-    PASS_CALL(CreatePass(&r->pass, NULL, &r->depth, 1));
+    PASS_CALL(CreatePass(&r->pass, &r->depth, 1));
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
     
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));

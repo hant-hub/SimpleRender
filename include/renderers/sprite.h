@@ -16,6 +16,8 @@
 
 
 #define MAX_LAYERS 100
+#define SR_MAX_INSTANCES 150000
+#define SR_SPRITE_ATTACHMENT_NUM 0
 
 //sprite ID
 typedef i32 SpriteHandle;

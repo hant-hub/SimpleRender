@@ -18,10 +18,9 @@ typedef struct {
     VkFence inFlight[SR_MAX_FRAMES_IN_FLIGHT];
 } PresentInfo;
 
-
 ErrorCode InitPresent(PresentInfo* p, RenderPass* r); 
-ErrorCode GetFrame(PresentInfo* p, u32 frame);
-ErrorCode PresentFrame(PresentInfo* p, u32 frame);
+ErrorCode StartFrame(PresentInfo* p, u32 frame);
+ErrorCode SubmitFrame(PresentInfo* p, u32 frame);
 void DestroyPresent(PresentInfo* p);
 
 #endif

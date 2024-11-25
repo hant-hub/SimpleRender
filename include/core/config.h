@@ -10,7 +10,7 @@
 
 
 
-typedef enum {
+typedef enum : char {
     SR_ATTATCHMENT_DEPTH
 } AttachmentType;
 
@@ -19,6 +19,13 @@ typedef struct {
     VkFormat format;
     Image image;
 } Attachment;
+
+typedef struct {
+    u32 firstAttachment;
+    u32 numAttachments;
+    i32 colorAttachment;
+    i32 depthAttachment;
+} SubPass;
 
 typedef struct {
     VkRenderPass pass;
@@ -106,7 +113,7 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
-ErrorCode CreatePass(RenderPass* r, RenderPass* old, Attachment* configs, u32 numAttachments);
+ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments);
 void DestroyPass(RenderPass* r);
 
 //pipeline Config

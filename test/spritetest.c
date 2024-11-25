@@ -44,9 +44,9 @@ int main() {
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-        GetFrame(&p, frameCounter);
+        StartFrame(&p, frameCounter);
         SpriteDrawFrame(&r, &p, frameCounter);
-        PresentFrame(&p, frameCounter); 
+        SubmitFrame(&p, frameCounter); 
 
     }
 

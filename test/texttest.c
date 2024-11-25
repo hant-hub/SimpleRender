@@ -1,6 +1,5 @@
 #include "frame.h"
 #include "init.h"
-#include "log.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -57,9 +56,9 @@ int main() {
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-        GetFrame(&p, frameCounter);
+        StartFrame(&p, frameCounter);
         TextDrawFrame(t, &p, frameCounter);
-        PresentFrame(&p, frameCounter);
+        SubmitFrame(&p, frameCounter);
 
         
 

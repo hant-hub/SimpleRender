@@ -6,6 +6,9 @@
 #include <vulkan/vulkan_core.h>
 
 
+
+
+
 ErrorCode InitPresent(PresentInfo* p, RenderPass* r) {
     PASS_CALL(CreateSwapChain(r, &p->swapchain, NULL));
 
@@ -31,7 +34,11 @@ ErrorCode InitPresent(PresentInfo* p, RenderPass* r) {
     return SR_NO_ERROR;
 }
 
-ErrorCode GetFrame(PresentInfo* p, u32 frame) {
+void NextPass(PresentInfo* p) {
+    vkCmdNextSubpass(sr_context.cmd.buffer[p->imageIndex], VK_SUBPASS_CONTENTS_INLINE);
+}
+
+ErrorCode StartFrame(PresentInfo* p, u32 frame) {
     vkWaitForFences(sr_device.l, 1, &p->inFlight[frame], VK_TRUE, UINT64_MAX);
     VkResult result = vkAcquireNextImageKHR(
             sr_device.l, 
@@ -56,7 +63,7 @@ ErrorCode GetFrame(PresentInfo* p, u32 frame) {
 }
 
 
-ErrorCode PresentFrame(PresentInfo* p, u32 frame) {
+ErrorCode SubmitFrame(PresentInfo* p, u32 frame) {
     VkSemaphore signalSemaphores[] = {p->renderFinished[frame]};
     SwapChain* swapchain = &p->swapchain;
     u32 imageIndex = p->imageIndex;
