@@ -27,7 +27,7 @@ static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling t
 ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachment* configs, u32 numAttachments) {
 
     VkSubpassDescription subdescriptions[numPasses];
-    VkSubpassDependency subdependencies[numPasses - 1];
+    VkSubpassDependency subdependencies[numPasses];
 
     VkAttachmentDescription attachDescriptions[numAttachments + 1];
     VkAttachmentReference attachReferences[numAttachments + 1];
@@ -48,24 +48,23 @@ ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachm
     free(swapDetails.formats);
     free(swapDetails.modes);
 
-    {
-        VkAttachmentDescription* colorAttachment = &attachDescriptions[0];
-        colorAttachment->flags = 0;
-        colorAttachment->format = format.format;
-        colorAttachment->samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachDescriptions[0] = (VkAttachmentDescription) {
+        .flags = 0,
+        .format = format.format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
 
-        colorAttachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachReferences[0] = (VkAttachmentReference) {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
 
-        colorAttachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference* colorAttachRef = &attachReferences[0];
-        colorAttachRef->attachment = 0;
-        colorAttachRef->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    }
     for (int i = 1; i <= numAttachments; i++) { 
         switch (configs[i-1].type) {
             case SR_ATTATCHMENT_DEPTH: {
@@ -103,20 +102,23 @@ ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachm
     //construct subpasses
     for (int i = 0; i < numPasses; i++) {
         subdependencies[i] = (VkSubpassDependency){
-            .srcSubpass = i == 0 ? VK_SUBPASS_EXTERNAL : i - 1,
             .dstSubpass = i,
             .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .srcAccessMask = 0,
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         };
+        if (i == 0) subdependencies[i].srcSubpass = VK_SUBPASS_EXTERNAL;
+        else subdependencies[i].srcSubpass = i - 1;
+
         //single color attachment
         subdescriptions[i] = (VkSubpassDescription) {
             .colorAttachmentCount = 1,
             .pColorAttachments = &attachReferences[0],
             .inputAttachmentCount = 0,
-            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE,
-            .pDepthStencilAttachment = &attachReferences[passes[i].depthAttachment],
+            .pInputAttachments = NULL,
+            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+            .pDepthStencilAttachment = &attachReferences[passes[i].depthAttachment + 1]
         };
 
         //build up access masks

@@ -84,6 +84,13 @@ texttest: $(BUILD_DIR)/$(TARGET_EXEC)
 	cd $(BUILD_DIR); \
 	./test;
 
+multitest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/multitest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
 static:
 	clang-tidy $(SRCS)
 	

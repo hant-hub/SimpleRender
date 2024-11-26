@@ -7,6 +7,7 @@
 #include "memory.h"
 #include <vulkan/vulkan_core.h>
 #include "texture.h"
+#include "util.h"
 
 
 
@@ -113,11 +114,12 @@ ErrorCode MultiCreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVert
 ErrorCode CreateVertAttr(VkVertexInputAttributeDescription* attrOut, VkVertexInputBindingDescription* bindOut, AttrConfig* configs, u32 numAttrs);
 
 //renderpass
+ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachment* configs, u32 numAttachments);
 ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments);
 void DestroyPass(RenderPass* r);
 
 //pipeline Config
-ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p);
+ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p, bool depthEnable);
 void DestroyPipelineConfig(VulkanPipelineConfig* p);
 
 //bindings

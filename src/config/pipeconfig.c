@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p) {
+ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipelineConfig* p, bool depthEnable) {
 
     //Shader stage creation
     p->stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -28,16 +28,29 @@ ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipel
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
+    if (depthEnable) {
+        depthStencil.depthTestEnable = VK_TRUE;
+        depthStencil.depthWriteEnable = VK_TRUE;
+        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depthStencil.depthBoundsTestEnable = VK_FALSE;
+        depthStencil.minDepthBounds = 0.0f;
+        depthStencil.maxDepthBounds = 1.0f;
 
-    depthStencil.stencilTestEnable = VK_TRUE;
-    depthStencil.front = (VkStencilOpState){};
-    depthStencil.back = (VkStencilOpState){};
+        depthStencil.stencilTestEnable = VK_TRUE;
+        depthStencil.front = (VkStencilOpState){};
+        depthStencil.back = (VkStencilOpState){};
+    } else {
+        depthStencil.depthTestEnable = VK_FALSE;
+        depthStencil.depthWriteEnable = VK_FALSE;
+        depthStencil.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+        depthStencil.depthBoundsTestEnable = VK_FALSE;
+        depthStencil.minDepthBounds = 0.0f;
+        depthStencil.maxDepthBounds = 1.0f;
+
+        depthStencil.stencilTestEnable = VK_FALSE;
+        depthStencil.front = (VkStencilOpState){};
+        depthStencil.back = (VkStencilOpState){};
+    }
     p->depth = depthStencil;
 
     VkPipelineVertexInputStateCreateInfo vertInputInfo = {0};
@@ -89,7 +102,7 @@ ErrorCode CreatePipelineConfig(VulkanShader* s, VulkanConfigInput v, VulkanPipel
 
     VkPipelineColorBlendAttachmentState blendInfo = {0};
     blendInfo.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    blendInfo.blendEnable = VK_FALSE;
+    blendInfo.blendEnable = VK_TRUE;
     blendInfo.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     blendInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     blendInfo.colorBlendOp = VK_BLEND_OP_ADD;

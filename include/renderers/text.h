@@ -8,10 +8,12 @@
 #include "pipeline.h"
 #include "texture.h"
 #include "vec2.h"
+#include "vec3.h"
 
 #define NUM_GLYPHS 128
 #define MAX_CHARS 100000
 
+#define SR_TEXT_NUM_ATTACHMENTS 0
 
 typedef struct {
     Texture atlas;
@@ -35,7 +37,8 @@ typedef struct {
     RenderPass pass;
     SwapChain swap;
     StaticBuffer font;
-    DynamicBuffer uniforms;
+    DynamicBuffer vertuniforms;
+    DynamicBuffer fraguniforms;
     DynamicBuffer indicies;
     DynamicBuffer verts;
     u32 chars;
@@ -45,13 +48,14 @@ ErrorCode LoadFont(FontData* font);
 
 ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale);
 ErrorCode ClearText(TextRenderer* r);
+ErrorCode SetColor(TextRenderer* r, sm_vec3f color);
 
-ErrorCode TextInit(TextRenderer* r);
+ErrorCode TextInit(TextRenderer* r, RenderPass* p, u32 subpass);
 void TextDestroy(TextRenderer* r);
 
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
-
+ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start);
 
 
 #endif

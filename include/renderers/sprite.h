@@ -17,7 +17,7 @@
 
 #define MAX_LAYERS 100
 #define SR_MAX_INSTANCES 150000
-#define SR_SPRITE_ATTACHMENT_NUM 0
+#define SR_SPRITE_ATTACHMENT_NUM 1
 
 //sprite ID
 typedef i32 SpriteHandle;
@@ -48,7 +48,6 @@ typedef struct {
     VulkanShader shader;
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
-    RenderPass pass;
     SwapChain swap;
     DynamicBuffer uniforms[SR_MAX_FRAMES_IN_FLIGHT];
     DynamicBuffer modelBuf[SR_MAX_FRAMES_IN_FLIGHT];
@@ -61,7 +60,7 @@ typedef struct {
 } SpriteRenderer;
 
 
-ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots);
+ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots);
 void SpriteDestroy(SpriteRenderer* r);
 
 SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
@@ -76,7 +75,7 @@ ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index);
 ErrorCode SetTextureSlots(SpriteRenderer* r, Texture* t, u32 number);
 
 void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame);
-
+ErrorCode SpriteGetSubpass(SubPass* s, Attachment* a, u32 start);
 
 
 #endif

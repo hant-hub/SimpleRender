@@ -39,7 +39,7 @@ static const uint16_t indicies[] = {
 
 
 
-ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
+ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots) {
 
     PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
 
@@ -65,12 +65,10 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
         .binding = binds[0],
         .size = 2
     };
-    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
+    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config, TRUE));
 
 
-    r->depth = (Attachment){.type = SR_ATTATCHMENT_DEPTH};
-    PASS_CALL(CreatePass(&r->pass, &r->depth, 1));
-    PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
+    PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, p, subpass)); 
     
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts, sizeof(verts), &r->verts));
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &r->index));
@@ -86,6 +84,20 @@ ErrorCode SpriteInit(SpriteRenderer* r, Camera c, uint textureSlots) {
     }
 
     r->cam = c;
+    return SR_NO_ERROR;
+}
+
+ErrorCode SpriteGetSubpass(SubPass* s, Attachment* a, u32 start) {
+    *s = (SubPass) {
+        .numAttachments = SR_SPRITE_ATTACHMENT_NUM,
+        .colorAttachment = 0,
+        .depthAttachment = start,
+        .firstAttachment = start,
+    };
+    a[start] = (Attachment) {
+        .type = SR_ATTATCHMENT_DEPTH,
+    };
+
     return SR_NO_ERROR;
 }
 
@@ -120,7 +132,7 @@ void SpriteDestroy(SpriteRenderer* r) {
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);
-    DestroyPass(&r->pass);
+    //DestroyPass(&r->pass);
     VkDevice d = sr_device.l;
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(d, r->uniforms[i].vhandle, NULL);
@@ -234,7 +246,6 @@ void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
     VulkanShader* shader = &r->shader;
     VulkanPipelineConfig* config = &r->config;
     VulkanPipeline* pipe = &r->pipeline;
-    RenderPass* pass = &r->pass;
     DynamicBuffer* uniforms = &r->uniforms[frame];
     
     sm_mat4f view = SM_MAT4_IDENTITY;
@@ -253,33 +264,7 @@ void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
     memcpy(uniforms->buffer + sizeof(sm_mat4f), &proj, sizeof(sm_mat4f));
     PushBuffer(r, r->modelBuf[frame].buffer);
 
-    vkResetFences(device->l, 1, &p->inFlight[frame]);
-    vkResetCommandBuffer(cmd->buffer[frame], 0);
     VkCommandBuffer cmdBuf = cmd->buffer[frame];
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;
-    beginInfo.pInheritanceInfo = NULL;
-
-    if (vkBeginCommandBuffer(cmdBuf, &beginInfo) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Begin Command Buffer");
-        return;
-    }
-    
-    VkRenderPassBeginInfo renderInfo = {0};
-    renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderInfo.renderPass = pass->pass;
-    renderInfo.framebuffer = p->swapchain.buffers[p->imageIndex];
-    renderInfo.renderArea.offset = (VkOffset2D){0, 0};
-    renderInfo.renderArea.extent = p->swapchain.extent;
-
-    VkClearValue clearcolors[2] = {0}; 
-    clearcolors[0].color = (VkClearColorValue){0.0f, 0.0f, 0.0f, 1.0f};
-    clearcolors[1].depthStencil = (VkClearDepthStencilValue){1.0f, 0}; 
-    renderInfo.clearValueCount = 2;
-    renderInfo.pClearValues = clearcolors;
-
-    vkCmdBeginRenderPass(cmdBuf, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
 
@@ -304,33 +289,4 @@ void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
     vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
 
     vkCmdDrawIndexed(cmdBuf, r->index.size/sizeof(uint16_t), r->denseSize, 0, 0, 0);
-    vkCmdEndRenderPass(cmdBuf);
-
-
-    if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to End Command Buffer");
-        return;
-    }
-
-    //update uniforms
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {p->imageAvalible[frame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd->buffer[frame];
-
-    VkSemaphore signalSemaphores[] = {p->renderFinished[frame]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if (vkQueueSubmit(device->graph, 1, &submitInfo, p->inFlight[frame]) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Submit Queue");
-        return;
-    }
 }
