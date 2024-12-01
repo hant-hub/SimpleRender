@@ -34,7 +34,6 @@ typedef struct {
     VulkanShader shader;
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
-    RenderPass pass;
     SwapChain swap;
     StaticBuffer font;
     DynamicBuffer vertuniforms;

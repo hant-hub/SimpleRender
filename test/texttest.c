@@ -16,10 +16,15 @@ int main() {
     SpriteRenderer r = {0};
     TextRenderer* t = malloc(sizeof(TextRenderer));
     PresentInfo p = {0};
+
     CRASH_CALL(CreateVulkan());
+
+    SubPass passes[1];
+
+    TextGetSubpass(passes, NULL, 0);
+    CRASH_CALL(InitPresent(&p, passes, 1, NULL, 0));
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t));
-    CRASH_CALL(InitPresent(&p, &t->pass));
+    CRASH_CALL(TextInit(t, &p.p, 0));
 
     FontData font;
     Texture tex;

@@ -48,7 +48,6 @@ typedef struct {
     VulkanShader shader;
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
-    SwapChain swap;
     DynamicBuffer uniforms[SR_MAX_FRAMES_IN_FLIGHT];
     DynamicBuffer modelBuf[SR_MAX_FRAMES_IN_FLIGHT];
     Camera cam;

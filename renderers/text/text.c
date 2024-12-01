@@ -168,7 +168,7 @@ ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
     *s = (SubPass) {
         .numAttachments = 0,
         .colorAttachment = 0,
-        .depthAttachment = 0,
+        .depthAttachment = -1,
         .firstAttachment = 0,
     };
     return SR_NO_ERROR;
@@ -181,7 +181,6 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     VulkanShader* shader = &r->shader;
     VulkanPipelineConfig* config = &r->config;
     VulkanPipeline* pipe = &r->pipeline;
-    RenderPass* pass = &r->pass;
 
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;

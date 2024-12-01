@@ -111,6 +111,8 @@ ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachm
         if (i == 0) subdependencies[i].srcSubpass = VK_SUBPASS_EXTERNAL;
         else subdependencies[i].srcSubpass = i - 1;
 
+        i32 depth = passes[i].depthAttachment;
+
         //single color attachment
         subdescriptions[i] = (VkSubpassDescription) {
             .colorAttachmentCount = 1,
@@ -118,7 +120,7 @@ ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachm
             .inputAttachmentCount = 0,
             .pInputAttachments = NULL,
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-            .pDepthStencilAttachment = &attachReferences[passes[i].depthAttachment + 1]
+            .pDepthStencilAttachment = depth >= 0 ? &attachReferences[depth + 1] : NULL
         };
 
         //build up access masks

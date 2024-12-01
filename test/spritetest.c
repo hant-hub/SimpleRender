@@ -19,7 +19,7 @@ int main() {
     SpriteGetSubpass(passes, attachments, 0);
     CRASH_CALL(InitPresent(&p, passes, 1, attachments, 1));
 
-    CRASH_CALL(SpriteInit(r, &p.p, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
+    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
 
     //build multipass
 
