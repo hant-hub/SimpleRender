@@ -29,7 +29,7 @@ typedef struct {
 
 
 
-ErrorCode TextInit(TextRenderer* r, RenderPass* p, u32 subpass) {
+ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
@@ -58,7 +58,7 @@ ErrorCode TextInit(TextRenderer* r, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, p, subpass)); 
     
-    LoadFont(&r->fdata);
+    LoadFont(font, &r->fdata);
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));

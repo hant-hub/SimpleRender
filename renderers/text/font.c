@@ -6,7 +6,7 @@
 
 
 //should only run once to load all fonts needed upon startup
-ErrorCode LoadFont(FontData* font) {
+ErrorCode LoadFont(const char* fontname, FontData* font) {
     FT_Library library;
 
     if (FT_Init_FreeType(&library)) {
@@ -15,7 +15,7 @@ ErrorCode LoadFont(FontData* font) {
     }
 
     FT_Face face;
-    if (FT_New_Face(library, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 0, &face)) {
+    if (FT_New_Face(library, fontname, 0, &face)) {
         SR_LOG_ERR("Failed to load font face");
         return SR_LOAD_FAIL;
     }

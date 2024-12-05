@@ -24,13 +24,7 @@ int main() {
     TextGetSubpass(passes, NULL, 0);
     CRASH_CALL(InitPresent(&p, passes, 1, NULL, 0));
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, &p.p, 0));
-
-    FontData font;
-    Texture tex;
-
-    CRASH_CALL(LoadTexture(&tex, "resources/textures/texture.jpg"));
-    CRASH_CALL(LoadFont(&font));
+    CRASH_CALL(TextInit(t, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", &p.p, 0));
     
     //CRASH_CALL(SetTextureSlot(&r, &tex, 0));
     //CRASH_CALL(SetTextureSlot(&r, &font.atlas, 1));
@@ -69,12 +63,9 @@ int main() {
 
     }
 
-    DestroyTexture(&font.atlas);
-    DestroyTexture(&tex);
-    DestroyPresent(&p);
-    //SpriteDestroy(&r);
     TextDestroy(t);
     free(t);
+    DestroyPresent(&p);
     DestroyVulkan();
     return 0;
 }

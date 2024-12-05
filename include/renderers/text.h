@@ -43,13 +43,13 @@ typedef struct {
     u32 chars;
 } TextRenderer;
 
-ErrorCode LoadFont(FontData* font);
+ErrorCode LoadFont(const char* fontname, FontData* font);
 
 ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale);
 ErrorCode ClearText(TextRenderer* r);
 ErrorCode SetColor(TextRenderer* r, sm_vec3f color);
 
-ErrorCode TextInit(TextRenderer* r, RenderPass* p, u32 subpass);
+ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass);
 void TextDestroy(TextRenderer* r);
 
 

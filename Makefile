@@ -77,6 +77,13 @@ spritetest: $(BUILD_DIR)/$(TARGET_EXEC)
 	cd $(BUILD_DIR); \
 	./test;
 
+tiletest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/tiletest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
 texttest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
