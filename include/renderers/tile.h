@@ -32,13 +32,17 @@ typedef struct {
     DynamicBuffer tiledata[SR_MAX_FRAMES_IN_FLIGHT];
     DynamicBuffer uniform[SR_MAX_FRAMES_IN_FLIGHT];
     sm_vec2f size; //how much of screen
+    sm_vec2i mapsize; //size of tilemap
 } TileRenderer;
 
 ErrorCode TileLoadSetFile(TileSet* t, const char* filename, int width, int height);
 void TileSetData(TileRenderer* r, int* data);
 
 void TileDrawFrame(TileRenderer* r, PresentInfo* p, u32 frame);
-ErrorCode TileInit(TileRenderer* r, RenderPass* p, u32 subpass, u32 width, u32 height);
+ErrorCode TileInit(TileRenderer* r, RenderPass* p, const char* tileset, u32 subpass, sm_vec2i tilesize, sm_vec2i mapsize);
 ErrorCode TileGetSubpass(SubPass* s, Attachment* a, u32 start);
 void DestroyTile(TileRenderer* r);
+
+
+
 #endif

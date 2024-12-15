@@ -32,6 +32,8 @@ typedef struct {
     size_t channels;
     VkFormat format;
     VkSamplerAddressMode accessmode;
+    VkFilter filter;
+    VkBool32 anisotropy;
 }TextureConfig;
 
 ErrorCode LoadTexture(Texture* t, const char* path);

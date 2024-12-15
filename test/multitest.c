@@ -23,7 +23,7 @@ int main() {
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, &p.p, 1))
+    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf",&p.p, 1))
 
     //build multipass
 

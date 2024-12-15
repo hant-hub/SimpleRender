@@ -14,7 +14,7 @@ ErrorCode TileLoadSetDir(TileSet* t) {
 ErrorCode TileLoadSetFile(TileSet* t, const char* filename, int width, int height) {
     int imgwidth, imgheight;
     int channels;
-    unsigned char* buffer = stbi_load(filename, &imgwidth, &imgheight, &channels, 0);
+    unsigned char* buffer = stbi_load(filename, &imgwidth, &imgheight, &channels, 3);
     
     SR_LOG_DEB("Channels: %d", channels);
 
@@ -23,7 +23,9 @@ ErrorCode TileLoadSetFile(TileSet* t, const char* filename, int width, int heigh
             .height = imgheight,
             .channels = channels,
             .format = VK_FORMAT_R8G8B8_SRGB,
-            .accessmode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+            .accessmode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .filter = VK_FILTER_NEAREST,
+            .anisotropy = VK_FALSE
             }, buffer);
 
     t->height = imgheight;

@@ -227,17 +227,17 @@ ErrorCode CreateTexture(Texture* t, TextureConfig config, void* pixels) {
     //make sampler
     VkSamplerCreateInfo samplerInfo = {0};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.magFilter = config.filter;
+    samplerInfo.minFilter = config.filter;
     samplerInfo.addressModeU = config.accessmode;
     samplerInfo.addressModeV = config.accessmode;
     samplerInfo.addressModeW = config.accessmode;
-    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.anisotropyEnable = config.anisotropy;
     
     //set to maximum quality
     samplerInfo.maxAnisotropy = devProps.limits.maxSamplerAnisotropy;
 
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
     samplerInfo.compareEnable = VK_FALSE;

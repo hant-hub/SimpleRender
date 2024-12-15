@@ -7,6 +7,7 @@ layout(location = 0) in vec2 fragUV;
 layout(binding = 0) uniform Uniform {
     mat4 proj;
     mat4 view;
+    vec2 mapsize;
     vec2 tilesize;
     vec2 imgsize;
 } ub;
@@ -19,7 +20,7 @@ layout(std430, set = 0, binding = 1) readonly buffer TileData {
 
 void main() {
     
-    int index = int(fragUV.y) * int(ub.tilesize.x) + int(fragUV.x);
+    int index = int(fragUV.y) * int(ub.mapsize.x) + int(fragUV.x);
     vec2 stride = vec2(1.0f)/ub.tilesize;
     index = tiles.data[index];
     vec2 offset = vec2(index % int(ub.tilesize.x), index / int(ub.tilesize.x)) * stride;

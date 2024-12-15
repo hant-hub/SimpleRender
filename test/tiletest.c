@@ -17,12 +17,12 @@ int main() {
     TileGetSubpass(passes, attachments, 0);
     CRASH_CALL(InitPresent(&p, passes, 1, attachments, SR_TILE_ATTACHMENT_NUM));
 
-    CRASH_CALL(TileInit(&t, &p.p, 0, 3, 3));
+    CRASH_CALL(TileInit(&t, &p.p, "resources/textures/duck.jpg",0, (sm_vec2i){4, 4}, (sm_vec2i){10, 10}));
 
 
 
     
-    int data[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    int data[6] = {0, 1, 2, 3, 4, 5};
     TileSetData(&t, data);
 
 
