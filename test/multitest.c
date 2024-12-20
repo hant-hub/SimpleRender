@@ -44,9 +44,12 @@ int main() {
     unsigned int frameCounter = 0;
     double last = 0.0;
     bool flip = FALSE;
+    double times[10] = {0};
+    int top = 0;
     while (!glfwWindowShouldClose(sr_context.w)) {
         glfwPollEvents();
 
+        double start = glfwGetTime();
         SpriteEntry* e = GetSprite(r, s1);
         e->rotation += 0.001f;
         if (glfwGetTime() > last + 3.0) { 
@@ -65,6 +68,21 @@ int main() {
         NextPass(&p, frameCounter);
         TextDrawFrame(t, &p, frameCounter);
         SubmitFrame(&p, frameCounter); 
+
+        times[top] = (glfwGetTime() - start);
+        top = (top + 1) % 10;
+
+        double avg = 0.0;
+        for (int i = 0; i < 10; i++) {
+            avg += times[i];
+        }
+        avg /= 10;
+        avg = 1.0/avg;
+
+        char buf[16];
+        int len = snprintf(buf, 16, "fps: %f", avg);
+        ClearText(t);
+        AppendText(t, buf, len-1, (sm_vec2f){10, 10}, 1);
 
     }
 

@@ -11,7 +11,7 @@
 
 
 
-typedef enum : char {
+typedef enum {
     SR_ATTATCHMENT_DEPTH
 } AttachmentType;
 
