@@ -51,7 +51,7 @@ int main() {
 
         double start = glfwGetTime();
         SpriteEntry* e = GetSprite(r, s1);
-        e->rotation += 0.001f;
+        e->rotation += 1.0f * times[(top + 9) % 10];
         if (glfwGetTime() > last + 3.0) { 
             SpriteEntry *s = GetSprite(r, s2);
             s->layer += flip ? -2 : 2;
