@@ -14,15 +14,15 @@ ErrorCode TileLoadSetDir(TileSet* t) {
 ErrorCode TileLoadSetFile(TileSet* t, const char* filename, int width, int height) {
     int imgwidth, imgheight;
     int channels;
-    unsigned char* buffer = stbi_load(filename, &imgwidth, &imgheight, &channels, 3);
+    unsigned char* buffer = stbi_load(filename, &imgwidth, &imgheight, &channels, 4);
     
     SR_LOG_DEB("Channels: %d", channels);
 
     CreateTexture(&t->atlas, (TextureConfig){
             .width = imgwidth,
             .height = imgheight,
-            .channels = channels,
-            .format = VK_FORMAT_R8G8B8_SRGB,
+            .channels = 4,
+            .format = VK_FORMAT_R8G8B8A8_SRGB,
             .accessmode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
             .filter = VK_FILTER_NEAREST,
             .anisotropy = VK_FALSE

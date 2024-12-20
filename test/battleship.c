@@ -293,11 +293,8 @@ void PlaceShip(GameState* s, TextRenderer* t, int* shipsPlaced, sm_vec2i pos) {
 }
 
 void TakeTurn(GameState* s, TextRenderer* t, sm_vec2i pos) {
-    static int ai_turn = FALSE;
-
     if (pos.x > B_WIDTH || pos.y > B_HEIGHT)
         return;
-
 
     TileState state = s->a_board[pos.x + pos.y * B_WIDTH];
     if (state != EMPTY && state != HIT && state != MISS) {
@@ -320,10 +317,10 @@ void TakeTurn(GameState* s, TextRenderer* t, sm_vec2i pos) {
         ClearText(t);
         AppendText(t, "Miss", 4, (sm_vec2f){10, 10}, 1);
         s->a_board[pos.x + pos.y * B_WIDTH] = MISS;
-        ai_turn = TRUE;
     }
 
-    while (ai_turn) {
+    bool valid = FALSE;
+    while (!valid) {
         //take ai turns until it misses
         sm_vec2i pos;
         pos.x = rand() % B_WIDTH;
@@ -338,9 +335,6 @@ void TakeTurn(GameState* s, TextRenderer* t, sm_vec2i pos) {
                 int len = snprintf(buf, 32, "They sunk your %s", ships[state]);
                 ClearText(t);
                 AppendText(t, buf, len, (sm_vec2f){10, 10}, 1);
-            } else {
-                ClearText(t);
-                AppendText(t, "Hit", 3, (sm_vec2f){10, 10}, 1);
             }
             s->p_board[pos.x + pos.y * B_WIDTH] = HIT;
         } else if (state == HIT || state == MISS) {
@@ -349,7 +343,7 @@ void TakeTurn(GameState* s, TextRenderer* t, sm_vec2i pos) {
             //ClearText(t);
             //AppendText(t, "Miss", 4, (sm_vec2f){10, 10}, 1);
             s->p_board[pos.x + pos.y * B_WIDTH] = MISS;
-            ai_turn = FALSE;
+            valid = TRUE;
         }
 
     }
