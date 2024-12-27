@@ -3,11 +3,11 @@
 #include "error.h"
 #include "frame.h"
 #include "init.h"
-#include "mat4.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "util.h"
 #include "vec2.h"
+#include "vec3.h"
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 
@@ -15,7 +15,9 @@
 typedef struct {
     sm_vec2f pos;
     sm_vec2f size;
+    sm_vec3f color;
     float zoom;
+    sm_vec2f initial;
 } Uniform;
 
 typedef struct {
@@ -36,12 +38,18 @@ static const uint16_t indicies[] = {
 };
 
 
-ErrorCode FractalInit(FractalRenderer* r, RenderPass* p, u32 subpass) {
+ErrorCode FractalInit(FractalRenderer* r, char* prog, RenderPass* p, u32 subpass) {
 
-    PASS_CALL(CreateShaderProg("shaders/fractal/fractal.vert.spv", "shaders/fractal/fractal.frag.spv", &r->shader));
+    char vert[64];
+    char frag[64];
+
+    snprintf(vert, sizeof(vert), "shaders/fractal/%s/fractal.vert.spv", prog);
+    snprintf(frag, sizeof(frag), "shaders/fractal/%s/fractal.frag.spv", prog);
+
+    PASS_CALL(CreateShaderProg(vert, frag, &r->shader));
 
     DescriptorDetail layout[] = {
-        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0}, 
+        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0}, 
     };
     PASS_CALL(CreateDescriptorSetConfig(&r->config, layout, ARRAY_SIZE(layout)));
 
@@ -66,13 +74,38 @@ ErrorCode FractalInit(FractalRenderer* r, RenderPass* p, u32 subpass) {
     PASS_CALL(CreateStaticBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicies, sizeof(indicies), &r->index));
 
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->uniform[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+        PASS_CALL(CreateDynamicBuffer(sizeof(Uniform), &r->uniform[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
     }
 
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->uniform[i], 0, i));
     }
     return SR_NO_ERROR;
+}
+
+
+void FractalSetZoom(FractalRenderer* r, float z) {
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        ((Uniform*)(r->uniform[i].buffer))->zoom = z;
+    }
+}
+
+void FractalSetColor(FractalRenderer* r, sm_vec3f c) {
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        ((Uniform*)(r->uniform[i].buffer))->color = c;
+    }
+}
+
+void FractalSetPos(FractalRenderer* r, sm_vec2f pos) {
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        ((Uniform*)(r->uniform[i].buffer))->pos = pos;
+    }
+}
+
+void FractalSetInit(FractalRenderer* r, sm_vec2f init) {
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        ((Uniform*)(r->uniform[i].buffer))->initial = init;
+    }
 }
 
 ErrorCode FractalGetSubpass(SubPass* s, Attachment* a, u32 start) {
@@ -86,13 +119,10 @@ ErrorCode FractalGetSubpass(SubPass* s, Attachment* a, u32 start) {
 }
 
 void FractalDrawFrame(FractalRenderer* r, PresentInfo* p, u32 frame) {
-    Uniform ub = (Uniform) {
-        .zoom = 1.5f,
-        .pos = (sm_vec2f){0, 0},
-        .size = (sm_vec2f){WIDTH, HEIGHT}
-    };
+    ((Uniform*)(r->uniform[frame].buffer))->size = 
+        (sm_vec2f){WIDTH, HEIGHT};
 
-    memcpy(r->uniform[frame].buffer, &ub, sizeof(Uniform));
+    //memcpy(r->uniform[frame].buffer, &ub, sizeof(Uniform));
     
     VkCommandBuffer cmdBuf = sr_context.cmd.buffer[frame];
 

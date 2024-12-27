@@ -9,16 +9,17 @@
 
 int main() {
 
-    SpriteRenderer* r = malloc(sizeof(SpriteRenderer));
-    PresentInfo p = {0};
     CRASH_CALL(CreateVulkan());
 
     Attachment attachments[SR_SPRITE_ATTACHMENT_NUM];
     SubPass passes[1];
 
     SpriteGetSubpass(passes, attachments, 0);
+
+    PresentInfo p = {0};
     CRASH_CALL(InitPresent(&p, passes, 1, attachments, 1));
 
+    SpriteRenderer* r = malloc(sizeof(SpriteRenderer));
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
 
     //build multipass
