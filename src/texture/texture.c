@@ -45,6 +45,24 @@ void TransitionImageLayout(VulkanDevice* d, VkImage img, VkFormat format, VkImag
 
         srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_HOST_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        srcStage = VK_PIPELINE_STAGE_HOST_BIT;
+        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+
+        srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dstStage = VK_PIPELINE_STAGE_HOST_BIT;
     }
 
 
@@ -162,20 +180,26 @@ ErrorCode LoadTexture(Texture* t, const char* path) {
 
 ErrorCode CreateDynTexture(DynamicTexture* t, TextureConfig config) {
     VkDeviceSize imgSize = config.width * config.height * config.channels;
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
 
-    CreateDynImage(&t->image, (ImageConfig){
+    DynamicImage img;
+    CreateDynImage(&img, (ImageConfig){
             config.width,
             config.height,
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_TILING_LINEAR,
+            VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             config.format
             });
 
+    t->t.image = (Image){
+        .mem = img.mem,
+        .view = img.view,
+        .image = img.image
+    };
+    t->size = imgSize;
+    t->format = config.format;
+    t->data = img.buf;
 
-    TransitionImageLayout(&sr_device, t->image.image, config.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     VkPhysicalDeviceProperties devProps = {0};
     vkGetPhysicalDeviceProperties(sr_device.p, &devProps);
 
@@ -203,13 +227,36 @@ ErrorCode CreateDynTexture(DynamicTexture* t, TextureConfig config) {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(sr_device.l, &samplerInfo, NULL, &t->sampler) != VK_SUCCESS) {
+    if (vkCreateSampler(sr_device.l, &samplerInfo, NULL, &t->t.sampler) != VK_SUCCESS) {
         SR_LOG_ERR("Failed to create Texture Sampler");
         return SR_CREATE_FAIL;
     }
 
+    TransitionImageLayout(&sr_device, img.image, config.format,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    TransitionImageLayout(&sr_device, img.image, config.format,
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+
     return SR_NO_ERROR;
 }
+
+ErrorCode BeginUpdateDynTexture(DynamicTexture* t) {
+    TransitionImageLayout(&sr_device, t->t.image.image, t->format,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+    return SR_NO_ERROR;
+}
+ErrorCode EndUpdateDynTexture(DynamicTexture* t) {
+    TransitionImageLayout(&sr_device, t->t.image.image, t->format,
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    return SR_NO_ERROR;
+}
+
+
+
 ErrorCode CreateTexture(Texture* t, TextureConfig config, void* pixels) {
 
     if (pixels == NULL) 
@@ -453,7 +500,15 @@ void DestroyImage(Image* i) {
     vkFreeMemory(d, i->mem, NULL);
 }
 
-void DestroyDynTexture(Texture* t) {
+void DestroyDynTexture(DynamicTexture* t) {
+    vkDeviceWaitIdle(sr_device.l);
+    DestroyDynImage(&t->t.image);
+    vkDestroySampler(sr_device.l, t->t.sampler, NULL);
 }
 void DestroyDynImage(Image* t) {
+    vkDeviceWaitIdle(sr_device.l);
+    vkDestroyImageView(sr_device.l, t->view, NULL);
+    vkDestroyImage(sr_device.l, t->image, NULL);
+    vkUnmapMemory(sr_device.l, t->mem);
+    vkFreeMemory(sr_device.l, t->mem, NULL);
 }

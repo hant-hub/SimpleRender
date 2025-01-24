@@ -25,7 +25,7 @@ int main() {
 
     FractalGetSubpass(passes, attachments, 0);
     CRASH_CALL(InitPresent(&p, passes, 1, attachments, 1));
-    CRASH_CALL(FractalInit(r,"manext", &p.p, 0));
+    CRASH_CALL(FractalInit(r,"mandel", &p.p, 0));
 
     FractalSetPos(r, (sm_vec2f){0.0f, 0.0f});
     FractalSetZoom(r, 1.5f);

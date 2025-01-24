@@ -23,8 +23,10 @@ typedef struct {
 } Texture;
 
 typedef struct {
-    DynamicImage image;
-    VkSampler sampler;
+    Texture t;
+    VkFormat format;
+    size_t size;
+    char* data;
 } DynamicTexture;
 
 typedef struct {
@@ -53,8 +55,11 @@ ErrorCode CreateDynTexture(DynamicTexture* t, TextureConfig config);
 ErrorCode CreateImage(Image* t, ImageConfig config);
 ErrorCode CreateDynImage(DynamicImage* t, ImageConfig config);
 
+ErrorCode BeginUpdateDynTexture(DynamicTexture* t);
+ErrorCode EndUpdateDynTexture(DynamicTexture* t);
+
 void DestroyTexture(Texture* t);
 void DestroyImage(Image* t);
-void DestroyDynTexture(Texture* t);
+void DestroyDynTexture(DynamicTexture* t);
 void DestroyDynImage(Image* t);
 #endif
