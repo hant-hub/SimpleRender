@@ -42,7 +42,7 @@ ifeq ($(BUILD), RELEASE)
 	BUILD_FLAGS = -O2
 endif
 
-CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD)
+CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD) -march=native
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm -lfreetype
 
 

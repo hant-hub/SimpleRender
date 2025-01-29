@@ -2,7 +2,7 @@
 #include "frame.h"
 #include <string.h>
 #include "init.h"
-#include "log.h"
+#include <immintrin.h>
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -11,7 +11,7 @@
 #include "sprite.h"
 #include "pthread.h"
 
-#define NUM_THREADS 16
+#define NUM_THREADS 8
 
 typedef struct {
     size_t size;
@@ -20,6 +20,93 @@ typedef struct {
     sm_vec2d center;
     double zoom;
 } thread_data;
+
+void* render_thread_SIMD(void* argp) {
+    thread_data* d = argp;
+
+    size_t size = d->size;
+    char* data = d->data;
+    double cx = d->center.x;
+    double cy = d->center.y;
+    double zoom = d->zoom;
+    int offset = d->offset;
+    //four wide
+    
+    __m256d coordscale = _mm256_set1_pd(1000);
+    __m256d centerx = _mm256_set1_pd(cx);
+    __m256d centery = _mm256_set1_pd(cy);
+
+    __m256d mult2 = _mm256_set1_pd(2);
+    __m256d one = _mm256_set1_pd(1);
+
+    __m256d zoomscale = _mm256_set1_pd(zoom);
+    __m256d offset_c = _mm256_set1_pd(0.5);
+
+    __m256d threshhold = _mm256_set1_pd(4.0);
+
+    __m256d constant = _mm256_set1_pd(1.0);
+
+    for (int i = offset; i < size/3; i += NUM_THREADS * 4) {
+        __m256d indicies = _mm256_set_pd(i + 3, i + 2, i + 1, i + 0);
+
+        //get components
+        indicies = _mm256_div_pd(indicies, coordscale);
+        __m256d yvals = _mm256_round_pd(indicies, _MM_FROUND_TRUNC);
+        __m256d xvals = _mm256_sub_pd(indicies, yvals); 
+        yvals = _mm256_div_pd(yvals, coordscale);
+
+
+        xvals = _mm256_sub_pd(xvals, offset_c);
+        yvals = _mm256_sub_pd(yvals, offset_c);
+
+
+        xvals = _mm256_mul_pd(xvals, zoomscale);
+        yvals = _mm256_mul_pd(yvals, zoomscale);
+
+        xvals = _mm256_sub_pd(xvals, centerx);
+        yvals = _mm256_sub_pd(yvals, centery);
+
+        __m256d valid = _mm256_setzero_pd();
+
+        __m256d iters = _mm256_set1_pd(0);
+        for (int j = 0; j < 100; j++) {
+            __m256d x2 = _mm256_mul_pd(xvals, xvals);
+            __m256d y2 = _mm256_mul_pd(yvals, yvals);
+            __m256d xy = _mm256_mul_pd(xvals, yvals);
+
+            xvals = _mm256_sub_pd(_mm256_sub_pd(x2, y2), one);
+            yvals = _mm256_add_pd(xy, xy);
+
+            __m256d cmp = _mm256_cmp_pd(_mm256_add_pd(x2,y2), threshhold, _CMP_LT_OS);
+            iters = _mm256_add_pd(_mm256_and_pd(cmp, one), iters);
+
+            if (_mm256_testz_pd(cmp, _mm256_set1_pd(-1))) {
+                break;
+            }
+        }
+
+        double results[4];
+
+        __m256d tx = _mm256_mul_pd(xvals, xvals);
+        __m256d ty = _mm256_mul_pd(yvals, yvals);
+
+        _mm256_storeu_pd(results, iters);
+
+
+        for (int j = 0; j < 4; j++) {
+            if (results[j] >= 100) {
+                data[(i+j)*3 + 0] = (char)255;
+                data[(i+j)*3 + 1] = (char)255;
+                data[(i+j)*3 + 2] = (char)255;
+            } else {
+                data[(i+j)*3 + 0] = (char)0;
+                data[(i+j)*3 + 1] = (char)0;
+                data[(i+j)*3 + 2] = (char)0;
+            }
+        }
+    }
+    return NULL;
+}
 
 void* render_thread(void* argp) {
     thread_data* d = argp;
@@ -43,7 +130,7 @@ void* render_thread(void* argp) {
         y -= center.y;
 
         double px, py;
-        float color = 0;
+        float color = 255;
         for (int j = 0; j < 100; j++) {
             px = x;
             py = y;
@@ -52,7 +139,7 @@ void* render_thread(void* argp) {
             y = 2 * px * py;
             x -= 1;
             if (x*x + y*y >= 4) {
-                color = 255 * (float)j; 
+                color =  0 * (float)j; 
                 color /= 50;
                 break;
             }
@@ -124,7 +211,7 @@ int main() {
     double last = 0.0;
     bool flip = FALSE;
     sm_vec2d center = (sm_vec2d){0, 0};
-    double zoom = 4.0f;
+    double zoom = 1.0f;
     int active = 0;
 
 
@@ -136,13 +223,13 @@ int main() {
 
     for (int i = 0; i < NUM_THREADS; i++) {
         args[i] = (thread_data){
-            .offset = i,
+            .offset = i*4,
                 .data = t[0].data,
                 .size = t[0].size,
                 .center = center,
                 .zoom = zoom
         };
-        pthread_create(&threads[i], NULL, render_thread, &args[i]); 
+        pthread_create(&threads[i], NULL, render_thread_SIMD, &args[i]); 
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
@@ -150,7 +237,7 @@ int main() {
 
     EndUpdateDynTexture(&t[0]);
     endperf = glfwGetTime();
-    SR_LOG_DEB("Render time: %f", endperf - startperf);
+    printf("Render time: %f\n", endperf - startperf);
 
     while (!glfwWindowShouldClose(sr_context.w)) {
         bool rerender = FALSE;
@@ -199,13 +286,13 @@ int main() {
 
             for (int i = 0; i < NUM_THREADS; i++) {
                 args[i] = (thread_data){
-                        .offset = i,
+                        .offset = i*4,
                         .data = t[0].data,
                         .size = t[0].size,
                         .center = center,
                         .zoom = zoom
                 };
-                pthread_create(&threads[i], NULL, render_thread, &args[i]); 
+                pthread_create(&threads[i], NULL, render_thread_SIMD, &args[i]); 
             }
             for (int i = 0; i < NUM_THREADS; i++) {
                 pthread_join(threads[i], NULL);
