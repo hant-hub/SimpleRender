@@ -23,7 +23,103 @@ typedef struct {
     sm_vec2d constant;
 } thread_data;
 
-static const int iterations = 100;
+static const int iterations = 300;
+
+void* render_thread_SIMD_ship(void* argp) {
+    thread_data* d = argp;
+
+    size_t size = d->size;
+    char* data = d->data;
+    double cx = -d->center.x;
+    double cy = -d->center.y;
+    double zoom = -d->zoom;
+    int offset = d->offset;
+    //four wide
+    
+    __m256d coordscale = _mm256_set1_pd(1000);
+    __m256d centerx = _mm256_set1_pd(cx);
+    __m256d centery = _mm256_set1_pd(cy);
+
+    __m256d one = _mm256_set1_pd(1);
+
+    __m256d zoomscale = _mm256_set1_pd(zoom);
+    __m256d offset_c = _mm256_set1_pd(0.5);
+
+    __m256d threshhold = _mm256_set1_pd(4.0);
+
+    __m256d constantx = _mm256_set1_pd(d->constant.x);
+    __m256d constanty = _mm256_set1_pd(d->constant.y);
+    __m256d iterscale = _mm256_set1_pd(1.0/iterations);
+
+    __m256d minusone = _mm256_set1_pd(-1);
+    
+    for (int i = offset; i < size/3; i += NUM_THREADS * 4) {
+        __m256d indicies = _mm256_set_pd(i + 3, i + 2, i + 1, i + 0);
+
+        //get components
+        indicies = _mm256_div_pd(indicies, coordscale);
+        __m256d yvals = _mm256_round_pd(indicies, _MM_FROUND_TRUNC);
+        __m256d xvals = _mm256_sub_pd(indicies, yvals); 
+        yvals = _mm256_div_pd(yvals, coordscale);
+
+
+        xvals = _mm256_sub_pd(xvals, offset_c);
+        yvals = _mm256_sub_pd(yvals, offset_c);
+
+
+        xvals = _mm256_mul_pd(xvals, zoomscale);
+        yvals = _mm256_mul_pd(yvals, zoomscale);
+
+        xvals = _mm256_sub_pd(xvals, centerx);
+        yvals = _mm256_sub_pd(yvals, centery);
+
+        __m256d valid = _mm256_setzero_pd();
+
+        __m256d iters = _mm256_set1_pd(0);
+
+        __m256d zx = constantx;
+        __m256d zy = constanty;
+        for (int j = 0; j < iterations; j++) {
+            zx = _mm256_max_pd(zx, _mm256_mul_pd(zx, minusone));
+            zy = _mm256_max_pd(zy, _mm256_mul_pd(zy, minusone));
+
+            __m256d x2 = _mm256_mul_pd(zx, zx);
+            __m256d y2 = _mm256_mul_pd(zy, zy);
+            __m256d xy = _mm256_mul_pd(zx, zy);
+
+            zx = _mm256_sub_pd(_mm256_sub_pd(x2, y2), xvals);
+            zy = _mm256_sub_pd(_mm256_add_pd(xy, xy), yvals);
+
+            __m256d cmp = _mm256_cmp_pd(_mm256_add_pd(x2,y2), threshhold, _CMP_LT_OS);
+            iters = _mm256_add_pd(_mm256_and_pd(cmp, one), iters);
+
+            if (_mm256_testz_pd(cmp, _mm256_set1_pd(-1))) {
+                break;
+            }
+        }
+
+        double results[4];
+
+        iters = _mm256_mul_pd(iters, iterscale);
+        _mm256_storeu_pd(results, iters);
+
+
+        for (int j = 0; j < 4; j++) {
+            double a = results[j];
+            double b = 1-a; 
+            if (results[j] >= 1.0) {
+                data[(i+j)*3 + 0] = 0;
+                data[(i+j)*3 + 1] = 0;
+                data[(i+j)*3 + 2] = 0;
+            } else {
+                data[(i+j)*3 + 0] = (char)(255 * a) + (100 * b);
+                data[(i+j)*3 + 1] = (char)(55 * a) + (200 * b);
+                data[(i+j)*3 + 2] = (char)(55 * a) + (200 * b);
+            }
+        }
+    }
+    return NULL;
+}
 
 void* render_thread_SIMD_mandel(void* argp) {
     thread_data* d = argp;
@@ -189,14 +285,16 @@ void* render_thread_SIMD_julia(void* argp) {
 
 
         for (int j = 0; j < 4; j++) {
+            double a = results[j];
+            double b = 1-a; 
             if (results[j] >= 1.0) {
                 data[(i+j)*3 + 0] = 0;
                 data[(i+j)*3 + 1] = 0;
                 data[(i+j)*3 + 2] = 0;
             } else {
-                data[(i+j)*3 + 0] = (char)(10 * 255 * results[j]);
-                data[(i+j)*3 + 1] = (char)(10 * 0 * results[j]);
-                data[(i+j)*3 + 2] = (char)(10 * 255 * results[j]);
+                data[(i+j)*3 + 0] = (char)(0 * a) + (80 * b);
+                data[(i+j)*3 + 1] = (char)(255 * a) + (0 * b);
+                data[(i+j)*3 + 2] = (char)(255 * a) + (80 * b);
             }
         }
     }
@@ -327,7 +425,7 @@ int main() {
             .zoom = zoom,
             .constant = constant
         };
-        pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
+        pthread_create(&threads[i], NULL, render_thread_SIMD_ship, &args[i]); 
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
@@ -417,7 +515,7 @@ int main() {
                         .zoom = zoom,
                         .constant = constant
                 };
-                pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
+                pthread_create(&threads[i], NULL, render_thread_SIMD_ship, &args[i]); 
             }
             for (int i = 0; i < NUM_THREADS; i++) {
                 pthread_join(threads[i], NULL);
