@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 #include "sprite.h"
+#include "text.h"
 #include "pthread.h"
 
 #define NUM_THREADS 8
@@ -19,9 +20,12 @@ typedef struct {
     int offset;
     sm_vec2d center;
     double zoom;
+    sm_vec2d constant;
 } thread_data;
 
-void* render_thread_SIMD(void* argp) {
+static const int iterations = 100;
+
+void* render_thread_SIMD_mandel(void* argp) {
     thread_data* d = argp;
 
     size_t size = d->size;
@@ -36,7 +40,6 @@ void* render_thread_SIMD(void* argp) {
     __m256d centerx = _mm256_set1_pd(cx);
     __m256d centery = _mm256_set1_pd(cy);
 
-    __m256d mult2 = _mm256_set1_pd(2);
     __m256d one = _mm256_set1_pd(1);
 
     __m256d zoomscale = _mm256_set1_pd(zoom);
@@ -44,7 +47,9 @@ void* render_thread_SIMD(void* argp) {
 
     __m256d threshhold = _mm256_set1_pd(4.0);
 
-    __m256d constant = _mm256_set1_pd(1.0);
+    __m256d constantx = _mm256_set1_pd(d->constant.x);
+    __m256d constanty = _mm256_set1_pd(d->constant.y);
+    __m256d iterscale = _mm256_set1_pd(1.0/iterations);
 
     for (int i = offset; i < size/3; i += NUM_THREADS * 4) {
         __m256d indicies = _mm256_set_pd(i + 3, i + 2, i + 1, i + 0);
@@ -69,13 +74,16 @@ void* render_thread_SIMD(void* argp) {
         __m256d valid = _mm256_setzero_pd();
 
         __m256d iters = _mm256_set1_pd(0);
-        for (int j = 0; j < 100; j++) {
-            __m256d x2 = _mm256_mul_pd(xvals, xvals);
-            __m256d y2 = _mm256_mul_pd(yvals, yvals);
-            __m256d xy = _mm256_mul_pd(xvals, yvals);
 
-            xvals = _mm256_sub_pd(_mm256_sub_pd(x2, y2), one);
-            yvals = _mm256_add_pd(xy, xy);
+        __m256d zx = constantx;
+        __m256d zy = constanty;
+        for (int j = 0; j < iterations; j++) {
+            __m256d x2 = _mm256_mul_pd(zx, zx);
+            __m256d y2 = _mm256_mul_pd(zy, zy);
+            __m256d xy = _mm256_mul_pd(zx, zy);
+
+            zx = _mm256_sub_pd(_mm256_sub_pd(x2, y2), xvals);
+            zy = _mm256_sub_pd(_mm256_add_pd(xy, xy), yvals);
 
             __m256d cmp = _mm256_cmp_pd(_mm256_add_pd(x2,y2), threshhold, _CMP_LT_OS);
             iters = _mm256_add_pd(_mm256_and_pd(cmp, one), iters);
@@ -87,21 +95,108 @@ void* render_thread_SIMD(void* argp) {
 
         double results[4];
 
-        __m256d tx = _mm256_mul_pd(xvals, xvals);
-        __m256d ty = _mm256_mul_pd(yvals, yvals);
-
+        iters = _mm256_mul_pd(iters, iterscale);
         _mm256_storeu_pd(results, iters);
 
 
         for (int j = 0; j < 4; j++) {
-            if (results[j] >= 100) {
-                data[(i+j)*3 + 0] = (char)255;
-                data[(i+j)*3 + 1] = (char)255;
-                data[(i+j)*3 + 2] = (char)255;
+            double a = results[j];
+            double b = 1-a; 
+            if (results[j] >= 1.0) {
+                data[(i+j)*3 + 0] = 0;
+                data[(i+j)*3 + 1] = 0;
+                data[(i+j)*3 + 2] = 0;
             } else {
-                data[(i+j)*3 + 0] = (char)0;
-                data[(i+j)*3 + 1] = (char)0;
-                data[(i+j)*3 + 2] = (char)0;
+                data[(i+j)*3 + 0] = (char)(255 * a) + (100 * b);
+                data[(i+j)*3 + 1] = (char)(55 * a) + (200 * b);
+                data[(i+j)*3 + 2] = (char)(55 * a) + (200 * b);
+            }
+        }
+    }
+    return NULL;
+}
+
+void* render_thread_SIMD_julia(void* argp) {
+    thread_data* d = argp;
+
+    size_t size = d->size;
+    char* data = d->data;
+    double cx = d->center.x;
+    double cy = d->center.y;
+    double zoom = d->zoom;
+    int offset = d->offset;
+    //four wide
+    
+    __m256d coordscale = _mm256_set1_pd(1000);
+    __m256d centerx = _mm256_set1_pd(cx);
+    __m256d centery = _mm256_set1_pd(cy);
+
+    __m256d mult2 = _mm256_set1_pd(2);
+    __m256d one = _mm256_set1_pd(1);
+
+    __m256d zoomscale = _mm256_set1_pd(zoom);
+    __m256d offset_c = _mm256_set1_pd(0.5);
+
+    __m256d threshhold = _mm256_set1_pd(4.0);
+
+    __m256d constantx = _mm256_set1_pd(d->constant.x);
+    __m256d constanty = _mm256_set1_pd(d->constant.y);
+    __m256d iterscale = _mm256_set1_pd(1.0/iterations);
+
+    for (int i = offset; i < size/3; i += NUM_THREADS * 4) {
+        __m256d indicies = _mm256_set_pd(i + 3, i + 2, i + 1, i + 0);
+
+        //get components
+        indicies = _mm256_div_pd(indicies, coordscale);
+        __m256d yvals = _mm256_round_pd(indicies, _MM_FROUND_TRUNC);
+        __m256d xvals = _mm256_sub_pd(indicies, yvals); 
+        yvals = _mm256_div_pd(yvals, coordscale);
+
+
+        xvals = _mm256_sub_pd(xvals, offset_c);
+        yvals = _mm256_sub_pd(yvals, offset_c);
+
+
+        xvals = _mm256_mul_pd(xvals, zoomscale);
+        yvals = _mm256_mul_pd(yvals, zoomscale);
+
+        xvals = _mm256_sub_pd(xvals, centerx);
+        yvals = _mm256_sub_pd(yvals, centery);
+
+        __m256d valid = _mm256_setzero_pd();
+
+        __m256d iters = _mm256_set1_pd(0);
+        for (int j = 0; j < iterations; j++) {
+            __m256d x2 = _mm256_mul_pd(xvals, xvals);
+            __m256d y2 = _mm256_mul_pd(yvals, yvals);
+            __m256d xy = _mm256_mul_pd(xvals, yvals);
+
+            xvals = _mm256_sub_pd(_mm256_sub_pd(x2, y2), constantx);
+            yvals = _mm256_sub_pd(_mm256_add_pd(xy, xy), constanty);
+
+            __m256d cmp = _mm256_cmp_pd(_mm256_add_pd(x2,y2), threshhold, _CMP_LT_OS);
+            iters = _mm256_add_pd(_mm256_and_pd(cmp, one), iters);
+
+            if (_mm256_testz_pd(cmp, _mm256_set1_pd(-1))) {
+                break;
+            }
+        }
+
+        double results[4];
+
+        iters = _mm256_mul_pd(iters, iterscale);
+        _mm256_storeu_pd(results, iters);
+
+
+        for (int j = 0; j < 4; j++) {
+            if (results[j] >= 1.0) {
+                data[(i+j)*3 + 0] = 0;
+                data[(i+j)*3 + 1] = 0;
+                data[(i+j)*3 + 2] = 0;
+            } else {
+                data[(i+j)*3 + 0] = (char)(10 * 255 * results[j]);
+                data[(i+j)*3 + 1] = (char)(10 * 0 * results[j]);
+                data[(i+j)*3 + 2] = (char)(10 * 255 * results[j]);
             }
         }
     }
@@ -161,24 +256,27 @@ int main() {
 
     CRASH_CALL(CreateVulkan());
 
-    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM];
-    SubPass passes[1];
+    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM + SR_TEXT_NUM_ATTACHMENTS] = {0};
+    SubPass passes[2] = {0};
 
     SpriteGetSubpass(passes, attachments, 0);
+    TextGetSubpass(passes, attachments, SR_SPRITE_ATTACHMENT_NUM);
 
     PresentInfo p = {0};
-    CRASH_CALL(InitPresent(&p, passes, 1, attachments, 1));
+    CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
-    SpriteRenderer* r = malloc(sizeof(SpriteRenderer));
+    SpriteRenderer* r = calloc(1, sizeof(SpriteRenderer));
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, HEIGHT}, .rotation = 0}, 1));
-
     //build multipass
 
+    TextRenderer* t = calloc(1, sizeof(TextRenderer));
+    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf",&p.p, 1))
 
-    Texture textures[2] = {0};
-    DynamicTexture t[2] = {0};
 
-    CRASH_CALL(CreateDynTexture(&t[0], (TextureConfig){
+    Texture textures[1] = {0};
+    DynamicTexture tex[1] = {0};
+
+    CRASH_CALL(CreateDynTexture(&tex[0], (TextureConfig){
                     .width = 1000,
                     .height = 1000,
                     .filter = VK_FILTER_LINEAR,
@@ -191,14 +289,14 @@ int main() {
 //                    .width = 1000,
 //                    .height = 1000,
 //                    .filter = VK_FILTER_LINEAR,
-//                    .format = VK_FORMAT_R8G8B8_SRGB,
+//                    .format _mm256_shuffle_epi8= VK_FORMAT_R8G8B8_SRGB,
 //                    .channels = 3,
 //                    .accessmode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 //                    .anisotropy = VK_FALSE,
 //                }));
 
 
-    textures[0] = t[0].t;    
+    textures[0] = tex[0].t;    
 //    textures[1] = t[1].t;
     CRASH_CALL(SetTextureSlots(r, textures, 1));
 
@@ -211,57 +309,81 @@ int main() {
     double last = 0.0;
     bool flip = FALSE;
     sm_vec2d center = (sm_vec2d){0, 0};
+    sm_vec2d constant = (sm_vec2d){0, 0};
     double zoom = 1.0f;
     int active = 0;
 
 
-    double startperf = glfwGetTime();
-    double endperf = 0;
-    BeginUpdateDynTexture(&t[0]);
+    BeginUpdateDynTexture(&tex[0]);
     thread_data args[NUM_THREADS];
     pthread_t threads[NUM_THREADS];
 
     for (int i = 0; i < NUM_THREADS; i++) {
         args[i] = (thread_data){
             .offset = i*4,
-                .data = t[0].data,
-                .size = t[0].size,
-                .center = center,
-                .zoom = zoom
+            .data = tex[0].data,
+            .size = tex[0].size,
+            .center = center,
+            .zoom = zoom,
+            .constant = constant
         };
-        pthread_create(&threads[i], NULL, render_thread_SIMD, &args[i]); 
+        pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
     }
 
-    EndUpdateDynTexture(&t[0]);
-    endperf = glfwGetTime();
-    printf("Render time: %f\n", endperf - startperf);
-
+    EndUpdateDynTexture(&tex[0]);
+    ClearText(t);
+    double rendertimes[10] = {0};
+    int perfcursor = 0;
     while (!glfwWindowShouldClose(sr_context.w)) {
         bool rerender = FALSE;
         glfwPollEvents();
 
 
         SpriteEntry* s = GetSprite(r, s1);
-        if (glfwGetKey(sr_context.w, GLFW_KEY_W) == GLFW_PRESS) {
-            center.y += 0.05 * zoom;
-            rerender = TRUE;
-        }
-        if (glfwGetKey(sr_context.w, GLFW_KEY_A) == GLFW_PRESS) {
-            center.x += 0.05 * zoom;
-            rerender = TRUE;
-        }
-        if (glfwGetKey(sr_context.w, GLFW_KEY_S) == GLFW_PRESS) {
-            center.y -= 0.05 * zoom;
-            rerender = TRUE;
-        }
-        if (glfwGetKey(sr_context.w, GLFW_KEY_D) == GLFW_PRESS) {
-            center.x -= 0.05 * zoom;
-            rerender = TRUE;
+        if (glfwGetKey(sr_context.w, GLFW_KEY_LEFT_SHIFT) != GLFW_PRESS) {
+            if (glfwGetKey(sr_context.w, GLFW_KEY_W) == GLFW_PRESS) {
+                center.y += 0.05 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_A) == GLFW_PRESS) {
+                center.x += 0.05 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_S) == GLFW_PRESS) {
+                center.y -= 0.05 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_D) == GLFW_PRESS) {
+                center.x -= 0.05 * zoom;
+                rerender = TRUE;
+            }
+        } else {
+            if (glfwGetKey(sr_context.w, GLFW_KEY_W) == GLFW_PRESS) {
+                constant.y += 0.02 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_A) == GLFW_PRESS) {
+                constant.x += 0.02 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_S) == GLFW_PRESS) {
+                constant.y -= 0.02 * zoom;
+                rerender = TRUE;
+            }
+            if (glfwGetKey(sr_context.w, GLFW_KEY_D) == GLFW_PRESS) {
+                constant.x -= 0.02 * zoom;
+                rerender = TRUE;
+            }
         }
         
+        if (glfwGetKey(sr_context.w, GLFW_KEY_R) == GLFW_PRESS) {
+            center = (sm_vec2d){0, 0};
+            zoom = 2.0f;
+            rerender = TRUE;
+        }
         if (glfwGetKey(sr_context.w, GLFW_KEY_H) == GLFW_PRESS) {
             //s->size = sm_vec2_f32_mul(s->size, (sm_vec2f){0.999, 0.999});
             zoom *= 1.1f;
@@ -275,37 +397,51 @@ int main() {
 
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-
-
         StartFrame(&p, frameCounter);
         SpriteDrawFrame(r, &p, frameCounter);
+        NextPass(&p, frameCounter);
+        TextDrawFrame(t, &p, frameCounter);
         SubmitFrame(&p, frameCounter); 
 
         if (rerender) {
-            BeginUpdateDynTexture(&t[0]);
+            double startperf = glfwGetTime();
+            double endperf = 0;
+            BeginUpdateDynTexture(&tex[0]);
 
             for (int i = 0; i < NUM_THREADS; i++) {
                 args[i] = (thread_data){
-                        .offset = i*4,
-                        .data = t[0].data,
-                        .size = t[0].size,
+                        .offset = i*4, //4 because of simd 4 doubles at a time
+                        .data = tex[0].data,
+                        .size = tex[0].size,
                         .center = center,
-                        .zoom = zoom
+                        .zoom = zoom,
+                        .constant = constant
                 };
-                pthread_create(&threads[i], NULL, render_thread_SIMD, &args[i]); 
+                pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
             }
             for (int i = 0; i < NUM_THREADS; i++) {
                 pthread_join(threads[i], NULL);
             }
-            EndUpdateDynTexture(&t[0]);
+            endperf = glfwGetTime();
+
+            char buffer[128];
+            int size = snprintf(buffer, 128, "Frame Time: %.4f\nConstant: %.4f %.4f\nZoom: %.4f", 
+                    endperf - startperf,
+                    constant.x, constant.y,
+                    zoom);
+            ClearText(t);
+            AppendText(t, buffer, size, (sm_vec2f){10,10}, 1);
+            EndUpdateDynTexture(&tex[0]);
         }
 
 
     }
 
-    DestroyDynTexture(&t[0]);
+    DestroyDynTexture(&tex[0]);
     DestroyPresent(&p);
     SpriteDestroy(r);
+    TextDestroy(t);
+    free(t);
     free(r);
     DestroyVulkan();
     return 0;

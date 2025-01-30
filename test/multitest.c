@@ -15,8 +15,8 @@ int main() {
     PresentInfo p = {0};
     CRASH_CALL(CreateVulkan());
 
-    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM * 2];
-    SubPass passes[2];
+    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM * 2] = {0};
+    SubPass passes[2] = {0};
 
     SpriteGetSubpass(passes, attachments, 0);
     TextGetSubpass(passes, attachments, SR_SPRITE_ATTACHMENT_NUM);

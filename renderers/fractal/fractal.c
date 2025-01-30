@@ -3,6 +3,7 @@
 #include "error.h"
 #include "frame.h"
 #include "init.h"
+#include <stdio.h>
 #include "memory.h"
 #include "pipeline.h"
 #include "util.h"

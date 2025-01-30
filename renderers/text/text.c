@@ -162,7 +162,6 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
 }
 
 ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
-ErrorCode AppendText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
 
 ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
     *s = (SubPass) {
