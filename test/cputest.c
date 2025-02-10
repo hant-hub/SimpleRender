@@ -425,7 +425,7 @@ int main() {
             .zoom = zoom,
             .constant = constant
         };
-        pthread_create(&threads[i], NULL, render_thread_SIMD_ship, &args[i]); 
+        pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
@@ -515,7 +515,7 @@ int main() {
                         .zoom = zoom,
                         .constant = constant
                 };
-                pthread_create(&threads[i], NULL, render_thread_SIMD_ship, &args[i]); 
+                pthread_create(&threads[i], NULL, render_thread_SIMD_mandel, &args[i]); 
             }
             for (int i = 0; i < NUM_THREADS; i++) {
                 pthread_join(threads[i], NULL);

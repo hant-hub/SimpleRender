@@ -5,6 +5,7 @@
 #include "text.h"
 #include "util.h"
 #include "vec2.h"
+#include "stdio.h"
 #include <GLFW/glfw3.h>
 #include <time.h>
 #define B_WIDTH 10

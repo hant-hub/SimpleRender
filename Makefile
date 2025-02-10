@@ -42,7 +42,7 @@ ifeq ($(BUILD), RELEASE)
 	BUILD_FLAGS = -O2
 endif
 
-CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD) -march=native
+CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -mavx -D$(BUILD)
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm -lfreetype
 
 
@@ -74,6 +74,13 @@ spritetest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
 	$(CC) $(CFLAGS) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+sheettest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/sheettest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
 	./test;
 
