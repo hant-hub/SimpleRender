@@ -49,6 +49,10 @@ typedef struct {
 }TextureConfig;
 
 ErrorCode LoadTexture(Texture* t, const char* path);
+//configurable version
+//width, height, channels, and format do nothing
+ErrorCode LoadTextureConfig(Texture* t, const char* path, TextureConfig config);
+
 ErrorCode CreateTexture(Texture* t, TextureConfig config, void* buf);
 ErrorCode CreateDynTexture(DynamicTexture* t, TextureConfig config);
 

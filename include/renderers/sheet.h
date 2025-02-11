@@ -41,7 +41,8 @@ typedef struct {
 
 typedef struct {
     sm_mat4f model;
-    sm_mat4f uv;
+    sm_vec2f uvoffset;
+    sm_vec2f uvscale;
     u32 texture;
 } __attribute__ ((aligned(sizeof(sm_vec4f)))) SpritePack;
 

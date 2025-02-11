@@ -2,7 +2,8 @@
 
 struct Uniform {
     mat4 model;
-    mat4 uv;
+    vec2 uvoffset;
+    vec2 uvscale; 
     uint texIndex;
 };
 
@@ -31,7 +32,9 @@ void main() {
                   models.ModelData[gl_InstanceIndex].model * 
                   vec4(inPosition, 1.0f, 1.0f);
 
-    fragUV = (models.ModelData[gl_InstanceIndex].uv * vec4(inTexCoords, 1.0f, 1.0f)).xy;
+    fragUV = (inTexCoords - models.ModelData[gl_InstanceIndex].uvoffset) *
+             models.ModelData[gl_InstanceIndex].uvscale; 
+
     index = models.ModelData[gl_InstanceIndex].texIndex;
 }
 

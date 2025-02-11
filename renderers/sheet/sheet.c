@@ -41,7 +41,7 @@ static const uint16_t indicies[] = {
 
 ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots) {
 
-    PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
+    PASS_CALL(CreateShaderProg("shaders/sheet/sheet.vert.spv", "shaders/sheet/sheet.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
         {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT,   0}, 
@@ -171,7 +171,7 @@ SheetHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex
         .pos = pos,
         .size = size,
         .scale = (sm_vec2f){1.0, 1.0},
-        .selection = (sm_vec2f){1.0, 1.0},
+        .selection = (sm_vec2f){0.0, 0.0},
         .rotation = 0,
         .layer = layer,
         .texture = tex
@@ -220,13 +220,10 @@ ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
         model = sm_mat4_f32_rz(&model, sprite.rotation);
         model = sm_mat4_f32_translate(&model, (sm_vec3f){sprite.pos.x, sprite.pos.y, sprite.layer}); 
 
-        sm_mat4f uv = SM_MAT4_IDENTITY;
-        uv = sm_mat4_f32_scale(&uv, (sm_vec4f){1.0/sprite.scale.x, 1.0/sprite.scale.y, 1.0f, 1.0f});
-        uv = sm_mat4_f32_translate(&uv, (sm_vec3f){sprite.selection.x, sprite.selection.y});
-
         packBuf[i] = (SpritePack) {
             .model = model,
-            .uv = uv,
+            .uvoffset = sprite.selection,
+            .uvscale = (sm_vec2f){1.0/sprite.scale.x, 1.0/sprite.scale.y}, 
             .texture = sprite.texture
         };
     }
