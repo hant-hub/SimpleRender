@@ -24,8 +24,141 @@ static ErrorCode findFormat(const VkFormat* candidates, u32 num, VkImageTiling t
     return SR_LOAD_FAIL;
 }
 
+ErrorCode CreateMultiPass(RenderPass* r, SubPass* passes, u32 numPasses, Attachment* configs, u32 numAttachments) {
 
-ErrorCode CreatePass(RenderPass* r, RenderPass* prev, Attachment* configs, u32 numAttachments) {
+    VkSubpassDescription subdescriptions[numPasses];
+    VkSubpassDependency subdependencies[numPasses];
+
+    VkAttachmentDescription attachDescriptions[numAttachments + 1];
+    VkAttachmentReference attachReferences[numAttachments + 1];
+
+    SwapChainDetails swapDetails;
+    querySwapDetails(&swapDetails, sr_device.p, sr_context.surface);
+
+    //Pick Format
+    VkSurfaceFormatKHR format = swapDetails.formats[0];
+    for (int i = 0; i < swapDetails.formatCount; i++) {
+        if (swapDetails.formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && 
+            swapDetails.formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            format = swapDetails.formats[i];
+            break;
+        }
+    }
+
+    free(swapDetails.formats);
+    free(swapDetails.modes);
+
+    attachDescriptions[0] = (VkAttachmentDescription) {
+        .flags = 0,
+        .format = format.format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+
+    attachReferences[0] = (VkAttachmentReference) {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    for (int i = 1; i <= numAttachments; i++) { 
+        switch (configs[i-1].type) {
+            case SR_ATTATCHMENT_DEPTH: {
+                static const VkFormat depthFormats[] = {
+                    VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT
+                };
+
+                VkFormat format;
+                {
+                    ErrorCode e = findFormat(depthFormats, 3, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, &format);
+                    if (e != SR_NO_ERROR) return SR_CREATE_FAIL;
+                }
+
+                configs[i - 1].format = format; 
+
+                VkAttachmentDescription* depthAttachment = &attachDescriptions[i];
+                depthAttachment->flags = 0;
+                depthAttachment->format = format; 
+                depthAttachment->samples = VK_SAMPLE_COUNT_1_BIT;
+                depthAttachment->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                depthAttachment->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                depthAttachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                depthAttachment->finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+                VkAttachmentReference* depthReference = &attachReferences[i];
+                depthReference->attachment = 1;
+                depthReference->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                break;
+            }
+        }
+    }
+
+    //construct subpasses
+    for (int i = 0; i < numPasses; i++) {
+        subdependencies[i] = (VkSubpassDependency){
+            .dstSubpass = i,
+            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+        };
+        if (i == 0) subdependencies[i].srcSubpass = VK_SUBPASS_EXTERNAL;
+        else subdependencies[i].srcSubpass = i - 1;
+
+        i32 depth = passes[i].depthAttachment;
+
+        //single color attachment
+        subdescriptions[i] = (VkSubpassDescription) {
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &attachReferences[0],
+            .inputAttachmentCount = 0,
+            .pInputAttachments = NULL,
+            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+            .pDepthStencilAttachment = depth >= 0 ? &attachReferences[depth + 1] : NULL
+        };
+
+        //build up access masks
+        
+        for (int j = passes[i].firstAttachment; j < passes[i].numAttachments; j++) {
+            switch (configs[j].type) {
+                case SR_ATTATCHMENT_DEPTH: 
+                    subdependencies[i].dstStageMask  |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+                    subdependencies[i].srcStageMask  |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+                    subdependencies[i].dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    VkRenderPassCreateInfo renderInfo = {0};
+    renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderInfo.attachmentCount = numAttachments + 1;
+    renderInfo.pAttachments = attachDescriptions;
+    renderInfo.subpassCount = numPasses;
+    renderInfo.pSubpasses = subdescriptions;
+    renderInfo.dependencyCount = numPasses;
+    renderInfo.pDependencies = subdependencies;
+
+    if (vkCreateRenderPass(sr_device.l, &renderInfo, NULL, &r->pass) != VK_SUCCESS) {
+        SR_LOG_WAR("Failed to Create Render Pass");
+        return SR_CREATE_FAIL;
+    }
+
+    r->configs = configs;
+    r->numAttachments = numAttachments + 1;
+    return SR_NO_ERROR;
+}
+
+
+ErrorCode CreatePass(RenderPass* r, Attachment* configs, u32 numAttachments) {
 
     VulkanDevice* d = &sr_device;
     VulkanContext* c = &sr_context;

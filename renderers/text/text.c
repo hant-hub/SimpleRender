@@ -4,7 +4,6 @@
 #include "error.h"
 #include "frame.h"
 #include "init.h"
-#include "log.h"
 #include "mat4.h"
 #include "memory.h"
 #include "texture.h"
@@ -30,13 +29,14 @@ typedef struct {
 
 
 
-ErrorCode TextInit(TextRenderer* r) {
+ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
         {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0},
-        {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1}
+        {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1},
+        {SR_DESC_UNIFORM, VK_SHADER_STAGE_FRAGMENT_BIT, 0},
     };
     PASS_CALL(CreateDescriptorSetConfig(&r->config, descriptorConfigs, ARRAY_SIZE(descriptorConfigs)));
     
@@ -54,24 +54,25 @@ ErrorCode TextInit(TextRenderer* r) {
         .binding = binds[0],
         .size = 2
     };
-    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config));
+    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config, FALSE));
 
-    PASS_CALL(CreatePass(&r->pass, NULL, NULL, 0));
-//    PASS_CALL(CreateSwapChain(&r->pass, &r->swap, VK_NULL_HANDLE));
-    PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, &r->pass)); 
+    PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, p, subpass)); 
     
-    LoadFont(&r->fdata);
+    LoadFont(font, &r->fdata);
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
-    PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->uniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->vertuniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(sizeof(sm_vec3f), &r->fraguniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     //todo, fix SetBuffer to be non sprite specific
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
-        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->uniforms, 0, i));
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->vertuniforms, 0, i));
+        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->fraguniforms, 2, i));
         PASS_CALL(SetImage(r->fdata.atlas.image.view, r->fdata.atlas.sampler, &r->config, 1, 0, i));
     }
 
+    ((sm_vec3f*)r->fraguniforms.buffer)[0] = (sm_vec3f){1.0f, 1.0f, 1.0f};
     return SR_NO_ERROR;
 }
 
@@ -83,17 +84,20 @@ void TextDestroy(TextRenderer* r) {
     DestroyStaticBuffer(&r->font);
     DestroyDynamicBuffer(&r->indicies);
     DestroyDynamicBuffer(&r->verts);
-    DestroyDynamicBuffer(&r->uniforms);
+    DestroyDynamicBuffer(&r->vertuniforms);
+    DestroyDynamicBuffer(&r->fraguniforms);
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);
-    DestroyPass(&r->pass);
-    VkDevice d = sr_device.l;
-    DestroySwapChain(&r->swap, &r->pass);
 }
 
 ErrorCode ClearText(TextRenderer* r) {
     r->chars = 0;
+    return SR_NO_ERROR;
+}
+
+ErrorCode SetColor(TextRenderer* r, sm_vec3f color) {
+    ((sm_vec3f*)r->fraguniforms.buffer)[0] = color;
     return SR_NO_ERROR;
 }
 
@@ -158,7 +162,16 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
 }
 
 ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
-ErrorCode AppendText(TextRenderer* r, const char* text, u32 textlen, sm_vec2f pos, float scale);
+
+ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
+    *s = (SubPass) {
+        .numAttachments = 0,
+        .colorAttachment = 0,
+        .depthAttachment = -1,
+        .firstAttachment = 0,
+    };
+    return SR_NO_ERROR;
+}
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     VulkanDevice* device = &sr_device;
@@ -167,41 +180,14 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     VulkanShader* shader = &r->shader;
     VulkanPipelineConfig* config = &r->config;
     VulkanPipeline* pipe = &r->pipeline;
-    RenderPass* pass = &r->pass;
 
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
     float aspect = ((float)WIDTH)/((float)HEIGHT);
     proj = sm_mat4_f32_ortho(0.0f,  1.0f, 0.0f, 100.0f * aspect, 0.0f, 100.0f);
 
-    memcpy(r->uniforms.buffer, &proj, sizeof(sm_mat4f));
-
-    vkResetFences(sr_device.l, 1, &p->inFlight[frame]);
-    vkResetCommandBuffer(cmd->buffer[frame], 0);
+    memcpy(r->vertuniforms.buffer, &proj, sizeof(sm_mat4f));
     VkCommandBuffer cmdBuf = cmd->buffer[frame];
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;
-    beginInfo.pInheritanceInfo = NULL;
-
-    if (vkBeginCommandBuffer(cmdBuf, &beginInfo) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Begin Command Buffer");
-        return;
-    }
-
-    VkRenderPassBeginInfo renderInfo = {0};
-    renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderInfo.renderPass = pass->pass;
-    renderInfo.framebuffer = p->swapchain.buffers[p->imageIndex];
-    renderInfo.renderArea.offset = (VkOffset2D){0, 0};
-    renderInfo.renderArea.extent = p->swapchain.extent;
-
-    VkClearValue clearcolors[2] = {0}; 
-    clearcolors[0].color = (VkClearColorValue){0.0f, 0.0f, 0.0f, 1.0f};
-    renderInfo.clearValueCount = 1;
-    renderInfo.pClearValues = clearcolors;
-
-    vkCmdBeginRenderPass(cmdBuf, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
 
@@ -225,31 +211,4 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, 1, &config->descrip.descriptorSet[frame], 0, NULL);
 
     vkCmdDrawIndexed(cmdBuf, r->chars * 6, 1, 0, 0, 0);
-    vkCmdEndRenderPass(cmdBuf);
-
-    if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to End Command Buffer");
-        return;
-    }
-
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {p->imageAvalible[frame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd->buffer[frame];
-
-    VkSemaphore signalSemaphores[] = {p->renderFinished[frame]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if (vkQueueSubmit(device->graph, 1, &submitInfo, p->inFlight[frame]) != VK_SUCCESS) {
-        SR_LOG_ERR("Failed to Submit Queue");
-        return;
-    }
 }

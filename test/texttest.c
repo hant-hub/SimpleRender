@@ -1,6 +1,5 @@
 #include "frame.h"
 #include "init.h"
-#include "log.h"
 #include "texture.h"
 #include "util.h"
 #include "vec2.h"
@@ -17,16 +16,15 @@ int main() {
     SpriteRenderer r = {0};
     TextRenderer* t = malloc(sizeof(TextRenderer));
     PresentInfo p = {0};
+
     CRASH_CALL(CreateVulkan());
+
+    SubPass passes[1];
+
+    TextGetSubpass(passes, NULL, 0);
+    CRASH_CALL(InitPresent(&p, passes, 1, NULL, 0));
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t));
-    CRASH_CALL(InitPresent(&p, &t->pass));
-
-    FontData font;
-    Texture tex;
-
-    CRASH_CALL(LoadTexture(&tex, "resources/textures/texture.jpg"));
-    CRASH_CALL(LoadFont(&font));
+    CRASH_CALL(TextInit(t, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", &p.p, 0));
     
     //CRASH_CALL(SetTextureSlot(&r, &tex, 0));
     //CRASH_CALL(SetTextureSlot(&r, &font.atlas, 1));
@@ -57,20 +55,17 @@ int main() {
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
-        GetFrame(&p, frameCounter);
+        StartFrame(&p, frameCounter);
         TextDrawFrame(t, &p, frameCounter);
-        PresentFrame(&p, frameCounter);
+        SubmitFrame(&p, frameCounter);
 
         
 
     }
 
-    DestroyTexture(&font.atlas);
-    DestroyTexture(&tex);
-    DestroyPresent(&p);
-    //SpriteDestroy(&r);
     TextDestroy(t);
     free(t);
+    DestroyPresent(&p);
     DestroyVulkan();
     return 0;
 }

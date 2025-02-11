@@ -1,6 +1,7 @@
 #include "init.h"
 #include "error.h"
 #include <string.h>
+#include <stdio.h>
 #include "stdlib.h"
 
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
@@ -219,7 +220,7 @@ ErrorCode CreateVulkan() {
 #ifdef DEBUG
     if (!CheckValidationLayerSupport()) {
         SR_LOG_ERR("Validation Layers Required but not Found");
-        return SR_VALIDATION_MISSING; 
+        return SR_EXTENSION_MISSING; 
     }
 
 #endif
@@ -296,7 +297,7 @@ ErrorCode CreateVulkan() {
     }
 
 #ifdef DEBUG
-    if (CreateDebugMessenger(&context->debug, &context->instance) != VK_SUCCESS) {
+    if (CreateDebugMessenger(&context->debug, &context->instance) != SR_NO_ERROR) {
         return SR_CREATE_FAIL;
     }
 #endif

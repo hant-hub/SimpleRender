@@ -1,4 +1,4 @@
-#include "sprite.h"
+#include "sheet.h"
 #include "error.h"
 #include "frame.h"
 #include "init.h"
@@ -41,7 +41,7 @@ static const uint16_t indicies[] = {
 
 ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots) {
 
-    PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
+    PASS_CALL(CreateShaderProg("shaders/sheet/sheet.vert.spv", "shaders/sheet/sheet.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
         {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT,   0}, 
@@ -89,7 +89,7 @@ ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, ui
 
 ErrorCode SpriteGetSubpass(SubPass* s, Attachment* a, u32 start) {
     *s = (SubPass) {
-        .numAttachments = SR_SPRITE_ATTACHMENT_NUM,
+        .numAttachments = SR_SHEET_ATTACHMENT_NUM,
         .colorAttachment = 0,
         .depthAttachment = start,
         .firstAttachment = start,
@@ -145,12 +145,12 @@ void SpriteDestroy(SpriteRenderer* r) {
 
 
 
-SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer) {
+SheetHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is
     //a tombstone value
     
-    SpriteEntry* denseSetVals = r->denseSetVals;
+    SheetEntry* denseSetVals = r->denseSetVals;
     u32* denseSetIdx = r->denseSetIdx;
     i32* sparseSet = r->sparseSet;
     u32* denseSize = &r->denseSize;
@@ -167,9 +167,11 @@ SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 te
 
     sm_vec4f s = (sm_vec4f){size.x, size.y, 1.0f, 1.0f};
 
-    denseSetVals[denseIndex] = (SpriteEntry) {
+    denseSetVals[denseIndex] = (SheetEntry) {
         .pos = pos,
         .size = size,
+        .scale = (sm_vec2f){1.0, 1.0},
+        .selection = (sm_vec2f){0.0, 0.0},
         .rotation = 0,
         .layer = layer,
         .texture = tex
@@ -181,16 +183,16 @@ SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 te
     return newIndex;
 }
 
-ErrorCode DestroySprite(SpriteRenderer* r, SpriteHandle s) {
+ErrorCode DestroySprite(SpriteRenderer* r, SheetHandle s) {
 
-    SpriteEntry* denseSetVals = r->denseSetVals;
+    SheetEntry* denseSetVals = r->denseSetVals;
     u32* denseSetIdx = r->denseSetIdx;
     i32* sparseSet = r->sparseSet;
     u32 denseSize = r->denseSize;
 
     u32 denseIndex = sparseSet[s] - 1;
     {
-        SpriteEntry temp = denseSetVals[denseSize - 1];
+        SheetEntry temp = denseSetVals[denseSize - 1];
         denseSetVals[denseSize - 1] = denseSetVals[denseIndex];
         denseSetVals[denseIndex] = temp;
     }
@@ -212,7 +214,7 @@ ErrorCode DestroySprite(SpriteRenderer* r, SpriteHandle s) {
 ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
     SpritePack* packBuf = buf;
     for (int i = 0; i < r->denseSize; i++) {
-        SpriteEntry sprite = r->denseSetVals[i];
+        SheetEntry sprite = r->denseSetVals[i];
         sm_mat4f model = SM_MAT4_IDENTITY;        
         model = sm_mat4_f32_scale(&model, (sm_vec4f){sprite.size.x, sprite.size.y, 1.0f, 1.0f});
         model = sm_mat4_f32_rz(&model, sprite.rotation);
@@ -220,12 +222,14 @@ ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
 
         packBuf[i] = (SpritePack) {
             .model = model,
+            .uvoffset = sprite.selection,
+            .uvscale = (sm_vec2f){1.0/sprite.scale.x, 1.0/sprite.scale.y}, 
             .texture = sprite.texture
         };
     }
     return SR_NO_ERROR;
 }
-SpriteEntry* GetSprite(SpriteRenderer* r, SpriteHandle s) {
+SheetEntry* GetSprite(SpriteRenderer* r, SheetHandle s) {
     if (!r->sparseSet[s]) return NULL;
     return &r->denseSetVals[(r->sparseSet[s] - 1)];
 }

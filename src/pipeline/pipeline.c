@@ -9,7 +9,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r) {
+ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipeline* p, RenderPass* r, u32 subpass) {
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -26,7 +26,7 @@ ErrorCode CreatePipeline(VulkanShader* s, VulkanPipelineConfig* con, VulkanPipel
 
     pipelineInfo.layout = con->layout;
     pipelineInfo.renderPass = r->pass;
-    pipelineInfo.subpass = 0;
+    pipelineInfo.subpass = subpass;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;

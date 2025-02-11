@@ -42,7 +42,7 @@ ifeq ($(BUILD), RELEASE)
 	BUILD_FLAGS = -O2
 endif
 
-CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -D $(BUILD)
+CFLAGS := $(BUILD_FLAGS) $(INC_FLAGS) -MMD -MP -mavx -D$(BUILD)
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lm -lfreetype
 
 
@@ -73,7 +73,21 @@ clean:
 spritetest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
-	$(CC) $(CFLAGS) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS) \
+	$(CC) $(CFLAGS) ./test/spritetest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+sheettest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/sheettest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+tiletest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/tiletest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
 	./test;
 
@@ -81,6 +95,34 @@ texttest: $(BUILD_DIR)/$(TARGET_EXEC)
 	clear
 	compiledb -n make
 	$(CC) $(CFLAGS) ./test/texttest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+multitest: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/multitest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+battleship: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/battleship.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+fractal: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/fractaltest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
+	cd $(BUILD_DIR); \
+	./test;
+
+cpu: $(BUILD_DIR)/$(TARGET_EXEC)
+	clear
+	compiledb -n make
+	$(CC) $(CFLAGS) ./test/cputest.c ./$(BUILD_DIR)/$(TARGET_EXEC) $(INC_FLAGS)  -o ./build/test $(LDFLAGS); \
 	cd $(BUILD_DIR); \
 	./test;
 

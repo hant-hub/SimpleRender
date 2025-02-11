@@ -10,7 +10,7 @@
 
 typedef struct {
     //This is the renderpass which outputs the final image
-    RenderPass* p;
+    RenderPass p;
     SwapChain swapchain;
     u32 imageIndex;
     VkSemaphore imageAvalible[SR_MAX_FRAMES_IN_FLIGHT];
@@ -18,10 +18,10 @@ typedef struct {
     VkFence inFlight[SR_MAX_FRAMES_IN_FLIGHT];
 } PresentInfo;
 
-
-ErrorCode InitPresent(PresentInfo* p, RenderPass* r); 
-ErrorCode GetFrame(PresentInfo* p, u32 frame);
-ErrorCode PresentFrame(PresentInfo* p, u32 frame);
+ErrorCode InitPresent(PresentInfo* p, SubPass* passes, u32 numPasses, Attachment* attachmens, u32 numAttachments);
+ErrorCode StartFrame(PresentInfo* p, u32 frame);
+void NextPass(PresentInfo* p, u32 frame);
+ErrorCode SubmitFrame(PresentInfo* p, u32 frame);
 void DestroyPresent(PresentInfo* p);
 
 #endif

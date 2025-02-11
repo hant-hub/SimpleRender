@@ -8,7 +8,6 @@
 #include <GLFW/glfw3.h>
 
 #define SR_MAX_FRAMES_IN_FLIGHT 3
-#define SR_MAX_INSTANCES 150000
 
 typedef struct VulkanCommand {
     VkCommandPool pool;
@@ -49,6 +48,7 @@ typedef struct {
 
 static const char* validationLayers[] = {
     "VK_LAYER_KHRONOS_validation", 
+    //"VK_LAYER_LUNARG_api_dump"
 };
 
 static const char* deviceExtensions[] = {

@@ -1,7 +1,6 @@
 #ifndef SR_TEXTURE_H
 #define SR_TEXTURE_H
-#include "vulkan/vulkan.h"
-#include "memory.h"
+#include "error.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -12,10 +11,23 @@ typedef struct {
 } Image;
 
 typedef struct {
+    VkImage image;
+    VkImageView view;
+    VkDeviceMemory mem;
+    char* buf; //byte array
+} DynamicImage;
+
+typedef struct {
     Image image;
     VkSampler sampler;
 } Texture;
 
+typedef struct {
+    Texture t;
+    VkFormat format;
+    size_t size;
+    char* data;
+} DynamicTexture;
 
 typedef struct {
     size_t width;
@@ -32,13 +44,26 @@ typedef struct {
     size_t channels;
     VkFormat format;
     VkSamplerAddressMode accessmode;
+    VkFilter filter;
+    VkBool32 anisotropy;
 }TextureConfig;
 
 ErrorCode LoadTexture(Texture* t, const char* path);
+//configurable version
+//width, height, channels, and format do nothing
+ErrorCode LoadTextureConfig(Texture* t, const char* path, TextureConfig config);
+
 ErrorCode CreateTexture(Texture* t, TextureConfig config, void* buf);
+ErrorCode CreateDynTexture(DynamicTexture* t, TextureConfig config);
 
 ErrorCode CreateImage(Image* t, ImageConfig config);
+ErrorCode CreateDynImage(DynamicImage* t, ImageConfig config);
+
+ErrorCode BeginUpdateDynTexture(DynamicTexture* t);
+ErrorCode EndUpdateDynTexture(DynamicTexture* t);
+
 void DestroyTexture(Texture* t);
 void DestroyImage(Image* t);
-
+void DestroyDynTexture(DynamicTexture* t);
+void DestroyDynImage(Image* t);
 #endif
