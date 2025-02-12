@@ -15,6 +15,7 @@
 #include <strings.h>
 #include <vulkan/vulkan_core.h>
 
+
 typedef struct {
     sm_vec2f pos;
     sm_vec2f uv;
