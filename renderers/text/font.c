@@ -19,7 +19,7 @@ ErrorCode LoadFont(const char* fontname, FontData* font) {
         SR_LOG_ERR("Failed to load font face");
         return SR_LOAD_FAIL;
     }
-    FT_Set_Pixel_Sizes(face, 0, 60);
+    FT_Set_Pixel_Sizes(face, 0, SR_TEXT_SIZE);
 
     int max_dim = (1 + (face->size->metrics.height >> 6)) * ceilf(sqrtf(NUM_GLYPHS));
 	int tex_width = 1;

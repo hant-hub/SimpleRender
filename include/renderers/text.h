@@ -14,6 +14,7 @@
 #define MAX_CHARS 100000
 
 #define SR_TEXT_NUM_ATTACHMENTS 1
+#define SR_TEXT_SIZE 100
 
 typedef struct {
     Texture atlas;
