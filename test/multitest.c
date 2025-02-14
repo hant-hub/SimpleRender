@@ -81,8 +81,8 @@ int main() {
         avg /= 10;
         avg = 1.0/avg;
 
-        char buf[16];
-        int len = snprintf(buf, 16, "fps: %f", avg);
+        char buf[32];
+        int len = snprintf(buf, 32, "fps: %.1f\nttttt", avg);
         ClearText(t);
         AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1);
 
