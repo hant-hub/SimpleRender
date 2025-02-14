@@ -165,8 +165,8 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         in[idx*6 + 4] = idx * 4 + 3;
         in[idx*6 + 5] = idx * 4 + 0;
         cadvance += (float)advance * scale;
+        r->chars++;
     }
-    r->chars += textLen;
     return SR_NO_ERROR;
 }
 
