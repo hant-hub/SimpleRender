@@ -118,6 +118,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
     Vertex* vertex = r->verts.buffer;
     uint16_t* in = r->indicies.buffer;
 
+    int start = r->chars;
     for (int i = 0; i < textLen; i++) {
         sm_vec2i size = r->fdata.size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
@@ -140,7 +141,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
             ((float)size.y) / r->fdata.texsize.y
         };
 
-        int idx = i + r->chars;
+        int idx = i + start;
         vertex[idx * 4 + 0] = (Vertex) {
             .pos = {x, y},
             .uv = {u , v}
