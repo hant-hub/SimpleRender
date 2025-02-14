@@ -1,5 +1,6 @@
 #include "config.h"
 #include "frame.h"
+#include "init.h"
 #include "text.h"
 #include "texture.h"
 #include "util.h"
@@ -22,8 +23,9 @@ int main() {
     TextGetSubpass(passes, attachments, SR_SPRITE_ATTACHMENT_NUM);
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
-    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf",&p.p, 1))
+    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, HEIGHT}, .rotation = 0}, 2));
+    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 1))
+    SetArea(t, (sm_vec2f){WIDTH, HEIGHT});
 
     //build multipass
 
@@ -36,9 +38,9 @@ int main() {
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
     SpriteHandle s1 = CreateSprite(r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 0, 1);
-    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 100}, 1, 0);
+    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 0);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
-    AppendText(t, "test", 4, (sm_vec2f){20, 100}, 10);
+    AppendText(t, "test", 4, (sm_vec2f){10, 10}, 10);
 
 
     unsigned int frameCounter = 0;
@@ -60,7 +62,7 @@ int main() {
             flip = !flip;
         }
         float time = glfwGetTime() * 2;
-        SetColor(t, (sm_vec3f){sin(time) * sin(time), sin(time) * cos(time), cos(time)});
+        //SetColor(t, (sm_vec3f){sin(time) * sin(time), sin(time) * cos(time), cos(time)});
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         StartFrame(&p, frameCounter);
@@ -82,7 +84,7 @@ int main() {
         char buf[16];
         int len = snprintf(buf, 16, "fps: %f", avg);
         ClearText(t);
-        AppendText(t, buf, len-1, (sm_vec2f){10, 10}, 1);
+        AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1);
 
     }
 

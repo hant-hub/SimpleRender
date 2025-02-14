@@ -22,6 +22,11 @@ typedef struct {
 } Vertex;
 
 typedef struct {
+    sm_mat4f proj;
+    sm_mat4f view;
+} Uniform;
+
+typedef struct {
     uint glyph;
     f32 rotation;
     f32 scale;
@@ -29,8 +34,12 @@ typedef struct {
 } __attribute__ ((aligned(sizeof(sm_vec4f)))) Character;
 
 
+ErrorCode SetArea(TextRenderer* r, sm_vec2f area) {
+    r->textarea = area;
+    return SR_NO_ERROR;
+}
 
-ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass) {
+ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
@@ -59,11 +68,11 @@ ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass
 
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, p, subpass)); 
     
-    LoadFont(font, &r->fdata);
+    LoadFont(font, size, &r->fdata);
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
-    PASS_CALL(CreateDynamicBuffer(sizeof(sm_mat4f), &r->vertuniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(sizeof(Uniform), &r->vertuniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(sizeof(sm_vec3f), &r->fraguniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     //todo, fix SetBuffer to be non sprite specific
@@ -108,7 +117,6 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
     int nonrendered = 0;
     Vertex* vertex = r->verts.buffer;
     uint16_t* in = r->indicies.buffer;
-    scale *=  0.0001 * HEIGHT;
 
     for (int i = 0; i < textLen; i++) {
         sm_vec2i size = r->fdata.size[text[i]];
@@ -184,10 +192,16 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
-    float aspect = ((float)WIDTH)/((float)HEIGHT);
-    proj = sm_mat4_f32_ortho(0.0f,  1.0f, 0.0f, 100.0f * aspect, 0.0f, 100.0f);
 
-    memcpy(r->vertuniforms.buffer, &proj, sizeof(sm_mat4f));
+    float aspect = ((float)WIDTH)/((float)HEIGHT);
+    proj = sm_mat4_f32_ortho(0.5f, 2.0f, -aspect, aspect, -1.0f, 1.0f);
+    view = sm_mat4_f32_scale(&view, (sm_vec4f){1/r->textarea.x, 1/r->textarea.y, 1.0f, 1.0f});
+
+    Uniform u = (Uniform){
+        .proj = proj,
+        .view = view
+    };
+    memcpy(r->vertuniforms.buffer, &u, sizeof(Uniform));
     VkCommandBuffer cmdBuf = cmd->buffer[frame];
 
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);

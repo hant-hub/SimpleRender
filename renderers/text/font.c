@@ -6,7 +6,7 @@
 
 
 //should only run once to load all fonts needed upon startup
-ErrorCode LoadFont(const char* fontname, FontData* font) {
+ErrorCode LoadFont(const char* fontname, u32 size, FontData* font) {
     FT_Library library;
 
     if (FT_Init_FreeType(&library)) {
@@ -19,7 +19,7 @@ ErrorCode LoadFont(const char* fontname, FontData* font) {
         SR_LOG_ERR("Failed to load font face");
         return SR_LOAD_FAIL;
     }
-    FT_Set_Pixel_Sizes(face, 0, SR_TEXT_SIZE);
+    FT_Set_Pixel_Sizes(face, 0, size);
 
     int max_dim = (1 + (face->size->metrics.height >> 6)) * ceilf(sqrtf(NUM_GLYPHS));
 	int tex_width = 1;

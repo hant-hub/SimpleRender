@@ -14,7 +14,6 @@
 #define MAX_CHARS 100000
 
 #define SR_TEXT_NUM_ATTACHMENTS 1
-#define SR_TEXT_SIZE 100
 
 typedef struct {
     Texture atlas;
@@ -42,15 +41,17 @@ typedef struct {
     DynamicBuffer indicies;
     DynamicBuffer verts;
     u32 chars;
+    sm_vec2f textarea;
 } TextRenderer;
 
-ErrorCode LoadFont(const char* fontname, FontData* font);
+ErrorCode LoadFont(const char* fontname, u32 size, FontData* font);
 
 ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale);
 ErrorCode ClearText(TextRenderer* r);
 ErrorCode SetColor(TextRenderer* r, sm_vec3f color);
+ErrorCode SetArea(TextRenderer* r, sm_vec2f area);
 
-ErrorCode TextInit(TextRenderer* r, const char* font, RenderPass* p, u32 subpass);
+ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u32 subpass);
 void TextDestroy(TextRenderer* r);
 
 
