@@ -1,6 +1,5 @@
 #include "frame.h"
 #include "init.h"
-#include "texture.h"
 #include "util.h"
 #include "vec2.h"
 #include <GLFW/glfw3.h>
@@ -24,7 +23,7 @@ int main() {
     TextGetSubpass(passes, NULL, 0);
     CRASH_CALL(InitPresent(&p, passes, 1, NULL, 0));
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", &p.p, 0));
+    CRASH_CALL(TextInit(t, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 0));
     
     //CRASH_CALL(SetTextureSlot(&r, &tex, 0));
     //CRASH_CALL(SetTextureSlot(&r, &font.atlas, 1));
