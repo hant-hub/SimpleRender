@@ -16,7 +16,7 @@
 
 
 #define MAX_LAYERS 100
-#define SR_MAX_INSTANCES 150000
+#define SR_MAX_INSTANCES 1500
 #define SR_SPRITE_ATTACHMENT_NUM 1
 
 //sprite ID
@@ -65,7 +65,6 @@ void SpriteDestroy(SpriteRenderer* r);
 SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
 ErrorCode DestroySprite(SpriteRenderer* r, SpriteHandle s);
 
-ErrorCode PushBuffer(SpriteRenderer* r, void* buf);
 SpriteEntry* GetSprite(SpriteRenderer* r, SpriteHandle s);
 u32 GetNum(SpriteRenderer* r);
 Camera* GetCam(SpriteRenderer* r);

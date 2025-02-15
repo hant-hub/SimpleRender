@@ -11,19 +11,19 @@
 
 int main() {
 
-    SpriteRenderer* r = malloc(sizeof(SpriteRenderer));
-    TextRenderer* t = malloc(sizeof(TextRenderer));
+    SpriteRenderer* r = calloc(sizeof(SpriteRenderer), 1);
+    TextRenderer* t = calloc(sizeof(TextRenderer), 1);
     PresentInfo p = {0};
     CRASH_CALL(CreateVulkan());
 
-    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM * 2] = {0};
+    Attachment attachments[SR_SPRITE_ATTACHMENT_NUM + SR_TEXT_NUM_ATTACHMENTS] = {0};
     SubPass passes[2] = {0};
 
     SpriteGetSubpass(passes, attachments, 0);
     TextGetSubpass(passes, attachments, SR_SPRITE_ATTACHMENT_NUM);
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
-    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, HEIGHT}, .rotation = 0}, 2));
+    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, WIDTH}, .rotation = 0}, 2));
     CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 1))
     SetArea(t, (sm_vec2f){WIDTH, HEIGHT});
 
@@ -37,8 +37,8 @@ int main() {
     
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){500.0f, 0.0f}, (sm_vec2f){500, 500}, 1, 2);
-    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 1);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){500, 500}, 1, 1);
+    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 0);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     AppendText(t, "test", 4, (sm_vec2f){10, 10}, 10);
 
@@ -53,6 +53,14 @@ int main() {
 
         double start = glfwGetTime();
 
+        SpriteEntry* e = GetSprite(r, s1);
+        e->rotation += 0.001f;
+        if (glfwGetTime() > last + 3.0) { 
+            SpriteEntry *s = GetSprite(r, s2);
+            s->layer += flip ? -2 : 2;
+            last = glfwGetTime();
+            flip = !flip;
+        }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         StartFrame(&p, frameCounter);

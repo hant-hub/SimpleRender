@@ -176,7 +176,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
 ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
 
 ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
-    *s = (SubPass) {
+    s[start] = (SubPass) {
         .numAttachments = 0,
         .colorAttachment = 0,
         .depthAttachment = -1,
