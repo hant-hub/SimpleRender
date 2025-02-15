@@ -39,7 +39,7 @@ static const uint16_t indicies[] = {
 
 
 
-ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots) {
+ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, uint textureSlots) {
 
     PASS_CALL(CreateShaderProg("shaders/sheet/sheet.vert.spv", "shaders/sheet/sheet.frag.spv", &r->shader));
 
@@ -75,7 +75,7 @@ ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, ui
 
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(CreateDynamicBuffer(2 * sizeof(sm_mat4f), &r->uniforms[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-        PASS_CALL(CreateDynamicBuffer(SR_MAX_INSTANCES * sizeof(SpritePack), &r->modelBuf[i], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        PASS_CALL(CreateDynamicBuffer(SR_MAX_INSTANCES * sizeof(SheetPack), &r->modelBuf[i], VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
@@ -87,7 +87,7 @@ ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, ui
     return SR_NO_ERROR;
 }
 
-ErrorCode SpriteGetSubpass(SubPass* s, Attachment* a, u32 start) {
+ErrorCode SheetGetSubpass(SubPass* s, Attachment* a, u32 start) {
     *s = (SubPass) {
         .numAttachments = SR_SHEET_ATTACHMENT_NUM,
         .colorAttachment = 0,
@@ -103,7 +103,7 @@ ErrorCode SpriteGetSubpass(SubPass* s, Attachment* a, u32 start) {
 
 
 //set texture to slot
-ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index) {
+ErrorCode SHSetTextureSlot(SheetRenderer* r, Texture* t, u32 index) {
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetImage(t->image.view, t->sampler, &r->config, 2, index, i));
     }
@@ -111,7 +111,7 @@ ErrorCode SetTextureSlot(SpriteRenderer* r, Texture* t, u32 index) {
 }
 
 //Sets all textures starting from texture id 0
-ErrorCode SetTextureSlots(SpriteRenderer* r, Texture* t, u32 number) {
+ErrorCode SHSetTextureSlots(SheetRenderer* r, Texture* t, u32 number) {
     VkImageView views[number];
     VkSampler samplers[number];
     for (int i = 0; i < number; i++) {
@@ -124,7 +124,7 @@ ErrorCode SetTextureSlots(SpriteRenderer* r, Texture* t, u32 number) {
 }
 
 
-void SpriteDestroy(SpriteRenderer* r) {
+void SheetDestroy(SheetRenderer* r) {
     vkDeviceWaitIdle(sr_device.l);
     DestroyStaticBuffer(&r->verts);
     DestroyStaticBuffer(&r->index);
@@ -145,7 +145,7 @@ void SpriteDestroy(SpriteRenderer* r) {
 
 
 
-SheetHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer) {
+SheetHandle CreateSpriteSh(SheetRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer) {
     //sparse set is index + 1,
     //all valid handles must be >0, since 0 is
     //a tombstone value
@@ -183,7 +183,7 @@ SheetHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex
     return newIndex;
 }
 
-ErrorCode DestroySprite(SpriteRenderer* r, SheetHandle s) {
+ErrorCode DestroySpriteSh(SheetRenderer* r, SheetHandle s) {
 
     SheetEntry* denseSetVals = r->denseSetVals;
     u32* denseSetIdx = r->denseSetIdx;
@@ -211,8 +211,8 @@ ErrorCode DestroySprite(SpriteRenderer* r, SheetHandle s) {
 
 
 
-ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
-    SpritePack* packBuf = buf;
+ErrorCode PushBuffer(SheetRenderer* r, void* buf) {
+    SheetPack* packBuf = buf;
     for (int i = 0; i < r->denseSize; i++) {
         SheetEntry sprite = r->denseSetVals[i];
         sm_mat4f model = SM_MAT4_IDENTITY;        
@@ -220,7 +220,7 @@ ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
         model = sm_mat4_f32_rz(&model, sprite.rotation);
         model = sm_mat4_f32_translate(&model, (sm_vec3f){sprite.pos.x, sprite.pos.y, sprite.layer}); 
 
-        packBuf[i] = (SpritePack) {
+        packBuf[i] = (SheetPack) {
             .model = model,
             .uvoffset = sprite.selection,
             .uvscale = (sm_vec2f){1.0/sprite.scale.x, 1.0/sprite.scale.y}, 
@@ -229,21 +229,21 @@ ErrorCode PushBuffer(SpriteRenderer* r, void* buf) {
     }
     return SR_NO_ERROR;
 }
-SheetEntry* GetSprite(SpriteRenderer* r, SheetHandle s) {
+SheetEntry* GetSpriteSh(SheetRenderer* r, SheetHandle s) {
     if (!r->sparseSet[s]) return NULL;
     return &r->denseSetVals[(r->sparseSet[s] - 1)];
 }
 
-Camera* GetCam(SpriteRenderer* r) {
+Sh_Camera* GetCamSh(SheetRenderer* r) {
     return &r->cam;
 }
 
 
-u32 GetNum(SpriteRenderer* r) {
+u32 GetNumSh(SheetRenderer* r) {
     return r->denseSize;
 }
 
-void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
+void SheetDrawFrame(SheetRenderer* r, PresentInfo* p, unsigned int frame) {
     VulkanDevice* device = &sr_device;
     VulkanContext* context = &sr_context; 
     VulkanCommand* cmd = &sr_context.cmd;
@@ -258,7 +258,7 @@ void SpriteDrawFrame(SpriteRenderer* r, PresentInfo* p, unsigned int frame) {
     float aspect = ((float)WIDTH)/((float)HEIGHT);
     proj = sm_mat4_f32_ortho(1.0f, (float)MAX_LAYERS + 1.0f, -aspect, aspect, -1.0f, 1.0f);
 
-    Camera cam = r->cam;
+    Sh_Camera cam = r->cam;
     view = sm_mat4_f32_scale(&view, (sm_vec4f){1/cam.size.x, 1/cam.size.y, 1.0f, 1.0f});
     view = sm_mat4_f32_rz(&view, -cam.rotation);
     view = sm_mat4_f32_translate(&view, (sm_vec3f){-cam.pos.x, -cam.pos.y, 0.0f});

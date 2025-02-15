@@ -37,8 +37,8 @@ int main() {
     
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 0, 1);
-    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 0);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){500.0f, 0.0f}, (sm_vec2f){500, 500}, 1, 2);
+    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 1);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     AppendText(t, "test", 4, (sm_vec2f){10, 10}, 10);
 
@@ -52,17 +52,7 @@ int main() {
         glfwPollEvents();
 
         double start = glfwGetTime();
-        SpriteEntry* e = GetSprite(r, s1);
-        e->rotation += 1.0f * times[(top + 9) % 10];
-        if (glfwGetTime() > last + 3.0) { 
-            SpriteEntry *s = GetSprite(r, s2);
-            s->layer += flip ? -2 : 2;
-            s->texture = flip ? 0 : 1;
-            last = glfwGetTime();
-            flip = !flip;
-        }
-        float time = glfwGetTime() * 2;
-        //SetColor(t, (sm_vec3f){sin(time) * sin(time), sin(time) * cos(time), cos(time)});
+
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         StartFrame(&p, frameCounter);
