@@ -9,6 +9,7 @@
 #include "texture.h"
 #include "vec2.h"
 #include "vec3.h"
+#include "vec4.h"
 
 #define NUM_GLYPHS 128
 #define MAX_CHARS 100000
@@ -37,11 +38,11 @@ typedef struct {
     SwapChain swap;
     StaticBuffer font;
     DynamicBuffer vertuniforms;
-    DynamicBuffer fraguniforms;
     DynamicBuffer indicies;
     DynamicBuffer verts;
     u32 chars;
     sm_vec2f textarea;
+    sm_vec4f currentTextColor;
 } TextRenderer;
 
 ErrorCode LoadFont(const char* fontname, u32 size, FontData* font);

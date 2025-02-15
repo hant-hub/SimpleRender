@@ -19,6 +19,7 @@
 typedef struct {
     sm_vec2f pos;
     sm_vec2f uv;
+    sm_vec4f color;
 } Vertex;
 
 typedef struct {
@@ -46,23 +47,23 @@ ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u
     DescriptorDetail descriptorConfigs[] = {
         {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0},
         {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1},
-        {SR_DESC_UNIFORM, VK_SHADER_STAGE_FRAGMENT_BIT, 0},
     };
     PASS_CALL(CreateDescriptorSetConfig(&r->config, descriptorConfigs, ARRAY_SIZE(descriptorConfigs)));
     
     AttrConfig vconfig[] = {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
-        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)}
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .size = sizeof(sm_vec4f)}
     };
     VkVertexInputBindingDescription binds[1];
-    VkVertexInputAttributeDescription attrs[2];
-    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 2));
+    VkVertexInputAttributeDescription attrs[3];
+    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 3));
 
 
     VulkanVertexInput vin = {
         .attrs = attrs,
         .binding = binds[0],
-        .size = 2
+        .size = 3
     };
     PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config, FALSE));
 
@@ -73,16 +74,17 @@ ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(sizeof(Uniform), &r->vertuniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-    PASS_CALL(CreateDynamicBuffer(sizeof(sm_vec3f), &r->fraguniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     //todo, fix SetBuffer to be non sprite specific
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->vertuniforms, 0, i));
-        PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->fraguniforms, 2, i));
         PASS_CALL(SetImage(r->fdata.atlas.image.view, r->fdata.atlas.sampler, &r->config, 1, 0, i));
     }
 
-    ((sm_vec3f*)r->fraguniforms.buffer)[0] = (sm_vec3f){1.0f, 1.0f, 1.0f};
+    r->currentTextColor = (sm_vec4f){
+        1.0, 1.0, 1.0, 1.0
+    };
+
     return SR_NO_ERROR;
 }
 
@@ -95,7 +97,6 @@ void TextDestroy(TextRenderer* r) {
     DestroyDynamicBuffer(&r->indicies);
     DestroyDynamicBuffer(&r->verts);
     DestroyDynamicBuffer(&r->vertuniforms);
-    DestroyDynamicBuffer(&r->fraguniforms);
     DestroyPipeline(&r->pipeline);
     DestroyShaderProg(&r->shader);
     DestroyPipelineConfig(&r->config);
@@ -107,7 +108,9 @@ ErrorCode ClearText(TextRenderer* r) {
 }
 
 ErrorCode SetColor(TextRenderer* r, sm_vec3f color) {
-    ((sm_vec3f*)r->fraguniforms.buffer)[0] = color;
+    r->currentTextColor = (sm_vec4f){
+        color.x, color.y, color.z, 1.0
+    };
     return SR_NO_ERROR;
 }
 
@@ -146,19 +149,23 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         int idx = i + start - newlines;
         vertex[idx * 4 + 0] = (Vertex) {
             .pos = {x, y},
-            .uv = {u , v}
+            .uv = {u , v},
+            .color = r->currentTextColor
         };
         vertex[idx * 4 + 1] = (Vertex) {
             .pos = {x + ((float)(size.x) * scale), y},
-            .uv = {u + texsize.x, v}
+            .uv = {u + texsize.x, v},
+            .color = r->currentTextColor
         };
         vertex[idx * 4 + 2] = (Vertex) {
             .pos = {x + (float)size.x * scale, y + (float)size.y * scale},
-            .uv = {u + texsize.x, v + texsize.y}
+            .uv = {u + texsize.x, v + texsize.y},
+            .color = r->currentTextColor
         };
         vertex[idx * 4 + 3] = (Vertex) {
             .pos = {x, y + (float)size.y * scale},
-            .uv = {u, v + texsize.y}
+            .uv = {u, v + texsize.y},
+            .color = r->currentTextColor
         };
 
         in[idx*6 + 0] = idx * 4 + 0;

@@ -25,7 +25,7 @@ int main() {
 
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, WIDTH}, .rotation = 0}, 2));
     CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 1))
-    SetArea(t, (sm_vec2f){WIDTH, HEIGHT});
+    SetArea(t, (sm_vec2f){WIDTH, WIDTH});
 
     //build multipass
 
@@ -82,7 +82,13 @@ int main() {
         char buf[32];
         int len = snprintf(buf, 32, "fps: %.3f", avg);
         ClearText(t);
+        SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
         AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1);
+
+        start = glfwGetTime()*1.2;
+
+        SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
+        AppendText(t, "\nTest", 5, (sm_vec2f){-400, -240}, 1);
 
     }
 

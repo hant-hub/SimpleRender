@@ -3,8 +3,10 @@
 
 layout(location = 0) in vec2 inPosition;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in vec4 color;
 
 layout (location = 0) out vec2 fragUV;
+layout (location = 1) out vec4 TextColor;
 
 layout(binding = 0) uniform UniformBuffer {
     mat4 proj;
@@ -14,5 +16,6 @@ layout(binding = 0) uniform UniformBuffer {
 void main() {
     gl_Position = ub.proj * ub.view * vec4(inPosition, 1.0f, 1.0f);
     fragUV = uv;
+    TextColor = color;
 }
 
