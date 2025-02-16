@@ -179,10 +179,11 @@ ErrorCode LoadTextureConfig(Texture* t, const char* path, TextureConfig config) 
 }
 ErrorCode LoadTexture(Texture* t, const char* path) {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(path,
-                                &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    if (pixels == NULL) 
+    stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    if (pixels == NULL) { 
+        SR_LOG_DEB("Failed to Load Texture: %s", path);
         return SR_LOAD_FAIL;
+    }
 
     VkDeviceSize imgSize = texWidth * texHeight * 4;
     VkBuffer stagingBuffer;
