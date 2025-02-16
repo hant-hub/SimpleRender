@@ -7,6 +7,7 @@
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
 void TransitionImageLayout(VulkanDevice* d, VkImage img, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
@@ -181,7 +182,8 @@ ErrorCode LoadTexture(Texture* t, const char* path) {
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (pixels == NULL) { 
-        SR_LOG_DEB("Failed to Load Texture: %s", path);
+        SR_LOG_ERR("Failed to Load Texture: %s", path);
+        SR_LOG_DEB("Error Msg: %s", stbi_failure_reason());
         return SR_LOAD_FAIL;
     }
 
