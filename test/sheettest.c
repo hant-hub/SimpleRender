@@ -15,13 +15,13 @@ int main() {
     Attachment attachments[SR_SHEET_ATTACHMENT_NUM];
     SubPass passes[1];
 
-    SpriteGetSubpass(passes, attachments, 0);
+    SheetGetSubpass(passes, attachments, 0);
 
     PresentInfo p = {0};
     CRASH_CALL(InitPresent(&p, passes, 1, attachments, 1));
 
-    SpriteRenderer* r = calloc(sizeof(SpriteRenderer), 1);
-    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
+    SheetRenderer* r = calloc(sizeof(SheetRenderer), 1);
+    CRASH_CALL(SheetInit(r, &p.p, 0, (Sh_Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
 
     //build multipass
 
@@ -35,12 +35,12 @@ int main() {
                 .filter = VK_FILTER_NEAREST
                 }));
     
-    CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
+    CRASH_CALL(SHSetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SheetHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 50}, 0, 1);
+    SheetHandle s1 = CreateSpriteSh(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 50}, 0, 1);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     {
-        SheetEntry* e = GetSprite(r, s1);
+        SheetEntry* e = GetSpriteSh(r, s1);
         e->scale = (sm_vec2f) {
             7, 2
         };
@@ -57,7 +57,7 @@ int main() {
 
         //e->rotation += 0.01f;
         if (glfwGetTime() > last + 0.08) { 
-            SheetEntry* e = GetSprite(r, s1);
+            SheetEntry* e = GetSpriteSh(r, s1);
             e->selection.x -= 1;
             if (!flip && e->selection.x < -6) {
                 flip = TRUE;
@@ -76,7 +76,7 @@ int main() {
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;
         StartFrame(&p, frameCounter);
-        SpriteDrawFrame(r, &p, frameCounter);
+        SheetDrawFrame(r, &p, frameCounter);
         SubmitFrame(&p, frameCounter); 
 
     }
@@ -84,7 +84,7 @@ int main() {
     DestroyTexture(&textures[0]);
     DestroyTexture(&textures[1]);
     DestroyPresent(&p);
-    SpriteDestroy(r);
+    SheetDestroy(r);
     free(r);
     DestroyVulkan();
     return 0;

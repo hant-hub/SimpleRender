@@ -364,11 +364,11 @@ int main() {
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
     SpriteRenderer* r = calloc(1, sizeof(SpriteRenderer));
-    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {WIDTH, HEIGHT}, .rotation = 0}, 1));
+    CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {fWIDTH, fHEIGHT}, .rotation = 0}, 1));
     //build multipass
 
     TextRenderer* t = calloc(1, sizeof(TextRenderer));
-    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf",&p.p, 1))
+    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 1))
 
 
     Texture textures[1] = {0};
@@ -399,7 +399,7 @@ int main() {
     CRASH_CALL(SetTextureSlots(r, textures, 1));
 
 
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH*2, HEIGHT*2}, 0, 0);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){fWIDTH*2, fHEIGHT*2}, 0, 0);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
 
 

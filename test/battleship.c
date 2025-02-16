@@ -87,7 +87,7 @@ int main() {
     TextGetSubpass(passes, attachments, SR_TILE_ATTACHMENT_NUM);
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, SR_TILE_ATTACHMENT_NUM + SR_TEXT_NUM_ATTACHMENTS));
     CRASH_CALL(TileInit(&r, &p.p, "resources/tilesets/battleship.jpg", 0, (sm_vec2i){4, 2}, (sm_vec2i){10, 20}));
-    CRASH_CALL(TextInit(&t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", &p.p, 1));
+    CRASH_CALL(TextInit(&t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60,  &p.p, 1));
     SetColor(&t, (sm_vec3f){0.3, 0.3, 0.3});
 
     //clear board

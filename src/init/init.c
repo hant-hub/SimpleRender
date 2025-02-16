@@ -1,17 +1,28 @@
 #include "init.h"
 #include "error.h"
+#include <GLFW/glfw3.h>
 #include <string.h>
 #include <stdio.h>
 #include "stdlib.h"
 
 static void ResizeCallback(GLFWwindow* window, int width, int height) {
-    WIDTH = width;
-    HEIGHT = height;
+    fWIDTH = width;
+    fHEIGHT = height;
     frameBufferResized = TRUE;
 }
 
-uint32_t WIDTH = 800;
-uint32_t HEIGHT = 600;
+static void WinSizeCallback(GLFWwindow* window, int width, int height) {
+    winWIDTH = width;
+    winHEIGHT = height;
+    frameBufferResized = TRUE;
+}
+
+uint32_t fWIDTH = 800;
+uint32_t fHEIGHT = 600;
+
+int32_t winWIDTH = 800;
+int32_t winHEIGHT = 600;
+
 bool frameBufferResized = FALSE;
 
 VulkanContext sr_context = {0};
@@ -211,8 +222,9 @@ ErrorCode CreateVulkan() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "SimpleRender", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(fWIDTH, fHEIGHT, "SimpleRender", NULL, NULL);
     glfwSetFramebufferSizeCallback(window, ResizeCallback);
+    glfwSetWindowSizeCallback(window, WinSizeCallback);
 
     VulkanContext* context = &sr_context;
     context->w = window;

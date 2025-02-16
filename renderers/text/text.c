@@ -213,7 +213,7 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
-    float aspect = ((float)WIDTH)/((float)HEIGHT);
+    float aspect = ((float)fWIDTH)/((float)fHEIGHT);
     proj = sm_mat4_f32_ortho(0.5f, 2.0f, -aspect, aspect, -1.0f, 1.0f);
     view = sm_mat4_f32_scale(&view, (sm_vec4f){1/r->textarea.x, 1/r->textarea.y, 1.0f, 1.0f});
 

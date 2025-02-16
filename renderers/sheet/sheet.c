@@ -255,7 +255,7 @@ void SheetDrawFrame(SheetRenderer* r, PresentInfo* p, unsigned int frame) {
     sm_mat4f view = SM_MAT4_IDENTITY;
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
-    float aspect = ((float)WIDTH)/((float)HEIGHT);
+    float aspect = ((float)fWIDTH)/((float)fHEIGHT);
     proj = sm_mat4_f32_ortho(1.0f, (float)MAX_LAYERS + 1.0f, -aspect, aspect, -1.0f, 1.0f);
 
     Sh_Camera cam = r->cam;

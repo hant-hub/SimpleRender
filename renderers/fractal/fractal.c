@@ -121,7 +121,7 @@ ErrorCode FractalGetSubpass(SubPass* s, Attachment* a, u32 start) {
 
 void FractalDrawFrame(FractalRenderer* r, PresentInfo* p, u32 frame) {
     ((Uniform*)(r->uniform[frame].buffer))->size = 
-        (sm_vec2f){WIDTH, HEIGHT};
+        (sm_vec2f){fWIDTH, fHEIGHT};
 
     //memcpy(r->uniform[frame].buffer, &ub, sizeof(Uniform));
     

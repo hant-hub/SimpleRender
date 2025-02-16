@@ -72,8 +72,10 @@ void endSingleTimeCommand(VkCommandBuffer cmd, VkCommandPool pool);
 ErrorCode CreateCommand(VulkanCommand* cmd);
 void DestroyCommand(VulkanCommand* cmd);
 
-extern uint32_t WIDTH;
-extern uint32_t HEIGHT;
+extern uint32_t fWIDTH;
+extern uint32_t fHEIGHT;
+extern int32_t winWIDTH;
+extern int32_t winHEIGHT;
 extern bool frameBufferResized;
 extern VulkanDevice sr_device;
 extern VulkanContext sr_context;
