@@ -123,6 +123,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
 
     int start = r->chars;
     int newlines = 0;
+
     for (int i = 0; i < textLen; i++) {
         sm_vec2i size = r->fdata.size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
@@ -177,10 +178,19 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         cadvance += (float)advance * scale;
         r->chars++;
     }
+
+    r->appendPos = (sm_vec2f) {
+        pos.x + cadvance, pos.y + cdrop
+    };
+
+
     return SR_NO_ERROR;
 }
 
 ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
+sm_vec2f GetTextPos(TextRenderer* r) {
+    return r->appendPos;
+}
 
 ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
     s[start] = (SubPass) {

@@ -42,6 +42,7 @@ typedef struct {
     DynamicBuffer verts;
     u32 chars;
     sm_vec2f textarea;
+    sm_vec2f appendPos;
     sm_vec4f currentTextColor;
 } TextRenderer;
 
@@ -51,6 +52,8 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
 ErrorCode ClearText(TextRenderer* r);
 ErrorCode SetColor(TextRenderer* r, sm_vec3f color);
 ErrorCode SetArea(TextRenderer* r, sm_vec2f area);
+
+sm_vec2f GetTextPos(TextRenderer* r);
 
 ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u32 subpass);
 void TextDestroy(TextRenderer* r);

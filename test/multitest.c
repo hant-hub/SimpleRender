@@ -37,8 +37,8 @@ int main() {
     
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){500, 500}, 1, 1);
-    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 0);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 0, 1);
+    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){WIDTH, HEIGHT}, 0, 2);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     AppendText(t, "test", 4, (sm_vec2f){10, 10}, 10);
 
@@ -54,10 +54,12 @@ int main() {
         double start = glfwGetTime();
 
         SpriteEntry* e = GetSprite(r, s1);
-        e->rotation += 0.001f;
-        if (glfwGetTime() > last + 3.0) { 
-            SpriteEntry *s = GetSprite(r, s2);
-            s->layer += flip ? -2 : 2;
+        //e->rotation += 0.001f;
+        e->pos = GetTextPos(t);
+        e->pos.y -= e->size.y/2;
+        e->pos.x += e->size.x;
+        if (glfwGetTime() > last + 0.5) { 
+            e->layer = flip ? 1 : 3;
             last = glfwGetTime();
             flip = !flip;
         }
@@ -88,7 +90,7 @@ int main() {
         start = glfwGetTime()*1.2;
 
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
-        AppendText(t, "\nTest", 5, (sm_vec2f){-400, -240}, 1);
+        AppendText(t, "\nTest\n\nw", 8, (sm_vec2f){-400, -240}, 1);
 
     }
 
