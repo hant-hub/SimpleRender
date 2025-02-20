@@ -34,13 +34,13 @@ int main() {
 
     Texture textures[2] = {0};
 
-    CRASH_CALL(LoadTexture(&textures[1], "resources/textures/duck.jpg"));
+    CRASH_CALL(LoadTexture(&textures[1], "resources/textures/Chisel.png"));
     CRASH_CALL(LoadTexture(&textures[0], "resources/textures/texture.jpg"));
     
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 0, 1);
     SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){fWIDTH, fHEIGHT}, 0, 2);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 1, 1);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     AppendText(t, "test", 4, (sm_vec2f){10, 10}, 1.0, 10);
 

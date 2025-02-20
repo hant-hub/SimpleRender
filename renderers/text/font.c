@@ -74,3 +74,7 @@ ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
 sm_vec2f GetTextSize(Font* f, const char* text, u32 textlen) {
     return (sm_vec2f){0, 0};
 }
+
+void DestroyFont(Font* f) {
+    DestroyTexture(&f->atlas);
+}

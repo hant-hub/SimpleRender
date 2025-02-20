@@ -65,6 +65,7 @@ int main() {
 
     }
 
+    DestroyFont(&f);
     TextDestroy(t);
     free(t);
     DestroyPresent(&p);

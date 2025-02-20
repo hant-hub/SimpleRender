@@ -86,9 +86,6 @@ ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpas
 void TextDestroy(TextRenderer* r) {
     vkDeviceWaitIdle(sr_device.l);
 
-    DestroyTexture(&r->fdata->atlas);
-
-    DestroyStaticBuffer(&r->font);
     DestroyDynamicBuffer(&r->indicies);
     DestroyDynamicBuffer(&r->verts);
     DestroyDynamicBuffer(&r->vertuniforms);

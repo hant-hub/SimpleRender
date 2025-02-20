@@ -36,7 +36,6 @@ typedef struct {
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
     SwapChain swap;
-    StaticBuffer font;
     DynamicBuffer vertuniforms;
     DynamicBuffer indicies;
     DynamicBuffer verts;
@@ -47,6 +46,7 @@ typedef struct {
 } TextRenderer;
 
 ErrorCode LoadFont(const char* fontname, u32 size, Font* font);
+void DestroyFont(Font* f);
 
 ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float layer, float scale);
 ErrorCode ClearText(TextRenderer* r);
