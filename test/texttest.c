@@ -1,3 +1,4 @@
+#include "config.h"
 #include "frame.h"
 #include "init.h"
 #include "util.h"
@@ -13,17 +14,20 @@
 int main() {
 
     SpriteRenderer r = {0};
-    TextRenderer* t = malloc(sizeof(TextRenderer));
+    TextRenderer* t = calloc(sizeof(TextRenderer), 1);
     PresentInfo p = {0};
 
     CRASH_CALL(CreateVulkan());
 
+    Attachment attachments[SR_TEXT_NUM_ATTACHMENTS];
     SubPass passes[1];
 
-    TextGetSubpass(passes, NULL, 0);
-    CRASH_CALL(InitPresent(&p, passes, 1, NULL, 0));
+    TextGetSubpass(passes, attachments, 0);
+    CRASH_CALL(InitPresent(&p, passes, 1, attachments, SR_TEXT_NUM_ATTACHMENTS));
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, "./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 0));
+    Font f;
+    CRASH_CALL(LoadFont("./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &f));
+    CRASH_CALL(TextInit(t, &f, 60, &p.p, 0));
     
     //CRASH_CALL(SetTextureSlot(&r, &tex, 0));
     //CRASH_CALL(SetTextureSlot(&r, &font.atlas, 1));
@@ -31,10 +35,9 @@ int main() {
     //SpriteHandle s1 = CreateSprite(&r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 100}, 0, 1);
     //SpriteHandle s2 = CreateSprite(&r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 100}, 1, 0);
 
-    char text[1000];
 
-    
-
+    SetArea(t, (sm_vec2f){100, 100});
+    SetColor(t, (sm_vec3f){1.0, 1.0, 1.0});
 
     unsigned int frameCounter = 0;
     double last = 0.0;
@@ -49,7 +52,7 @@ int main() {
                 float scale = shift * 2;
                 shift = shift - floor(shift);
                 shift *= 10;
-                AppendText(t, "Blam", 4, (sm_vec2f){15 * i, 5 * j + shift}, 0.3 * sin(scale + (float)j/5) + 0.5);
+                AppendText(t, "Blam", 4, (sm_vec2f){50 * i, 50 * j + shift}, i + 10, 0.3 * sin(scale + (float)j/5) + 0.5);
             }
         }
 

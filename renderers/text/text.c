@@ -20,6 +20,7 @@ typedef struct {
     sm_vec2f pos;
     sm_vec2f uv;
     sm_vec4f color;
+    float layer;
 } Vertex;
 
 typedef struct {
@@ -27,20 +28,13 @@ typedef struct {
     sm_mat4f view;
 } Uniform;
 
-typedef struct {
-    uint glyph;
-    f32 rotation;
-    f32 scale;
-    //4 bytes of additional padding
-} __attribute__ ((aligned(sizeof(sm_vec4f)))) Character;
-
 
 ErrorCode SetArea(TextRenderer* r, sm_vec2f area) {
     r->textarea = area;
     return SR_NO_ERROR;
 }
 
-ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u32 subpass) {
+ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
@@ -53,32 +47,33 @@ ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u
     AttrConfig vconfig[] = {
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
         {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32_SFLOAT, .size = sizeof(sm_vec2f)},
-        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .size = sizeof(sm_vec4f)}
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .size = sizeof(sm_vec4f)},
+        {.rate = VK_VERTEX_INPUT_RATE_VERTEX, .format = VK_FORMAT_R32_SFLOAT, .size = sizeof(float)},
     };
     VkVertexInputBindingDescription binds[1];
-    VkVertexInputAttributeDescription attrs[3];
-    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 3));
+    VkVertexInputAttributeDescription attrs[4];
+    PASS_CALL(CreateVertAttr(attrs, binds, vconfig, 4));
 
 
     VulkanVertexInput vin = {
         .attrs = attrs,
         .binding = binds[0],
-        .size = 3
+        .size = 4
     };
-    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config, FALSE));
+    PASS_CALL(CreatePipelineConfig(&r->shader, VulkanVertToConfig(vin), &r->config, TRUE));
 
     PASS_CALL(CreatePipeline(&r->shader, &r->config, &r->pipeline, p, subpass)); 
     
-    LoadFont(font, size, &r->fdata);
+    r->fdata = f;
 
     PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 6 * sizeof(uint16_t), &r->indicies, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
-    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(sm_vec2f), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
+    PASS_CALL(CreateDynamicBuffer(MAX_CHARS * 4 * sizeof(Vertex), &r->verts, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
     PASS_CALL(CreateDynamicBuffer(sizeof(Uniform), &r->vertuniforms, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     //todo, fix SetBuffer to be non sprite specific
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->vertuniforms, 0, i));
-        PASS_CALL(SetImage(r->fdata.atlas.image.view, r->fdata.atlas.sampler, &r->config, 1, 0, i));
+        PASS_CALL(SetImage(r->fdata->atlas.image.view, r->fdata->atlas.sampler, &r->config, 1, 0, i));
     }
 
     r->currentTextColor = (sm_vec4f){
@@ -91,7 +86,7 @@ ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u
 void TextDestroy(TextRenderer* r) {
     vkDeviceWaitIdle(sr_device.l);
 
-    DestroyTexture(&r->fdata.atlas);
+    DestroyTexture(&r->fdata->atlas);
 
     DestroyStaticBuffer(&r->font);
     DestroyDynamicBuffer(&r->indicies);
@@ -114,7 +109,7 @@ ErrorCode SetColor(TextRenderer* r, sm_vec3f color) {
     return SR_NO_ERROR;
 }
 
-ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale) {
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float layer, float scale) {
     float cadvance = 0;
     float cdrop = 0;
     int nonrendered = 0;
@@ -125,10 +120,10 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
     int newlines = 0;
 
     for (int i = 0; i < textLen; i++) {
-        sm_vec2i size = r->fdata.size[text[i]];
+        sm_vec2i size = r->fdata->size[text[i]];
         //sm_vec2i pos = r->fdata.pos[text[i]]; For doing UV lookups, not needed yet
-        sm_vec2i offset = r->fdata.offset[text[i]];
-        int advance = r->fdata.advance[text[i]]; 
+        sm_vec2i offset = r->fdata->offset[text[i]];
+        int advance = r->fdata->advance[text[i]]; 
         if (text[i] == '\n') {
             cdrop += (size.y * scale) * 1.50;
             cadvance = 0;
@@ -139,34 +134,38 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         float x = pos.x + cadvance + (offset.x * scale);
         float y = pos.y + cdrop - (offset.y) * scale;
 
-        float u = ((float)r->fdata.pos[text[i]].x) / r->fdata.texsize.x;
-        float v = ((float)r->fdata.pos[text[i]].y) / r->fdata.texsize.y;
+        float u = ((float)r->fdata->pos[text[i]].x) / r->fdata->texsize.x;
+        float v = ((float)r->fdata->pos[text[i]].y) / r->fdata->texsize.y;
 
         sm_vec2f texsize = (sm_vec2f){
-            ((float)size.x) / r->fdata.texsize.x,
-            ((float)size.y) / r->fdata.texsize.y
+            ((float)size.x) / r->fdata->texsize.x,
+            ((float)size.y) / r->fdata->texsize.y
         };
 
         int idx = i + start - newlines;
         vertex[idx * 4 + 0] = (Vertex) {
             .pos = {x, y},
             .uv = {u , v},
-            .color = r->currentTextColor
+            .color = r->currentTextColor,
+            .layer = layer
         };
         vertex[idx * 4 + 1] = (Vertex) {
             .pos = {x + ((float)(size.x) * scale), y},
             .uv = {u + texsize.x, v},
-            .color = r->currentTextColor
+            .color = r->currentTextColor,
+            .layer = layer
         };
         vertex[idx * 4 + 2] = (Vertex) {
             .pos = {x + (float)size.x * scale, y + (float)size.y * scale},
             .uv = {u + texsize.x, v + texsize.y},
-            .color = r->currentTextColor
+            .color = r->currentTextColor,
+            .layer = layer
         };
         vertex[idx * 4 + 3] = (Vertex) {
             .pos = {x, y + (float)size.y * scale},
             .uv = {u, v + texsize.y},
-            .color = r->currentTextColor
+            .color = r->currentTextColor,
+            .layer = layer
         };
 
         in[idx*6 + 0] = idx * 4 + 0;
@@ -194,9 +193,9 @@ sm_vec2f GetTextPos(TextRenderer* r) {
 
 ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start) {
     s[start] = (SubPass) {
-        .numAttachments = 0,
+        .numAttachments = SR_TEXT_NUM_ATTACHMENTS,
         .colorAttachment = 0,
-        .depthAttachment = -1,
+        .depthAttachment = 0,
         .firstAttachment = 0,
     };
     return SR_NO_ERROR;
@@ -214,7 +213,7 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
     sm_mat4f proj = SM_MAT4_IDENTITY;
 
     float aspect = ((float)fWIDTH)/((float)fHEIGHT);
-    proj = sm_mat4_f32_ortho(0.5f, 2.0f, -aspect, aspect, -1.0f, 1.0f);
+    proj = sm_mat4_f32_ortho(0.5f, 100 * 1.0f, -aspect, aspect, -1.0f, 1.0f);
     view = sm_mat4_f32_scale(&view, (sm_vec4f){1/r->textarea.x, 1/r->textarea.y, 1.0f, 1.0f});
 
     Uniform u = (Uniform){

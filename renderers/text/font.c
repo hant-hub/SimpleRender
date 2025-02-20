@@ -6,7 +6,7 @@
 
 
 //should only run once to load all fonts needed upon startup
-ErrorCode LoadFont(const char* fontname, u32 size, FontData* font) {
+ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
     FT_Library library;
 
     if (FT_Init_FreeType(&library)) {
@@ -69,4 +69,8 @@ ErrorCode LoadFont(const char* fontname, u32 size, FontData* font) {
     font->texsize = (sm_vec2i){tex_width, tex_height};
     free(buffer);
     return SR_NO_ERROR;
+}
+
+sm_vec2f GetTextSize(Font* f, const char* text, u32 textlen) {
+    return (sm_vec2f){0, 0};
 }

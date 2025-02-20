@@ -24,7 +24,9 @@ int main() {
     CRASH_CALL(InitPresent(&p, passes, 2, attachments, 2));
 
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {fWIDTH, fWIDTH}, .rotation = 0}, 2));
-    CRASH_CALL(TextInit(t, "resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &p.p, 1))
+    Font f;
+    CRASH_CALL(LoadFont("resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &f));
+    CRASH_CALL(TextInit(t, &f, 60, &p.p, 1))
     SetArea(t, (sm_vec2f){fWIDTH, fWIDTH});
 
     //build multipass
@@ -40,7 +42,7 @@ int main() {
     SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 0, 1);
     SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){fWIDTH, fHEIGHT}, 0, 2);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
-    AppendText(t, "test", 4, (sm_vec2f){10, 10}, 10);
+    AppendText(t, "test", 4, (sm_vec2f){10, 10}, 1.0, 10);
 
 
     unsigned int frameCounter = 0;
@@ -85,12 +87,12 @@ int main() {
         int len = snprintf(buf, 32, "fps: %.3f", avg);
         ClearText(t);
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
-        AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1);
+        AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1.0, 1);
 
         start = glfwGetTime()*1.2;
 
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
-        AppendText(t, "\nTest\n\nw", 8, (sm_vec2f){-400, -240}, 1);
+        AppendText(t, "\nTest\n\nw", 8, (sm_vec2f){-400, -240}, 3.0 * sin(start), 1);
 
     }
 

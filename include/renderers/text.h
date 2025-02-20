@@ -28,10 +28,10 @@ typedef struct {
     int advance[NUM_GLYPHS];
     //atlas size
     sm_vec2i texsize;
-} FontData;
+} Font;
 
 typedef struct {
-    FontData fdata;
+    Font* fdata;
     VulkanShader shader;
     VulkanPipelineConfig config;
     VulkanPipeline pipeline;
@@ -46,18 +46,24 @@ typedef struct {
     sm_vec4f currentTextColor;
 } TextRenderer;
 
-ErrorCode LoadFont(const char* fontname, u32 size, FontData* font);
+ErrorCode LoadFont(const char* fontname, u32 size, Font* font);
 
-ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float scale);
+ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f pos, float layer, float scale);
 ErrorCode ClearText(TextRenderer* r);
 ErrorCode SetColor(TextRenderer* r, sm_vec3f color);
 ErrorCode SetArea(TextRenderer* r, sm_vec2f area);
 
 sm_vec2f GetTextPos(TextRenderer* r);
 
-ErrorCode TextInit(TextRenderer* r, const char* font, u32 size, RenderPass* p, u32 subpass);
-void TextDestroy(TextRenderer* r);
+//Expensive so use with care
+sm_vec2f GetTextSize(Font* f, const char* text, u32 textlen);
 
+//Better reuse
+ErrorCode SetFont(TextRenderer* r, Font* f);
+
+//TODO replace font path with font data
+ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpass);
+void TextDestroy(TextRenderer* r);
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);
 ErrorCode TextGetSubpass(SubPass* s, Attachment* a, u32 start);
