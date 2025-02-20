@@ -26,7 +26,8 @@ int main() {
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {fWIDTH, fWIDTH}, .rotation = 0}, 2));
     Font f;
     CRASH_CALL(LoadFont("resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &f));
-    CRASH_CALL(TextInit(t, &f, 60, &p.p, 1))
+    CRASH_CALL(TextInit(t, NULL, &p.p, 1));
+    SetFont(t, &f);
     SetArea(t, (sm_vec2f){fWIDTH, fWIDTH});
 
     //build multipass
@@ -92,12 +93,13 @@ int main() {
         start = glfwGetTime()*1.2;
 
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
-        AppendText(t, "\nTest\n\nw", 8, (sm_vec2f){-400, -240}, 3.0 * sin(start), 1);
+        AppendText(t, "\nTest\nw", 7, (sm_vec2f){-400, -240}, 3.0 * sin(start), 1);
 
     }
 
     DestroyTexture(&textures[0]);
     DestroyTexture(&textures[1]);
+    DestroyFont(&f);
     DestroyPresent(&p);
     SpriteDestroy(r);
     TextDestroy(t);

@@ -27,7 +27,8 @@ int main() {
     //CRASH_CALL(SpriteInit(&r,(Camera){.pos = {0, 0}, .size = {100, 100}, .rotation = 0}, 2));
     Font f;
     CRASH_CALL(LoadFont("./resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &f));
-    CRASH_CALL(TextInit(t, &f, 60, &p.p, 0));
+    CRASH_CALL(TextInit(t, NULL, 60, &p.p, 0));
+    SetFont(t, &f);
     
     //CRASH_CALL(SetTextureSlot(&r, &tex, 0));
     //CRASH_CALL(SetTextureSlot(&r, &font.atlas, 1));

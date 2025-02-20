@@ -28,6 +28,8 @@ typedef struct {
     int advance[NUM_GLYPHS];
     //atlas size
     sm_vec2i texsize;
+    //preserve specified height of font
+    float charheight;
 } Font;
 
 typedef struct {
@@ -62,7 +64,7 @@ sm_vec2f GetTextSize(Font* f, const char* text, u32 textlen);
 ErrorCode SetFont(TextRenderer* r, Font* f);
 
 //TODO replace font path with font data
-ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpass);
+ErrorCode TextInit(TextRenderer* r, Font* f, RenderPass* p, u32 subpass);
 void TextDestroy(TextRenderer* r);
 
 void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame);

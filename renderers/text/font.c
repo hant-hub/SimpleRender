@@ -7,6 +7,7 @@
 
 //should only run once to load all fonts needed upon startup
 ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
+    font->charheight = size;
     FT_Library library;
 
     if (FT_Init_FreeType(&library)) {

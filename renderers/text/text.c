@@ -34,7 +34,7 @@ ErrorCode SetArea(TextRenderer* r, sm_vec2f area) {
     return SR_NO_ERROR;
 }
 
-ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpass) {
+ErrorCode TextInit(TextRenderer* r, Font* f, RenderPass* p, u32 subpass) {
 
     PASS_CALL(CreateShaderProg("shaders/text/text.vert.spv", "shaders/text/text.frag.spv", &r->shader));
 
@@ -122,7 +122,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         sm_vec2i offset = r->fdata->offset[text[i]];
         int advance = r->fdata->advance[text[i]]; 
         if (text[i] == '\n') {
-            cdrop += (size.y * scale) * 1.50;
+            cdrop += (r->fdata->charheight * scale) * 1.00;
             cadvance = 0;
             newlines++;
             continue;
