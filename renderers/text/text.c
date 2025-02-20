@@ -73,7 +73,7 @@ ErrorCode TextInit(TextRenderer* r, Font* f, u32 size, RenderPass* p, u32 subpas
     //todo, fix SetBuffer to be non sprite specific
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetBuffer(&r->config, SR_DESC_UNIFORM, (Buffer*)&r->vertuniforms, 0, i));
-        PASS_CALL(SetImage(r->fdata->atlas.image.view, r->fdata->atlas.sampler, &r->config, 1, 0, i));
+        if (r->fdata) PASS_CALL(SetImage(r->fdata->atlas.image.view, r->fdata->atlas.sampler, &r->config, 1, 0, i));
     }
 
     r->currentTextColor = (sm_vec4f){
@@ -245,6 +245,8 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 }
 
 ErrorCode SetFont(TextRenderer* r, Font* f) {
-    r->fdata = f;
+    for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
+        PASS_CALL(SetImage(r->fdata->atlas.image.view, r->fdata->atlas.sampler, &r->config, 1, 0, i));
+    }
     return SR_NO_ERROR;
 }
