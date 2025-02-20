@@ -245,6 +245,7 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 }
 
 ErrorCode SetFont(TextRenderer* r, Font* f) {
+    r->fdata = f;
     for (int i = 0; i < SR_MAX_FRAMES_IN_FLIGHT; i++) {
         PASS_CALL(SetImage(r->fdata->atlas.image.view, r->fdata->atlas.sampler, &r->config, 1, 0, i));
     }
