@@ -25,7 +25,7 @@ int main() {
 
     CRASH_CALL(SpriteInit(r, &p.p, 0, (Camera){.pos = {0, 0}, .size = {fWIDTH, fWIDTH}, .rotation = 0}, 2));
     Font f;
-    CRASH_CALL(LoadFont("resources/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf", 60, &f));
+    CRASH_CALL(LoadFont("resources/fonts/dogicapixel.ttf", 60, &f));
     CRASH_CALL(TextInit(t, NULL, &p.p, 1));
     SetFont(t, &f);
     SetArea(t, (sm_vec2f){fWIDTH, fWIDTH});
@@ -39,9 +39,10 @@ int main() {
     CRASH_CALL(LoadTexture(&textures[0], "resources/textures/texture.jpg"));
     
     CRASH_CALL(SetTextureSlots(r, textures, ARRAY_SIZE(textures)));
+    CRASH_CALL(SetTextureSlot(r, &f.atlas, 1));
 
-    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){fWIDTH, fHEIGHT}, 0, 2);
-    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 1, 1);
+    SpriteHandle s2 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){fWIDTH * 2, fHEIGHT * 2}, 1, 2);
+    SpriteHandle s1 = CreateSprite(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){20, 60}, 0, -10);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     AppendText(t, "test", 4, (sm_vec2f){10, 10}, 1.0, 10);
 
@@ -62,7 +63,7 @@ int main() {
         e->pos.y -= e->size.y/2;
         e->pos.x += e->size.x;
         if (glfwGetTime() > last + 0.5) { 
-            e->layer = flip ? 1 : 3;
+            //e->layer = flip ? 1 : 3;
             last = glfwGetTime();
             flip = !flip;
         }
@@ -84,16 +85,16 @@ int main() {
         avg /= 10;
         avg = 1.0/avg;
 
+        ClearText(t);
         char buf[32];
         int len = snprintf(buf, 32, "fps: %.3f", avg);
-        ClearText(t);
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
         AppendText(t, buf, len-1, (sm_vec2f){-400, -240}, 1.0, 1);
 
         start = glfwGetTime()*1.2;
 
         SetColor(t, (sm_vec3f){sin(start), sin(start) * cos(start), cos(start) * cos(start)});
-        AppendText(t, "\nTest\nw", 7, (sm_vec2f){-400, -240}, 3.0 * sin(start), 1);
+        AppendText(t, "\nABCDE\nw", 7, (sm_vec2f){-400, -240}, 1, 1);
 
     }
 

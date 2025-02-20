@@ -1,3 +1,4 @@
+#include "log.h"
 #include "text.h"
 #include "ft2build.h"
 #include "texture.h"
@@ -22,7 +23,7 @@ ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
     }
     FT_Set_Pixel_Sizes(face, 0, size);
 
-    int max_dim = (1 + (face->size->metrics.height >> 6)) * ceilf(sqrtf(NUM_GLYPHS));
+    int max_dim = (1 + (size)) * ceilf(sqrtf(NUM_GLYPHS));
 	int tex_width = 1;
 	while(tex_width < max_dim) tex_width <<= 1;
 	int tex_height = tex_width;
@@ -40,7 +41,7 @@ ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
 
         if (pen_x + bmp->width >= tex_width) {
             pen_x = 0;
-            pen_y += (face->size->metrics.height >> 6) + 1;
+            pen_y += (size) + 1;
         }
 
         for (int row = 0; row < bmp->rows; row++) {
