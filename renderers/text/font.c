@@ -60,6 +60,8 @@ ErrorCode LoadFont(const char* fontname, u32 size, Font* font) {
     FT_Done_Face(face);
 
     CreateTexture(&font->atlas, (TextureConfig){
+                .anisotropy = VK_FALSE,
+                .filter = VK_FILTER_LINEAR,
                 .width = tex_width,
                 .height = tex_height,
                 .channels = 1,
