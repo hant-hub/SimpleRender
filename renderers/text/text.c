@@ -122,7 +122,7 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
         sm_vec2i offset = r->fdata->offset[text[i]];
         int advance = r->fdata->advance[text[i]]; 
         if (text[i] == '\n') {
-            cdrop += (r->fdata->charheight * scale) * 1.00;
+            cdrop += (r->fdata->charheight * scale) * 1.10;
             cadvance = 0;
             newlines++;
             continue;
