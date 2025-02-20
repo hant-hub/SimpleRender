@@ -243,3 +243,8 @@ void TextDrawFrame(TextRenderer* r, PresentInfo* p, u32 frame) {
 
     vkCmdDrawIndexed(cmdBuf, r->chars * 6, 1, 0, 0, 0);
 }
+
+ErrorCode SetFont(TextRenderer* r, Font* f) {
+    r->fdata = f;
+    return SR_NO_ERROR;
+}
