@@ -1,5 +1,10 @@
 #include "log.h"
 #include "text.h"
+#define FT_DISABLE_ZLIB
+#define FT_DISABLE_BZIP2
+#define FT_DISABLE_PNG
+#define FT_DISABLE_HARFBUZZ
+#define FT_DISABLE_BROTLI
 #include "ft2build.h"
 #include "texture.h"
 #include <vulkan/vulkan_core.h>
