@@ -183,7 +183,6 @@ ErrorCode AppendText(TextRenderer* r, const char* text, u32 textLen, sm_vec2f po
     return SR_NO_ERROR;
 }
 
-ErrorCode ReplaceText(TextRenderer* r, const char* text, u32 start, u32 end, float scale);
 sm_vec2f GetTextPos(TextRenderer* r) {
     return r->appendPos;
 }
