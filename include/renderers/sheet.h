@@ -63,7 +63,7 @@ typedef struct {
 } SheetRenderer;
 
 
-ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, uint textureSlots);
+ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, u32 textureSlots);
 void SheetDestroy(SheetRenderer* r);
 
 SheetHandle CreateSpriteSh(SheetRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);

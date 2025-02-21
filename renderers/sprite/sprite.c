@@ -39,7 +39,7 @@ static const uint16_t indicies[] = {
 
 
 
-ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots) {
+ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, u32 textureSlots) {
 
     PASS_CALL(CreateShaderProg("shaders/sprite/sprite.vert.spv", "shaders/sprite/sprite.frag.spv", &r->shader));
 

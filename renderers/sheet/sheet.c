@@ -39,7 +39,7 @@ static const uint16_t indicies[] = {
 
 
 
-ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, uint textureSlots) {
+ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, u32 textureSlots) {
 
     PASS_CALL(CreateShaderProg("shaders/sheet/sheet.vert.spv", "shaders/sheet/sheet.frag.spv", &r->shader));
 

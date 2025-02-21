@@ -59,7 +59,7 @@ typedef struct {
 } SpriteRenderer;
 
 
-ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, uint textureSlots);
+ErrorCode SpriteInit(SpriteRenderer* r, RenderPass* p, u32 subpass, Camera c, u32 textureSlots);
 void SpriteDestroy(SpriteRenderer* r);
 
 SpriteHandle CreateSprite(SpriteRenderer* r, sm_vec2f pos, sm_vec2f size, u32 tex, u32 layer);
