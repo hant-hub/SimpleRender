@@ -44,7 +44,7 @@ ErrorCode SheetInit(SheetRenderer* r, RenderPass* p, u32 subpass, Sh_Camera c, u
     PASS_CALL(CreateShaderProg("shaders/sheet/sheet.vert.spv", "shaders/sheet/sheet.frag.spv", &r->shader));
 
     DescriptorDetail descriptorConfigs[] = {
-        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT,   0}, 
+        {SR_DESC_UNIFORM, VK_SHADER_STAGE_VERTEX_BIT, 0}, 
         {SR_DESC_STORAGE, VK_SHADER_STAGE_VERTEX_BIT, 0},
         {SR_DESC_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, textureSlots}
     };
@@ -168,6 +168,7 @@ SheetHandle CreateSpriteSh(SheetRenderer* r, sm_vec2f pos, sm_vec2f size, u32 te
     sm_vec4f s = (sm_vec4f){size.x, size.y, 1.0f, 1.0f};
 
     denseSetVals[denseIndex] = (SheetEntry) {
+        .color = (sm_vec3f){1.0, 1.0, 1.0},
         .pos = pos,
         .size = size,
         .scale = (sm_vec2f){1.0, 1.0},
@@ -224,7 +225,8 @@ ErrorCode PushBuffer(SheetRenderer* r, void* buf) {
             .model = model,
             .uvoffset = sprite.selection,
             .uvscale = (sm_vec2f){1.0/sprite.scale.x, 1.0/sprite.scale.y}, 
-            .texture = sprite.texture
+            .texture = sprite.texture,
+            .color = sprite.color
         };
     }
     return SR_NO_ERROR;

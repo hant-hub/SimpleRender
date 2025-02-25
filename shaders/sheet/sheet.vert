@@ -4,6 +4,7 @@ struct Uniform {
     mat4 model;
     vec2 uvoffset;
     vec2 uvscale; 
+    vec3 color;
     uint texIndex;
 };
 
@@ -13,6 +14,7 @@ layout(location = 1) in vec2 inTexCoords;
 
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out uint index;
+layout(location = 2) out vec3 tint;
 
 layout(binding = 0) uniform UniformBuffer {
     mat4 view;
@@ -36,5 +38,6 @@ void main() {
              models.ModelData[gl_InstanceIndex].uvscale; 
 
     index = models.ModelData[gl_InstanceIndex].texIndex;
+    tint = models.ModelData[gl_InstanceIndex].color;
 }
 

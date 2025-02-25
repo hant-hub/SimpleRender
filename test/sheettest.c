@@ -37,12 +37,12 @@ int main() {
     
     CRASH_CALL(SHSetTextureSlots(r, textures, ARRAY_SIZE(textures)));
 
-    SheetHandle s1 = CreateSpriteSh(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 50}, 0, 1);
+    SheetHandle s1 = CreateSpriteSh(r, (sm_vec2f){0.0f, 0.0f}, (sm_vec2f){100, 50}, 0, 4);
     //SpriteHandle s3 = CreateSprite(&r, (sm_vec2f){50.0f, 0.0f}, (sm_vec2f){100, 100}, 1);
     {
         SheetEntry* e = GetSpriteSh(r, s1);
         e->scale = (sm_vec2f) {
-            7, 2
+            1, 1
         };
         e->selection = (sm_vec2f) {
             0, 0
@@ -54,6 +54,7 @@ int main() {
     bool flip = FALSE;
     while (!glfwWindowShouldClose(sr_context.w)) {
         glfwPollEvents();
+
 
         //e->rotation += 0.01f;
         if (glfwGetTime() > last + 0.08) { 
@@ -72,6 +73,8 @@ int main() {
             //s->layer += flip ? -2 : 2;
             //s->texture = flip ? 0 : 1;
             last = glfwGetTime();
+
+            e->color = (sm_vec3f){sin(last) * cos(last), sin(last) * sin(last), cos(last)};
         }
 
         frameCounter = (frameCounter + 1) % SR_MAX_FRAMES_IN_FLIGHT;

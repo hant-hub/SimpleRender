@@ -24,6 +24,7 @@ typedef i32 SheetHandle;
 
 
 typedef struct {
+    sm_vec3f color;
     sm_vec2f pos;
     sm_vec2f size;
     sm_vec2f scale;
@@ -43,6 +44,7 @@ typedef struct {
     sm_mat4f model;
     sm_vec2f uvoffset;
     sm_vec2f uvscale;
+    sm_vec3f color;
     u32 texture;
 } __attribute__ ((aligned(sizeof(sm_vec4f)))) SheetPack;
 
